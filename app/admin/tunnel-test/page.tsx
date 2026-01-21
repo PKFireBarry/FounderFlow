@@ -1,8 +1,11 @@
 'use client';
 
 import { useAuth } from '@clerk/nextjs';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Navigation from '../../components/Navigation';
+
+// PDF.js will be loaded dynamically on client side only
+let pdfjsLib: typeof import('pdfjs-dist') | null = null;
 
 interface TestResult {
   success: boolean;
@@ -15,48 +18,197 @@ interface TestResult {
   errorType?: string;
 }
 
+interface FounderData {
+  name: string;
+  company: string;
+  role: string;
+  looking_for: string;
+  company_info: string;
+  company_url: string;
+  linkedinurl: string;
+  email: string;
+}
+
+type OutreachType = 'job' | 'collaboration' | 'friendship';
+type MessageType = 'email' | 'linkedin';
+
 export default function TunnelTestPage() {
   const { isLoaded, userId } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pdfJsLoaded, setPdfJsLoaded] = useState(false);
+
+  // Load PDF.js dynamically on client side
+  useEffect(() => {
+    const loadPdfJs = async () => {
+      if (typeof window !== 'undefined' && !pdfjsLib) {
+        const pdfjs = await import('pdfjs-dist');
+        pdfjs.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.js';
+        pdfjsLib = pdfjs;
+        setPdfJsLoaded(true);
+      }
+    };
+    loadPdfJs();
+  }, []);
+
+  // Connection test state
   const [webhookUrl, setWebhookUrl] = useState('');
-  const [customPayload, setCustomPayload] = useState('{"test": true, "message": "ping"}');
+  const [activeTab, setActiveTab] = useState<'connection' | 'outreach'>('connection');
+
+  // Resume state
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState('');
+  const [extractingPdf, setExtractingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
+  // Founder data state
+  const [founderData, setFounderData] = useState<FounderData>({
+    name: '',
+    company: '',
+    role: '',
+    looking_for: '',
+    company_info: '',
+    company_url: '',
+    linkedinurl: '',
+    email: '',
+  });
+
+  // Outreach options
+  const [outreachType, setOutreachType] = useState<OutreachType>('job');
+  const [messageType, setMessageType] = useState<MessageType>('email');
+  const [userGoals, setUserGoals] = useState('');
+
+  // Test state
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
+  const [generatedMessage, setGeneratedMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleTest = async (e: React.FormEvent) => {
+  // Extract text from PDF using pdfjs-dist
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    if (!pdfjsLib) {
+      throw new Error('PDF.js is not loaded yet. Please wait and try again.');
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += pageText + '\n';
+    }
+
+    return fullText.trim();
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setResumeFile(file);
+    setPdfError(null);
+
+    if (file.type === 'application/pdf') {
+      setExtractingPdf(true);
+      try {
+        const text = await extractTextFromPdf(file);
+        setResumeText(text);
+      } catch (err) {
+        setPdfError(err instanceof Error ? err.message : 'Failed to extract PDF text');
+        setResumeText('');
+      } finally {
+        setExtractingPdf(false);
+      }
+    } else if (file.type === 'text/plain') {
+      const text = await file.text();
+      setResumeText(text);
+    } else {
+      setPdfError('Please upload a PDF or text file');
+    }
+  };
+
+  // Simple connection test
+  const handleConnectionTest = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setResult(null);
     setError(null);
 
     try {
-      // Parse custom payload
-      let testPayload;
-      try {
-        testPayload = JSON.parse(customPayload);
-      } catch {
-        setError('Invalid JSON in custom payload');
-        setLoading(false);
-        return;
-      }
-
       const response = await fetch('/api/admin/tunnel-test', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           webhookUrl,
-          testPayload,
+          testPayload: { test: true, ping: 'connection-test', timestamp: new Date().toISOString() },
         }),
       });
 
       const data = await response.json();
-
       if (response.ok) {
         setResult(data);
       } else {
         setError(data.error || 'Failed to test connection');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Full outreach generation test
+  const handleOutreachTest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setResult(null);
+    setGeneratedMessage(null);
+    setError(null);
+
+    if (!resumeText.trim()) {
+      setError('Please upload a resume or enter resume text');
+      setLoading(false);
+      return;
+    }
+
+    if (!webhookUrl.trim()) {
+      setError('Please enter your N8N webhook URL');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/tunnel-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          webhookUrl,
+          mode: 'outreach',
+          outreachData: {
+            founderData,
+            outreachType,
+            messageType,
+            resumeText,
+            userGoals,
+          },
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setResult(data);
+        // Extract the generated message from the response
+        if (data.data && typeof data.data === 'object' && 'message' in data.data) {
+          setGeneratedMessage(data.data.message as string);
+        } else if (data.data && typeof data.data === 'string') {
+          setGeneratedMessage(data.data);
+        }
+      } else {
+        setError(data.error || 'Failed to generate outreach');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
@@ -87,74 +239,326 @@ export default function TunnelTestPage() {
     <div className="min-h-screen bg-[#0f1015]">
       <Navigation />
 
-      <div className="max-w-4xl mx-auto p-8">
+      <div className="max-w-6xl mx-auto p-8">
         <div className="bg-[#11121b] rounded-xl border border-white/10 p-6">
           <div className="border-b border-white/10 pb-4 mb-6">
-            <h1 className="text-2xl font-bold text-white">N8N Tunnel Connection Test</h1>
+            <h1 className="text-2xl font-bold text-white">N8N Integration Test Lab</h1>
             <p className="text-neutral-400 mt-2">
-              Test your reverse tunnel connection to N8N before enabling AI features.
-              This will send a test request to your webhook URL and display the response.
+              Test your N8N webhook connection and outreach generation before deploying to production.
             </p>
           </div>
 
-          {/* Test Form */}
-          <form onSubmit={handleTest} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-2">
-                Webhook URL
-              </label>
-              <input
-                type="url"
-                value={webhookUrl}
-                onChange={(e) => setWebhookUrl(e.target.value)}
-                placeholder="https://your-tunnel-domain.com/webhook/test"
-                className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none"
-                required
-                disabled={loading}
-              />
-              <p className="text-xs text-neutral-400 mt-1">
-                Enter the full URL of your N8N webhook endpoint through your reverse tunnel
-              </p>
-            </div>
+          {/* Webhook URL - Always visible */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-neutral-300 mb-2">
+              N8N Webhook URL
+            </label>
+            <input
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://your-tunnel-domain.com/webhook/generate-outreach"
+              className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-2">
-                Test Payload (JSON)
-              </label>
-              <textarea
-                value={customPayload}
-                onChange={(e) => setCustomPayload(e.target.value)}
-                className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none font-mono text-sm h-24"
-                disabled={loading}
-              />
-              <p className="text-xs text-neutral-400 mt-1">
-                JSON data to send in the test request body
-              </p>
-            </div>
-
+          {/* Tabs */}
+          <div className="flex gap-2 mb-6">
             <button
-              type="submit"
-              disabled={loading || !webhookUrl}
-              className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+              onClick={() => setActiveTab('connection')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'connection'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-[#18192a] text-neutral-400 hover:text-white'
+              }`}
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Testing Connection...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  Test Connection
-                </>
-              )}
+              Connection Test
             </button>
-          </form>
+            <button
+              onClick={() => setActiveTab('outreach')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'outreach'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-[#18192a] text-neutral-400 hover:text-white'
+              }`}
+            >
+              Outreach Generation Test
+            </button>
+          </div>
+
+          {/* Connection Test Tab */}
+          {activeTab === 'connection' && (
+            <form onSubmit={handleConnectionTest} className="space-y-6">
+              <button
+                type="submit"
+                disabled={loading || !webhookUrl}
+                className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-800 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Testing Connection...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Test Connection
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Outreach Generation Test Tab */}
+          {activeTab === 'outreach' && (
+            <form onSubmit={handleOutreachTest} className="space-y-6">
+              {/* Resume Upload Section */}
+              <div className="bg-[#18192a] border border-white/10 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-white mb-4">Your Resume</h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Upload Resume (PDF or TXT)
+                    </label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.txt"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full px-4 py-3 bg-[#0f1015] border border-dashed border-white/20 rounded-lg text-neutral-400 hover:border-purple-400 hover:text-purple-400 transition-colors"
+                    >
+                      {extractingPdf ? (
+                        <span className="flex items-center justify-center">
+                          <svg className="animate-spin mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Extracting text from PDF...
+                        </span>
+                      ) : resumeFile ? (
+                        <span className="text-green-400">{resumeFile.name}</span>
+                      ) : (
+                        <span>Click to upload resume file</span>
+                      )}
+                    </button>
+                    {pdfError && (
+                      <p className="text-red-400 text-sm mt-1">{pdfError}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Resume Text {resumeFile && '(extracted)'}
+                    </label>
+                    <textarea
+                      value={resumeText}
+                      onChange={(e) => setResumeText(e.target.value)}
+                      placeholder="Paste your resume text here or upload a file above..."
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none font-mono text-sm h-32"
+                    />
+                    {resumeText && (
+                      <p className="text-neutral-400 text-xs mt-1">
+                        {resumeText.length} characters
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Your Goals (what you're looking for)
+                    </label>
+                    <textarea
+                      value={userGoals}
+                      onChange={(e) => setUserGoals(e.target.value)}
+                      placeholder="e.g., Looking for senior frontend roles at early-stage startups working on AI/ML products..."
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none text-sm h-20"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Founder/Target Data Section */}
+              <div className="bg-[#18192a] border border-white/10 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-white mb-4">Target Person/Company</h3>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Contact Name
+                    </label>
+                    <input
+                      type="text"
+                      value={founderData.name}
+                      onChange={(e) => setFounderData({ ...founderData, name: e.target.value })}
+                      placeholder="John Doe"
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Company
+                    </label>
+                    <input
+                      type="text"
+                      value={founderData.company}
+                      onChange={(e) => setFounderData({ ...founderData, company: e.target.value })}
+                      placeholder="Acme Inc"
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Role
+                    </label>
+                    <input
+                      type="text"
+                      value={founderData.role}
+                      onChange={(e) => setFounderData({ ...founderData, role: e.target.value })}
+                      placeholder="Founder & CEO"
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={founderData.email}
+                      onChange={(e) => setFounderData({ ...founderData, email: e.target.value })}
+                      placeholder="john@acme.com"
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Company URL
+                    </label>
+                    <input
+                      type="url"
+                      value={founderData.company_url}
+                      onChange={(e) => setFounderData({ ...founderData, company_url: e.target.value })}
+                      placeholder="https://acme.com"
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      LinkedIn URL
+                    </label>
+                    <input
+                      type="url"
+                      value={founderData.linkedinurl}
+                      onChange={(e) => setFounderData({ ...founderData, linkedinurl: e.target.value })}
+                      placeholder="https://linkedin.com/in/johndoe"
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      What they're looking for
+                    </label>
+                    <input
+                      type="text"
+                      value={founderData.looking_for}
+                      onChange={(e) => setFounderData({ ...founderData, looking_for: e.target.value })}
+                      placeholder="Senior Frontend Engineer, React, TypeScript"
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Company Description
+                    </label>
+                    <textarea
+                      value={founderData.company_info}
+                      onChange={(e) => setFounderData({ ...founderData, company_info: e.target.value })}
+                      placeholder="Brief description of what the company does..."
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:border-purple-400 focus:outline-none h-20"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Outreach Options */}
+              <div className="bg-[#18192a] border border-white/10 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-white mb-4">Outreach Options</h3>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Outreach Type
+                    </label>
+                    <select
+                      value={outreachType}
+                      onChange={(e) => setOutreachType(e.target.value as OutreachType)}
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white focus:border-purple-400 focus:outline-none"
+                    >
+                      <option value="job">Job Opportunity</option>
+                      <option value="collaboration">Collaboration</option>
+                      <option value="friendship">Networking/Friendship</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Message Type
+                    </label>
+                    <select
+                      value={messageType}
+                      onChange={(e) => setMessageType(e.target.value as MessageType)}
+                      className="w-full px-3 py-2 bg-[#0f1015] border border-white/10 rounded-lg text-white focus:border-purple-400 focus:outline-none"
+                    >
+                      <option value="email">Email</option>
+                      <option value="linkedin">LinkedIn Message</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Generate Button */}
+              <button
+                type="submit"
+                disabled={loading || !webhookUrl || !resumeText.trim()}
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating via N8N...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Generate Outreach Message
+                  </>
+                )}
+              </button>
+            </form>
+          )}
 
           {/* Error Display */}
           {error && (
@@ -166,6 +570,33 @@ export default function TunnelTestPage() {
                 Error
               </h3>
               <p className="text-red-300 mt-1">{error}</p>
+            </div>
+          )}
+
+          {/* Generated Message Display */}
+          {generatedMessage && (
+            <div className="mt-6 bg-green-500/20 border border-green-500/30 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-green-200 font-semibold flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Generated Message
+                </h3>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedMessage);
+                  }}
+                  className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
+              <div className="bg-[#0f1015] rounded-lg p-4">
+                <pre className="text-neutral-200 text-sm whitespace-pre-wrap font-sans">
+                  {generatedMessage}
+                </pre>
+              </div>
             </div>
           )}
 
@@ -191,7 +622,7 @@ export default function TunnelTestPage() {
                     )}
                     <div>
                       <h3 className={`font-semibold ${result.success ? 'text-green-200' : 'text-yellow-200'}`}>
-                        {result.success ? 'Connection Successful!' : 'Connection Made (with error response)'}
+                        {result.success ? 'Request Successful!' : 'Request Completed (with error response)'}
                       </h3>
                       <p className={`text-sm ${result.success ? 'text-green-300' : 'text-yellow-300'}`}>
                         Status: {result.status} {result.statusText}
@@ -220,28 +651,18 @@ export default function TunnelTestPage() {
                 </div>
               )}
 
-              {/* Response Data */}
+              {/* Raw Response Data (collapsed by default if we have a generated message) */}
               {result.data !== undefined && (
-                <div className="bg-[#18192a] border border-white/10 rounded-lg p-4">
-                  <h4 className="text-neutral-200 font-semibold mb-2">Response Data</h4>
-                  <pre className="text-neutral-300 text-sm font-mono overflow-x-auto whitespace-pre-wrap bg-[#0f1015] rounded-lg p-3">
-                    {typeof result.data === 'string'
-                      ? result.data
-                      : JSON.stringify(result.data, null, 2)
-                    }
-                  </pre>
-                </div>
-              )}
-
-              {/* Response Headers */}
-              {result.headers && Object.keys(result.headers).length > 0 && (
-                <details className="bg-[#18192a] border border-white/10 rounded-lg">
+                <details className="bg-[#18192a] border border-white/10 rounded-lg" open={!generatedMessage}>
                   <summary className="p-4 text-neutral-200 font-semibold cursor-pointer hover:bg-white/5">
-                    Response Headers ({Object.keys(result.headers).length})
+                    Raw Response Data
                   </summary>
                   <div className="px-4 pb-4">
-                    <pre className="text-neutral-400 text-xs font-mono overflow-x-auto bg-[#0f1015] rounded-lg p-3">
-                      {JSON.stringify(result.headers, null, 2)}
+                    <pre className="text-neutral-300 text-sm font-mono overflow-x-auto whitespace-pre-wrap bg-[#0f1015] rounded-lg p-3">
+                      {typeof result.data === 'string'
+                        ? result.data
+                        : JSON.stringify(result.data, null, 2)
+                      }
                     </pre>
                   </div>
                 </details>
@@ -258,25 +679,22 @@ export default function TunnelTestPage() {
               How This Works
             </h3>
             <div className="text-blue-300 text-sm mt-2 space-y-1">
-              <p>1. Your N8N instance runs on your home network with Gemini CLI access</p>
-              <p>2. A reverse tunnel (like ngrok, Cloudflare Tunnel, or similar) exposes the webhook</p>
-              <p>3. This test page verifies the connection works over the internet</p>
-              <p>4. Even error responses are useful - they confirm the server received our request</p>
+              <p>1. Your resume is converted to text (PDF extraction happens in the browser)</p>
+              <p>2. The prompt is built using the same logic as the main app</p>
+              <p>3. Everything is sent to your N8N webhook (prompt + context)</p>
+              <p>4. N8N runs Gemini CLI and returns the generated message</p>
+              <p>5. Once working, we'll retrofit this into the main generate-outreach API</p>
             </div>
           </div>
 
-          {/* Expected N8N Setup */}
+          {/* Expected N8N Response Format */}
           <div className="mt-4 bg-[#18192a] border border-white/10 rounded-lg p-4">
-            <h3 className="font-semibold text-neutral-200 mb-2">Expected N8N Webhook Response</h3>
+            <h3 className="font-semibold text-neutral-200 mb-2">Expected N8N Response Format</h3>
             <pre className="text-neutral-400 text-sm font-mono bg-[#0f1015] rounded-lg p-3">
 {`{
-  "message": "Generated content here..."
+  "message": "Generated outreach message here..."
 }`}
             </pre>
-            <p className="text-xs text-neutral-400 mt-2">
-              For the full AI integration, your N8N workflow should accept a <code className="bg-[#0f1015] px-1 rounded">prompt</code> field
-              and return the generated message in this format.
-            </p>
           </div>
         </div>
       </div>
