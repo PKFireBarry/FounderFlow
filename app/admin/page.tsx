@@ -86,6 +86,33 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-6">
+            {/* N8N Tunnel Test */}
+            <Link href="/admin/tunnel-test" className="group">
+              <div className="bg-[#18192a] border border-white/10 rounded-lg p-6 hover:bg-white/5 transition-colors">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center mr-4">
+                    <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white group-hover:text-cyan-300 transition-colors">
+                      Tunnel Test
+                    </h3>
+                    <p className="text-neutral-400 text-sm">
+                      Test N8N reverse tunnel connection
+                    </p>
+                  </div>
+                </div>
+                <div className="text-neutral-300 text-sm">
+                  • Test webhook connectivity<br/>
+                  • Verify tunnel is working<br/>
+                  • Check response times<br/>
+                  • Debug connection issues
+                </div>
+              </div>
+            </Link>
+
             {/* LinkedIn Post Generator */}
             <Link href="/admin/linkedin-posts" className="group">
               <div className="bg-[#18192a] border border-white/10 rounded-lg p-6 hover:bg-white/5 transition-colors">

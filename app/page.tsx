@@ -95,6 +95,22 @@ export default function Home() {
     return { faviconUrl, initials, displayName: name || company || 'Unknown' };
   };
 
+  // Helper function to detect NA values in any form
+  const isNAValue = (value: string | undefined | null): boolean => {
+    if (!value || typeof value !== 'string') return true;
+    const normalized = value.trim().toLowerCase();
+    return normalized === '' ||
+           normalized === 'na' ||
+           normalized === 'n/a' ||
+           normalized === 'unknown' ||
+           normalized === 'unknown company';
+  };
+
+  // Helper function to get company display name, replacing NA values with "Stealth Company"
+  const getCompanyDisplayName = (company: string | undefined | null): string => {
+    return isNAValue(company) ? 'Stealth Company' : company!;
+  };
+
   const formatPublishedDate = (publishedStr: string) => {
     if (!publishedStr || publishedStr === 'N/A' || publishedStr === 'Unknown') return 'Recently';
 
@@ -450,10 +466,7 @@ Always great to meet fellow EdTech innovators!`,
           const founder = founders[i];
 
           // Filter out N/A entries and ensure we have good data
-          // Type guard: ensure company is a string
-          const hasValidCompany = typeof founder.company === 'string' &&
-            founder.company !== 'n/a' &&
-            founder.company.trim().length > 0;
+          const hasValidCompany = !isNAValue(founder.company);
 
           const hasValidName = typeof founder.name === 'string' &&
             founder.name !== 'N/A' &&
@@ -817,7 +830,7 @@ Always great to meet fellow EdTech innovators!`,
                           </div>
                           <div className="min-w-0 flex-1">
                             <h3 className="text-base font-semibold text-white mb-1 truncate">
-                              {(!founder.company || founder.company === 'Unknown' || founder.company === 'Unknown Company' || founder.company === 'N/A') ? "Stealth Company" : founder.company}
+                              {getCompanyDisplayName(founder.company)}
                             </h3>
                             <div className="text-xs text-neutral-300 mb-1 h-8 overflow-hidden">
                               <div className="line-clamp-2">
@@ -956,13 +969,13 @@ Always great to meet fellow EdTech innovators!`,
 
                         {/* Fallback for failed favicons */}
                         <div className="hidden w-full h-full items-center justify-center text-xs font-semibold text-white absolute inset-0">
-                          {founder.company.slice(0, 2).toUpperCase()}
+                          {getCompanyDisplayName(founder.company).slice(0, 2).toUpperCase()}
                         </div>
                       </div>
 
                       {/* Company name underneath */}
                       <div className="mt-1 text-[10px] text-neutral-400 text-center max-w-[60px] truncate">
-                        {founder.company}
+                        {getCompanyDisplayName(founder.company)}
                       </div>
                     </div>
                   ))}
