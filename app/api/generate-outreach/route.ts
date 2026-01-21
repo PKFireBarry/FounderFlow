@@ -1,7 +1,10 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/firebase/server';
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 async function enrichPersonData(jobData: any) {
   console.log('Starting data enrichment...');
@@ -97,15 +100,15 @@ export async function POST(request: NextRequest) {
     // User profile found
     const userGoals = userProfile?.goals || '';
 
-    if (!process.env.N8N_WEBHOOK_URL) {
-      console.log('N8N webhook URL not found in environment');
+    if (!process.env.GEMINI_API_KEY) {
+      console.log('Gemini API key not found in environment');
       return NextResponse.json(
-        { error: 'N8N webhook URL not configured. AI generation is temporarily unavailable.' },
+        { error: 'Gemini API key not configured' },
         { status: 500 }
       );
     }
 
-    console.log('N8N webhook URL configured');
+    console.log('Gemini API key found, length:', process.env.GEMINI_API_KEY.length);
 
     // Determine if we have PDF or text resume
     const hasPdfResume = userProfile?.resumePdfBase64;
@@ -125,14 +128,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For N8N webhook, we need to use text-based resume content
-    // If user has PDF but no text, they should extract text first via their profile
-    let resumeTextContent = userProfile?.resumeText || '';
+    // Use gemini-2.5-flash which supports multimodal input
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    if (hasPdfResume && !resumeTextContent) {
-      console.log('PDF resume exists but no text extracted - user should extract text in profile settings');
-      // We'll proceed but note in the prompt that PDF content could not be read
-      resumeTextContent = '[PDF resume was uploaded but text could not be extracted. Please go to Profile Settings and re-upload or paste your resume text.]';
+    // Prepare content parts
+    const contentParts = [];
+
+    if (hasPdfResume) {
+      // Add PDF as base64 for Gemini to read directly
+      contentParts.push({
+        inlineData: {
+          mimeType: 'application/pdf',
+          data: userProfile.resumePdfBase64
+        }
+      });
+      console.log('Added PDF to content parts');
     }
 
     // Create different prompts based on outreach type
@@ -172,8 +182,8 @@ ${enrichedJobData.looking_for ? '- Specifically address what they\'re looking fo
 ${enrichedJobData.role ? '- Reference their role: ' + enrichedJobData.role : ''}
 ${!enrichedJobData.company_info && !enrichedJobData.companyInfo && !enrichedJobData.linkedinInfo ? '- Use general but genuine language about their work/company' : ''}
 
-USER'S BACKGROUND/RESUME:
-${resumeTextContent || 'No resume provided'}
+USER'S BACKGROUND:
+${hasPdfResume ? 'Please analyze the attached resume PDF to understand the user\'s background, skills, and experience. Focus on specific achievements with measurable results.' : hasTextResume ? userProfile.resumeText : 'No resume provided'}
 
 USER'S GOALS:
 ${userGoals}
@@ -243,8 +253,8 @@ ${enrichedJobData.linkedinInfo ? '- Reference their background/experience from L
 ${enrichedJobData.looking_for ? '- Specifically address what they\'re working on: "' + enrichedJobData.looking_for + '"' : ''}
 ${!enrichedJobData.company_info && !enrichedJobData.companyInfo && !enrichedJobData.linkedinInfo ? '- Use general but genuine language about their work/company' : ''}
 
-USER'S BACKGROUND/RESUME:
-${resumeTextContent || 'No resume provided'}
+USER'S BACKGROUND:
+${hasPdfResume ? 'Please analyze the attached resume PDF to understand their technical skills, projects, and expertise that could be valuable for collaboration.' : hasTextResume ? userProfile.resumeText : 'No resume provided'}
 
 USER'S GOALS:
 ${userGoals}
@@ -313,8 +323,8 @@ ${enrichedJobData.linkedinInfo ? '- Reference shared interests or background fro
 ${enrichedJobData.looking_for ? '- Show interest in what they\'re focused on: "' + enrichedJobData.looking_for + '"' : ''}
 ${!enrichedJobData.company_info && !enrichedJobData.companyInfo && !enrichedJobData.linkedinInfo ? '- Use general but genuine language about their work/company' : ''}
 
-USER'S BACKGROUND/RESUME:
-${resumeTextContent || 'No resume provided'}
+USER'S BACKGROUND:
+${hasPdfResume ? 'Please analyze the attached resume PDF to find genuine connection points - shared technologies, similar career paths, complementary experiences.' : hasTextResume ? userProfile.resumeText : 'No resume provided'}
 
 USER'S GOALS:
 ${userGoals}
@@ -356,32 +366,20 @@ CRITICAL: Write the actual content with NO placeholders. Use natural, conversati
 `;
     }
 
-    // Call N8N webhook instead of Gemini API directly
-    console.log('Sending prompt to N8N webhook...');
+    // Add the prompt to content parts
+    contentParts.push(prompt);
+
+    // About to call Gemini API
 
     try {
-      const n8nResponse = await fetch(process.env.N8N_WEBHOOK_URL!, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
+      // Making Gemini API call
+      const result = await model.generateContent(contentParts);
+      // Gemini API call completed, getting response
+      const response = await result.response;
+      // Got response, extracting text
+      const text = response.text();
 
-      if (!n8nResponse.ok) {
-        const errorText = await n8nResponse.text();
-        console.error('N8N webhook error response:', errorText);
-        throw new Error(`N8N webhook failed with status ${n8nResponse.status}: ${errorText}`);
-      }
-
-      const n8nResult = await n8nResponse.json();
-      const text = n8nResult.message || n8nResult.response || n8nResult.text || '';
-
-      if (!text) {
-        throw new Error('N8N webhook returned empty response');
-      }
-
-      console.log('N8N response received, length:', text.length);
+      // Gemini API response received
 
       // Save the outreach record to database only if requested
       if (saveToDatabase) {
@@ -424,18 +422,11 @@ CRITICAL: Write the actual content with NO placeholders. Use natural, conversati
           message: text
         });
       }
-    } catch (n8nError) {
-      console.error('N8N webhook error:', n8nError);
-      console.error('Error message:', n8nError instanceof Error ? n8nError.message : 'Unknown error');
-
-      // Return a user-friendly error for N8N issues
-      return NextResponse.json(
-        {
-          error: 'AI service temporarily unavailable. Please try again later.',
-          details: n8nError instanceof Error ? n8nError.message : 'Unknown error'
-        },
-        { status: 503 }
-      );
+    } catch (geminiError) {
+      console.error('Gemini API error details:', geminiError);
+      console.error('Error message:', geminiError instanceof Error ? geminiError.message : 'Unknown error');
+      console.error('Error stack:', geminiError instanceof Error ? geminiError.stack : 'No stack');
+      throw geminiError;
     }
   } catch (error) {
     console.error('Error generating outreach:', error);

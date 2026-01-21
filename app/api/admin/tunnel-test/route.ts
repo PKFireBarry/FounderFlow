@@ -80,9 +80,9 @@ LinkedIn URL: ${founderData.linkedinurl || 'Not provided'}
 Company URL: ${founderData.company_url || 'Not provided'}
 
 HOW TO REFERENCE THEM:
-${founderData.company_info ? '- Reference their company description: "' + founderData.company_info + '"' : ''}
-${founderData.looking_for ? '- Specifically address what they\'re looking for: "' + founderData.looking_for + '"' : ''}
-${founderData.role ? '- Reference their role: ' + founderData.role : ''}
+${founderData.company_info ? '- Reference their company description if available: "' + founderData.company_info + '"' : ''}
+${founderData.looking_for ? '- Specifically address what they\'re looking for if available: "' + founderData.looking_for + '"' : ''}
+${founderData.role ? '- Reference their role if available: ' + founderData.role : ''}
 ${!founderData.company_info ? '- Use general but genuine language about their work/company' : ''}
 
 USER'S RESUME:
@@ -254,6 +254,8 @@ STRUCTURE:
 `}
 
 CRITICAL: Write the actual content with NO placeholders. Use natural, conversational language. Tone should be curious and authentic like you're connecting with someone on social media.
+only respond with the message content, no additional text or explanation. this means no "here is the message" or "here is the subject line" or any other text. just the message content.
+if should include a subject line, include it in the response as well, but nothing else.
 `;
   }
 
