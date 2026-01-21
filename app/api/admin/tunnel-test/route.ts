@@ -78,14 +78,9 @@ function buildOutreachPrompt(data: OutreachData): string {
     ? `TARGET DETAILS (use what is available, skip what is missing):\n${targetInfo.join('\n')}`
     : 'TARGET DETAILS: Limited information available. Write a general but genuine message.';
 
-  // JSON response format based on message type
-  const jsonFormat = messageType === 'email'
-    ? `{
-  subject: the email subject line here,
-  body: the email body here
-}`
-    : `{
-  body: the linkedin message here
+  // JSON response format - unified format for frontend compatibility
+  const jsonFormat = `{
+  message: the complete ready-to-send ${messageType === 'email' ? 'email including Subject line at the top' : 'linkedin message'}
 }`;
 
   let prompt = '';
@@ -130,9 +125,9 @@ You must respond with ONLY valid JSON in this exact structure:
 ${jsonFormat}
 
 Do not include any other text, explanation, or commentary. Only the JSON object.
-Do not say things like here is the message or here is the subject line.
 Do not wrap the JSON in markdown code blocks.
-Just the raw JSON object with subject and body fields for email, or just body field for linkedin.`;
+Just the raw JSON object with a message field containing the complete ready-to-send content.
+${messageType === 'email' ? 'For email, include the subject line at the very top of the message, formatted as: Subject: [your subject line here] followed by two newlines then the email body.' : ''}`;
   } else if (outreachType === 'collaboration') {
     prompt = `You are crafting a collaboration outreach message between founders and builders. This is about mutual value creation, not job seeking.
 
@@ -173,9 +168,9 @@ You must respond with ONLY valid JSON in this exact structure:
 ${jsonFormat}
 
 Do not include any other text, explanation, or commentary. Only the JSON object.
-Do not say things like here is the message or here is the subject line.
 Do not wrap the JSON in markdown code blocks.
-Just the raw JSON object with subject and body fields for email, or just body field for linkedin.`;
+Just the raw JSON object with a message field containing the complete ready-to-send content.
+${messageType === 'email' ? 'For email, include the subject line at the very top of the message, formatted as: Subject: [your subject line here] followed by two newlines then the email body.' : ''}`;
   } else if (outreachType === 'friendship') {
     prompt = `You are crafting a genuine networking message focused on building authentic professional relationships. This is about human connection and mutual learning, not immediate asks.
 
@@ -218,9 +213,9 @@ You must respond with ONLY valid JSON in this exact structure:
 ${jsonFormat}
 
 Do not include any other text, explanation, or commentary. Only the JSON object.
-Do not say things like here is the message or here is the subject line.
 Do not wrap the JSON in markdown code blocks.
-Just the raw JSON object with subject and body fields for email, or just body field for linkedin.`;
+Just the raw JSON object with a message field containing the complete ready-to-send content.
+${messageType === 'email' ? 'For email, include the subject line at the very top of the message, formatted as: Subject: [your subject line here] followed by two newlines then the email body.' : ''}`;
   }
 
   return prompt;
