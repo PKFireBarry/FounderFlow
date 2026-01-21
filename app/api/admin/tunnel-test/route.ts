@@ -31,7 +31,8 @@ function buildWebBrowsingInstructions(founderData: FounderData): string {
   }
 
   if (founderData.linkedinurl && founderData.linkedinurl.trim() && founderData.linkedinurl.toLowerCase() !== 'n/a') {
-    instructions.push(`- LINKEDIN PROFILE: Visit ${founderData.linkedinurl} to learn about ${founderData.name || 'this person'}'s background and experience`);
+    const personRef = hasValue(founderData.name) ? founderData.name : 'this person';
+    instructions.push(`- LINKEDIN PROFILE: Visit ${founderData.linkedinurl} to learn about ${personRef}s background and experience`);
   }
 
   if (instructions.length === 0) {
@@ -43,220 +44,183 @@ IMPORTANT: You have web browsing capabilities. Please visit these URLs to gather
 
 ${instructions.join('\n')}
 
-Use the information from these pages to make your outreach message highly specific and personalized. Reference specific details you find (products, recent news, background, etc.) rather than generic statements.
+Use the information from these pages to make your outreach message highly specific and personalized. Reference specific details you find rather than generic statements.
 
 `;
 }
 
+// Helper to check if a value is missing or n/a
+function hasValue(val: string | undefined | null): boolean {
+  if (!val) return false;
+  const trimmed = val.trim().toLowerCase();
+  return trimmed !== '' && trimmed !== 'n/a' && trimmed !== 'na' && trimmed !== 'not specified' && trimmed !== 'not provided';
+}
+
 // Build prompt using the same logic as generate-outreach route
+// IMPORTANT: No quotation marks allowed in prompt - CLI interprets them as argument delimiters
 function buildOutreachPrompt(data: OutreachData): string {
   const { founderData, outreachType, messageType, resumeText, userGoals } = data;
 
   // Build web browsing instructions if URLs are available
   const webBrowsingInstructions = buildWebBrowsingInstructions(founderData);
 
+  // Build target info section - only include fields that have real values
+  const targetInfo: string[] = [];
+  if (hasValue(founderData.name)) targetInfo.push(`Person: ${founderData.name}`);
+  if (hasValue(founderData.company)) targetInfo.push(`Company: ${founderData.company}`);
+  if (hasValue(founderData.company_info)) targetInfo.push(`Company Description: ${founderData.company_info}`);
+  if (hasValue(founderData.role)) targetInfo.push(`Role: ${founderData.role}`);
+  if (hasValue(founderData.looking_for)) targetInfo.push(`What they are looking for: ${founderData.looking_for}`);
+  if (hasValue(founderData.linkedinurl)) targetInfo.push(`LinkedIn URL: ${founderData.linkedinurl}`);
+  if (hasValue(founderData.company_url)) targetInfo.push(`Company URL: ${founderData.company_url}`);
+
+  const targetSection = targetInfo.length > 0
+    ? `TARGET DETAILS (use what is available, skip what is missing):\n${targetInfo.join('\n')}`
+    : 'TARGET DETAILS: Limited information available. Write a general but genuine message.';
+
+  // JSON response format based on message type
+  const jsonFormat = messageType === 'email'
+    ? `{
+  subject: the email subject line here,
+  body: the email body here
+}`
+    : `{
+  body: the linkedin message here
+}`;
+
   let prompt = '';
 
   if (outreachType === 'job') {
-    prompt = `
-You are an expert at crafting high-converting cold outreach messages based on modern job market best practices. Your goal is to write a message that cuts through the noise and gets a response.
+    prompt = `You are an expert at crafting high-converting cold outreach messages. Write a message that cuts through the noise and gets a response.
 
 CRITICAL PRINCIPLES:
-- Keep it under 200 words (less is more)
-- Use plain, conversational language - no buzzwords, corporate speak, or AI-sounding phrases
-- Be specific with examples and concrete results from the actual resume
+- Keep it under 200 words
+- Use plain, conversational language - no buzzwords or corporate speak
+- Be specific with examples and concrete results from the resume when possible
 - Have ONE clear, specific ask
-- Show genuine interest based on what you know about them
+- Show genuine interest based on available information about them
 - Sound completely human - use contractions, natural flow, casual but professional tone
-- Format: Who you are → Why you're reaching out → Why they should care
+- If information about the target is missing, write around it naturally - do not mention that info is missing
 ${webBrowsingInstructions}
-TARGET DETAILS:
-Person: ${founderData.name || 'Hiring team'}
-Company: ${founderData.company || 'Unknown Company'}
-Company Description: ${founderData.company_info || 'Not specified'}
-Role: ${founderData.role || 'Not specified'}
-What they're looking for: ${founderData.looking_for || 'Not specified'}
-LinkedIn URL: ${founderData.linkedinurl || 'Not provided'}
-Company URL: ${founderData.company_url || 'Not provided'}
+${targetSection}
 
-HOW TO REFERENCE THEM:
-${founderData.company_info ? '- Reference their company description if available: "' + founderData.company_info + '"' : ''}
-${founderData.looking_for ? '- Specifically address what they\'re looking for if available: "' + founderData.looking_for + '"' : ''}
-${founderData.role ? '- Reference their role if available: ' + founderData.role : ''}
-${!founderData.company_info ? '- Use general but genuine language about their work/company' : ''}
-
-USER'S RESUME:
+USER RESUME:
 ${resumeText}
 
-USER'S GOALS:
-${userGoals}
+USER GOALS:
+${userGoals || 'Not specified'}
 
-MESSAGE TYPE: ${messageType} (email or LinkedIn)
+MESSAGE TYPE: ${messageType}
 
-${messageType === 'email' ? `
-Write a complete, ready-to-send cold email with NO placeholders, brackets, or comments.
-
-EMAIL STRUCTURE:
-1. OPENS with who you are (1 sentence max)
-2. STATES why you're reaching out specifically to them/their company
-3. HIGHLIGHTS 1-2 most relevant achievements from the resume with specific results
-4. MAKES one clear, specific ask (15-minute call, coffee chat, or specific next step)
-5. SOUNDS completely human and conversational
-
-Include a compelling subject line (6-8 words max).
-` : `
-Write a complete, ready-to-send LinkedIn DM with NO placeholders, brackets, or comments.
-
-LINKEDIN MESSAGE STYLE:
+${messageType === 'email' ? `EMAIL REQUIREMENTS:
+- Open with who you are in 1 sentence max
+- State why you are reaching out to them or their company
+- Highlight 1-2 relevant achievements from the resume
+- Make one clear ask like a 15-minute call or coffee chat
+- Include a compelling subject line of 6-8 words max` : `LINKEDIN MESSAGE REQUIREMENTS:
 - Much more casual and direct than email
 - Keep under 100 words
 - Get straight to the point
-- Ask directly: "Do you have any open roles?" or similar
-- Less about selling yourself, more about asking what's available
-- Social media tone - like you're messaging a friend
-- No formal greetings or signatures needed
+- Ask directly about opportunities
+- Social media tone like messaging a friend
+- No formal greetings or signatures needed`}
 
-STRUCTURE:
-1. Quick intro (who you are in 5-7 words)
-2. Direct question about opportunities
-3. Brief mention of relevant experience
-4. Simple ask for next step
-`}
+RESPONSE FORMAT:
+You must respond with ONLY valid JSON in this exact structure:
+${jsonFormat}
 
-CRITICAL: Write the actual content. Do NOT use placeholders. If you don't have specific information, write around it naturally. The message must be ready to copy and send immediately.
-`;
+Do not include any other text, explanation, or commentary. Only the JSON object.
+Do not say things like here is the message or here is the subject line.
+Do not wrap the JSON in markdown code blocks.
+Just the raw JSON object with subject and body fields for email, or just body field for linkedin.`;
   } else if (outreachType === 'collaboration') {
-    prompt = `
-You are crafting a collaboration outreach message between founders/builders. This is about mutual value creation, not job seeking.
+    prompt = `You are crafting a collaboration outreach message between founders and builders. This is about mutual value creation, not job seeking.
 
 COLLABORATION PRINCIPLES:
 - Lead with specific value you can provide
-- Show you understand their current challenges/projects
+- Show you understand their current challenges or projects if that info is available
 - Propose concrete ways to work together
 - Be peer-to-peer, not supplicant
 - Under 200 words, plain language
 - One clear next step
+- If information about the target is missing, write around it naturally - do not mention that info is missing
 ${webBrowsingInstructions}
-TARGET DETAILS:
-Person: ${founderData.name || 'Team'}
-Company: ${founderData.company || 'Unknown Company'}
-Company Description: ${founderData.company_info || 'Not specified'}
-What they're working on: ${founderData.looking_for || 'Not specified'}
-LinkedIn URL: ${founderData.linkedinurl || 'Not provided'}
-Company URL: ${founderData.company_url || 'Not provided'}
+${targetSection}
 
-HOW TO REFERENCE THEM:
-${founderData.company_info ? '- Reference their company description for collaboration fit: "' + founderData.company_info + '"' : ''}
-${founderData.looking_for ? '- Specifically address what they\'re working on: "' + founderData.looking_for + '"' : ''}
-${!founderData.company_info ? '- Use general but genuine language about their work/company' : ''}
-
-USER'S RESUME:
+USER RESUME:
 ${resumeText}
 
-USER'S GOALS:
-${userGoals}
+USER GOALS:
+${userGoals || 'Not specified'}
 
-MESSAGE TYPE: ${messageType} (email or LinkedIn)
+MESSAGE TYPE: ${messageType}
 
-${messageType === 'email' ? `
-Write a complete, ready-to-send collaboration email with NO placeholders, brackets, or comments.
-
-EMAIL STRUCTURE:
-1. OPENS with a specific observation about their work/company
-2. INTRODUCES yourself with relevant credibility (1-2 sentences max)
-3. PROPOSES specific value you can provide based on your actual skills/experience
-4. SUGGESTS concrete collaboration ideas
-5. ASKS for one specific next step
-
-Subject line should hint at the collaboration opportunity.
-` : `
-Write a complete, ready-to-send LinkedIn DM with NO placeholders, brackets, or comments.
-
-LINKEDIN COLLABORATION STYLE:
+${messageType === 'email' ? `EMAIL REQUIREMENTS:
+- Open with a specific observation about their work or company if available
+- Introduce yourself with relevant credibility in 1-2 sentences max
+- Propose specific value you can provide based on your skills and experience
+- Suggest concrete collaboration ideas
+- Ask for one specific next step
+- Include a subject line that hints at the collaboration opportunity` : `LINKEDIN MESSAGE REQUIREMENTS:
 - Casual, founder-to-founder tone
-- Talk openly about what you're both working on
+- Talk openly about what you are both working on
 - Focus on alignment and mutual benefit
 - Keep under 100 words
-- Direct and conversational
-- "Hey, I'm working on X, saw you're doing Y, think there might be some overlap"
+- Direct and conversational`}
 
-STRUCTURE:
-1. Quick intro about what you're working on
-2. Mention what you saw about their work
-3. Point out potential alignment/collaboration
-4. Simple ask to chat more
-`}
+RESPONSE FORMAT:
+You must respond with ONLY valid JSON in this exact structure:
+${jsonFormat}
 
-CRITICAL: Write the actual content with NO placeholders. Tone should be confident peer-to-peer. The message must be ready to copy and send immediately.
-`;
+Do not include any other text, explanation, or commentary. Only the JSON object.
+Do not say things like here is the message or here is the subject line.
+Do not wrap the JSON in markdown code blocks.
+Just the raw JSON object with subject and body fields for email, or just body field for linkedin.`;
   } else if (outreachType === 'friendship') {
-    prompt = `
-You are crafting a genuine networking message focused on building authentic professional relationships. This is about human connection and mutual learning, not immediate asks.
+    prompt = `You are crafting a genuine networking message focused on building authentic professional relationships. This is about human connection and mutual learning, not immediate asks.
 
 NETWORKING PRINCIPLES:
 - Lead with genuine curiosity about their work
-- Find authentic connection points (shared experiences, interests)
-- Offer value or insights, don't just take
+- Find authentic connection points like shared experiences or interests
+- Offer value or insights, do not just take
 - Be conversational but professional
-- No immediate asks for jobs/favors
+- No immediate asks for jobs or favors
 - Focus on learning and relationship building
+- If information about the target is missing, write around it naturally - do not mention that info is missing
 ${webBrowsingInstructions}
-TARGET DETAILS:
-Person: ${founderData.name || 'Professional'}
-Company: ${founderData.company || 'Unknown Company'}
-Company Description: ${founderData.company_info || 'Not specified'}
-Their focus: ${founderData.looking_for || 'Not specified'}
-LinkedIn URL: ${founderData.linkedinurl || 'Not provided'}
-Company URL: ${founderData.company_url || 'Not provided'}
+${targetSection}
 
-HOW TO REFERENCE THEM:
-${founderData.company_info ? '- Reference their company description to show understanding: "' + founderData.company_info + '"' : ''}
-${founderData.looking_for ? '- Show interest in what they\'re focused on: "' + founderData.looking_for + '"' : ''}
-${!founderData.company_info ? '- Use general but genuine language about their work/company' : ''}
-
-USER'S RESUME:
+USER RESUME:
 ${resumeText}
 
-USER'S GOALS:
-${userGoals}
+USER GOALS:
+${userGoals || 'Not specified'}
 
-MESSAGE TYPE: ${messageType} (email or LinkedIn)
+MESSAGE TYPE: ${messageType}
 
-${messageType === 'email' ? `
-Write a complete, ready-to-send networking email with NO placeholders, brackets, or comments.
-
-EMAIL STRUCTURE:
-1. OPENS with specific interest in their work/company (not generic praise)
-2. SHARES a genuine connection point from your actual background
-3. OFFERS something of value based on your real experience
-4. EXPRESSES curiosity about their experience/perspective
-5. SUGGESTS low-pressure connection (coffee chat, informal call)
-6. SOUNDS genuinely interested in them as a person
-
-Subject line should be warm and specific to them.
-` : `
-Write a complete, ready-to-send LinkedIn DM with NO placeholders, brackets, or comments.
-
-LINKEDIN NETWORKING STYLE:
+${messageType === 'email' ? `EMAIL REQUIREMENTS:
+- Open with specific interest in their work or company, not generic praise
+- Share a genuine connection point from your actual background
+- Offer something of value based on your real experience
+- Express curiosity about their experience or perspective
+- Suggest low-pressure connection like coffee chat or informal call
+- Sound genuinely interested in them as a person
+- Include a warm subject line specific to them` : `LINKEDIN MESSAGE REQUIREMENTS:
 - Super casual and friendly
 - Like adding a friend on social media
-- Focus on staying connected and seeing each other's posts
+- Focus on staying connected and seeing each others posts
 - Keep under 80 words
-- "Hey, I see you're also working on AI stuff. I'm really into AI too. Would be cool to stay connected!"
 - Natural, conversational tone
-- About mutual following and engagement
+- About mutual following and engagement`}
 
-STRUCTURE:
-1. Quick observation about shared interest/background
-2. Mention your similar interest
-3. Suggest staying connected to see each other's content
-4. Keep it light and social
-`}
+RESPONSE FORMAT:
+You must respond with ONLY valid JSON in this exact structure:
+${jsonFormat}
 
-CRITICAL: Write the actual content with NO placeholders. Use natural, conversational language. Tone should be curious and authentic like you're connecting with someone on social media.
-only respond with the message content, no additional text or explanation. this means no "here is the message" or "here is the subject line" or any other text. just the message content.
-if should include a subject line, include it in the response as well, but nothing else.
-`;
+Do not include any other text, explanation, or commentary. Only the JSON object.
+Do not say things like here is the message or here is the subject line.
+Do not wrap the JSON in markdown code blocks.
+Just the raw JSON object with subject and body fields for email, or just body field for linkedin.`;
   }
 
   return prompt;
