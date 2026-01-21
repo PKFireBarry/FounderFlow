@@ -22,9 +22,38 @@ interface OutreachData {
   userGoals: string;
 }
 
+// Build web browsing instructions for Gemini CLI
+function buildWebBrowsingInstructions(founderData: FounderData): string {
+  const instructions: string[] = [];
+
+  if (founderData.company_url && founderData.company_url.trim() && founderData.company_url.toLowerCase() !== 'n/a') {
+    instructions.push(`- COMPANY WEBSITE: Visit ${founderData.company_url} to understand their product, mission, and culture`);
+  }
+
+  if (founderData.linkedinurl && founderData.linkedinurl.trim() && founderData.linkedinurl.toLowerCase() !== 'n/a') {
+    instructions.push(`- LINKEDIN PROFILE: Visit ${founderData.linkedinurl} to learn about ${founderData.name || 'this person'}'s background and experience`);
+  }
+
+  if (instructions.length === 0) {
+    return '';
+  }
+
+  return `
+IMPORTANT: You have web browsing capabilities. Please visit these URLs to gather more context:
+
+${instructions.join('\n')}
+
+Use the information from these pages to make your outreach message highly specific and personalized. Reference specific details you find (products, recent news, background, etc.) rather than generic statements.
+
+`;
+}
+
 // Build prompt using the same logic as generate-outreach route
 function buildOutreachPrompt(data: OutreachData): string {
   const { founderData, outreachType, messageType, resumeText, userGoals } = data;
+
+  // Build web browsing instructions if URLs are available
+  const webBrowsingInstructions = buildWebBrowsingInstructions(founderData);
 
   let prompt = '';
 
@@ -40,7 +69,7 @@ CRITICAL PRINCIPLES:
 - Show genuine interest based on what you know about them
 - Sound completely human - use contractions, natural flow, casual but professional tone
 - Format: Who you are → Why you're reaching out → Why they should care
-
+${webBrowsingInstructions}
 TARGET DETAILS:
 Person: ${founderData.name || 'Hiring team'}
 Company: ${founderData.company || 'Unknown Company'}
@@ -107,7 +136,7 @@ COLLABORATION PRINCIPLES:
 - Be peer-to-peer, not supplicant
 - Under 200 words, plain language
 - One clear next step
-
+${webBrowsingInstructions}
 TARGET DETAILS:
 Person: ${founderData.name || 'Team'}
 Company: ${founderData.company || 'Unknown Company'}
@@ -171,7 +200,7 @@ NETWORKING PRINCIPLES:
 - Be conversational but professional
 - No immediate asks for jobs/favors
 - Focus on learning and relationship building
-
+${webBrowsingInstructions}
 TARGET DETAILS:
 Person: ${founderData.name || 'Professional'}
 Company: ${founderData.company || 'Unknown Company'}

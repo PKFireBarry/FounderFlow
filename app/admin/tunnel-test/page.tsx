@@ -3,6 +3,8 @@
 import { useAuth } from '@clerk/nextjs';
 import { useState, useRef, useEffect } from 'react';
 import Navigation from '../../components/Navigation';
+import { clientDb } from '@/lib/firebase/client';
+import { collection, query, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 
 // PDF.js will be loaded dynamically on client side only
 let pdfjsLib: typeof import('pdfjs-dist') | null = null;
@@ -82,6 +84,101 @@ export default function TunnelTestPage() {
   const [result, setResult] = useState<TestResult | null>(null);
   const [generatedMessage, setGeneratedMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Sample loading state
+  const [loadingSample, setLoadingSample] = useState(false);
+  const [sampleError, setSampleError] = useState<string | null>(null);
+  const [loadedSampleName, setLoadedSampleName] = useState<string | null>(null);
+
+  // Helper function to validate URL
+  const isValidUrl = (url: string): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    const trimmed = url.trim().toLowerCase();
+    if (!trimmed || trimmed === 'n/a' || trimmed === 'na' || trimmed === '-') return false;
+    try {
+      const parsed = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
+  // Helper function to validate email
+  const isValidEmail = (email: string): boolean => {
+    if (!email || typeof email !== 'string') return false;
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || trimmed === 'n/a' || trimmed === 'na' || trimmed === '-') return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+  };
+
+  // Load a sample founder from database with complete data
+  const loadSampleFromDatabase = async () => {
+    setLoadingSample(true);
+    setSampleError(null);
+    setLoadedSampleName(null);
+
+    try {
+      // Query recent entries
+      const entriesRef = collection(clientDb, 'entry');
+      const q = query(
+        entriesRef,
+        orderBy('published', 'desc'),
+        limit(100)  // Get recent entries, filter client-side for completeness
+      );
+
+      const querySnapshot = await getDocs(q);
+      const entries: any[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        entries.push({ id: doc.id, ...data });
+      });
+
+      // Filter for entries with complete data
+      const completeEntries = entries.filter((entry) => {
+        const hasCompanyUrl = isValidUrl(entry.company_url);
+        const hasLinkedIn = isValidUrl(entry.linkedinurl);
+        const hasEmail = isValidEmail(entry.email);
+        const hasName = entry.name && entry.name.trim() && entry.name.toLowerCase() !== 'n/a';
+        const hasCompany = entry.company && entry.company.trim() && entry.company.toLowerCase() !== 'n/a';
+
+        return hasCompanyUrl && hasLinkedIn && hasEmail && hasName && hasCompany;
+      });
+
+      if (completeEntries.length === 0) {
+        setSampleError('No entries found with complete data (company_url, linkedinurl, and email)');
+        return;
+      }
+
+      // Pick the first complete entry
+      const sample = completeEntries[0];
+
+      // Populate the form
+      setFounderData({
+        name: sample.name || '',
+        company: sample.company || '',
+        role: sample.role || '',
+        looking_for: sample.looking_for || '',
+        company_info: sample.company_info || '',
+        company_url: sample.company_url || '',
+        linkedinurl: sample.linkedinurl || '',
+        email: sample.email || '',
+      });
+
+      setLoadedSampleName(`${sample.name} @ ${sample.company}`);
+
+      // Auto-switch to outreach tab if on connection tab
+      if (activeTab === 'connection') {
+        setActiveTab('outreach');
+      }
+
+    } catch (err) {
+      console.error('Error loading sample:', err);
+      setSampleError(err instanceof Error ? err.message : 'Failed to load sample from database');
+    } finally {
+      setLoadingSample(false);
+    }
+  };
 
   // Extract text from PDF using pdfjs-dist
   const extractTextFromPdf = async (file: File): Promise<string> => {
@@ -390,7 +487,51 @@ export default function TunnelTestPage() {
 
               {/* Founder/Target Data Section */}
               <div className="bg-[#18192a] border border-white/10 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-white mb-4">Target Person/Company</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Target Person/Company</h3>
+                  <button
+                    type="button"
+                    onClick={loadSampleFromDatabase}
+                    disabled={loadingSample}
+                    className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-800 text-white text-sm font-medium rounded-lg transition-colors flex items-center"
+                  >
+                    {loadingSample ? (
+                      <>
+                        <svg className="animate-spin mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Load Sample from Database
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Sample Loaded Success Message */}
+                {loadedSampleName && (
+                  <div className="mb-4 bg-green-500/20 border border-green-500/30 rounded-lg p-3">
+                    <p className="text-green-300 text-sm flex items-center">
+                      <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Loaded: {loadedSampleName}
+                    </p>
+                  </div>
+                )}
+
+                {/* Sample Load Error */}
+                {sampleError && (
+                  <div className="mb-4 bg-red-500/20 border border-red-500/30 rounded-lg p-3">
+                    <p className="text-red-300 text-sm">{sampleError}</p>
+                  </div>
+                )}
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
