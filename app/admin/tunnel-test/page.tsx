@@ -237,7 +237,7 @@ export default function TunnelTestPage() {
     }
   };
 
-  // Extract text from PDF using pdfjs-dist
+  // Extract text from PDF using pdfjs-dist with improved spacing
   const extractTextFromPdf = async (file: File): Promise<string> => {
     if (!pdfjsLib) {
       throw new Error('PDF.js is not loaded yet. Please wait and try again.');
@@ -247,16 +247,70 @@ export default function TunnelTestPage() {
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
     let fullText = '';
+
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-      fullText += pageText + '\n';
+
+      // Get items with their positions
+      const items = textContent.items.map((item: any) => ({
+        str: item.str,
+        x: item.transform[4],
+        y: item.transform[5],
+        width: item.width,
+        height: item.height || 12, // default height
+      }));
+
+      // Sort by Y (descending - PDF coords start from bottom) then X (ascending)
+      items.sort((a: any, b: any) => {
+        const yDiff = b.y - a.y;
+        if (Math.abs(yDiff) > 3) return yDiff; // Different lines
+        return a.x - b.x; // Same line, sort by X
+      });
+
+      let lastY: number | null = null;
+      let lastX: number | null = null;
+      let lastWidth: number = 0;
+      let pageText = '';
+
+      for (const item of items) {
+        if (!item.str.trim()) continue;
+
+        if (lastY !== null) {
+          const yGap = lastY - item.y;
+          const xGap = item.x - (lastX! + lastWidth);
+
+          // New line detection - if Y changed significantly
+          if (yGap > 8) {
+            // Large gap = new paragraph
+            pageText += '\n\n';
+          } else if (yGap > 3) {
+            // Small gap = new line
+            pageText += '\n';
+          } else if (xGap > 20) {
+            // Large horizontal gap on same line = tab/column
+            pageText += '  ';
+          } else if (xGap > 5) {
+            // Normal word spacing
+            pageText += ' ';
+          }
+        }
+
+        pageText += item.str;
+        lastY = item.y;
+        lastX = item.x;
+        lastWidth = item.width || item.str.length * 5;
+      }
+
+      fullText += pageText + '\n\n--- Page Break ---\n\n';
     }
 
-    return fullText.trim();
+    // Clean up the output
+    return fullText
+      .replace(/--- Page Break ---\n\n$/g, '') // Remove trailing page break
+      .replace(/\n{4,}/g, '\n\n\n') // Max 3 newlines
+      .replace(/[ ]{3,}/g, '  ') // Max 2 spaces
+      .trim();
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
