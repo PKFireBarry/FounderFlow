@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useUserProfile, validateProfileForOutreach } from '@/app/hooks/useUserProfile';
 import ProfileSetupGuide from './ProfileSetupGuide';
+import GenerationLoadingOverlay from './GenerationLoadingOverlay';
 
 interface IntegratedOutreachProps {
   jobData: any;
@@ -76,6 +77,9 @@ export default function IntegratedOutreach({ jobData, userProfile, onBack }: Int
 
   return (
     <div className="space-y-6">
+      {/* Loading Overlay */}
+      <GenerationLoadingOverlay isLoading={isGenerating} />
+
       {/* Header */}
       <div className="flex items-center gap-4">
         <button

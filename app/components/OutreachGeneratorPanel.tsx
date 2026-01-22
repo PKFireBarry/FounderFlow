@@ -2,6 +2,7 @@
 
 import { useState, type ChangeEvent } from 'react';
 import { useToast } from '../hooks/useToast';
+import GenerationLoadingOverlay from './GenerationLoadingOverlay';
 
 interface JobData {
   company?: string;
@@ -80,8 +81,12 @@ export default function OutreachGeneratorPanel({ jobData, contactId }: OutreachG
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full text-neutral-100">
-      {/* Configuration - Fixed Height */}
+    <>
+      {/* Loading Overlay */}
+      <GenerationLoadingOverlay isLoading={isGenerating} />
+
+      <div className="flex-1 flex flex-col h-full text-neutral-100">
+        {/* Configuration - Fixed Height */}
       <div className="p-6 border-b border-neutral-800 flex-shrink-0 bg-neutral-950">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -216,5 +221,6 @@ export default function OutreachGeneratorPanel({ jobData, contactId }: OutreachG
         )}
       </div>
     </div>
+    </>
   );
 }
