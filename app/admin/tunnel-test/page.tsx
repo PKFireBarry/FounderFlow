@@ -305,12 +305,37 @@ export default function TunnelTestPage() {
       fullText += pageText + '\n\n--- Page Break ---\n\n';
     }
 
-    // Clean up the output
-    return fullText
-      .replace(/--- Page Break ---\n\n$/g, '') // Remove trailing page break
-      .replace(/\n{4,}/g, '\n\n\n') // Max 3 newlines
-      .replace(/[ ]{3,}/g, '  ') // Max 2 spaces
+    // Clean up and fix common PDF extraction issues
+    let cleaned = fullText
+      // Remove trailing page break
+      .replace(/--- Page Break ---\n\n$/g, '')
+      // Max 3 newlines
+      .replace(/\n{4,}/g, '\n\n\n')
+      // Max 2 spaces
+      .replace(/[ ]{3,}/g, '  ')
+      // Add space after colon if followed by letter/number (Languages:HTML -> Languages: HTML)
+      .replace(/:([A-Za-z0-9])/g, ': $1')
+      // Add space before opening paren if preceded by letter (Flow(Full -> Flow (Full)
+      .replace(/([A-Za-z])\(([A-Za-z])/g, '$1 ($2')
+      // Add space after closing paren if followed by letter (Stack)Next -> Stack) Next
+      .replace(/\)([A-Za-z])/g, ') $1')
+      // Add space between lowercase and uppercase (camelCase detection: FullStack -> Full Stack)
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      // Add space after comma if followed by letter (React,Next -> React, Next)
+      .replace(/,([A-Za-z])/g, ', $1')
+      // Fix common concatenations with ampersand (Development&Data -> Development & Data)
+      .replace(/([A-Za-z])&([A-Za-z])/g, '$1 & $2')
+      // Add space between number and letter if they look like separate items (15TypeScript -> 15, TypeScript)
+      .replace(/(\d)([A-Z][a-z])/g, '$1, $2')
+      // Fix double spaces that may have been created
+      .replace(/  +/g, ' ')
+      // Fix space before comma
+      .replace(/ ,/g, ',')
+      // Fix space before colon
+      .replace(/ :/g, ':')
       .trim();
+
+    return cleaned;
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
