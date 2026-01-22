@@ -434,11 +434,43 @@ export default function TunnelTestPage() {
       const data = await response.json();
       if (response.ok) {
         setResult(data);
-        // Extract the generated message from the response
-        if (data.data && typeof data.data === 'object' && 'message' in data.data) {
-          setGeneratedMessage(data.data.message as string);
-        } else if (data.data && typeof data.data === 'string') {
-          setGeneratedMessage(data.data);
+        // Extract the generated message from the response, handling nested JSON
+        const extractMessage = (responseData: any): string | null => {
+          if (!responseData) return null;
+
+          let message: any = responseData;
+
+          // If it's an object with a message field, get that
+          if (typeof message === 'object' && 'message' in message) {
+            message = message.message;
+          }
+
+          // If the message is a string that looks like JSON, try to parse it
+          if (typeof message === 'string') {
+            // Check if it looks like JSON (starts with { or [)
+            const trimmed = message.trim();
+            if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+              try {
+                const parsed = JSON.parse(trimmed);
+                // Recursively extract if there's a nested message
+                if (typeof parsed === 'object' && 'message' in parsed) {
+                  return extractMessage(parsed);
+                }
+                return typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
+              } catch {
+                // Not valid JSON, return as-is
+                return message;
+              }
+            }
+            return message;
+          }
+
+          return typeof message === 'string' ? message : null;
+        };
+
+        const extractedMessage = extractMessage(data.data);
+        if (extractedMessage) {
+          setGeneratedMessage(extractedMessage);
         }
       } else {
         setError(data.error || 'Failed to generate outreach');
