@@ -90,6 +90,63 @@ export default function TunnelTestPage() {
   const [sampleError, setSampleError] = useState<string | null>(null);
   const [loadedSampleName, setLoadedSampleName] = useState<string | null>(null);
 
+  // Loading animation state
+  const [currentSayingIndex, setCurrentSayingIndex] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const MAX_GENERATION_TIME = 105; // 1 minute 45 seconds
+
+  // Fun loading messages that rotate during generation
+  const loadingSayings = [
+    "Brewing up something special...",
+    "Teaching the AI some manners...",
+    "Consulting the oracle...",
+    "Channeling creative energy...",
+    "Crafting the perfect words...",
+    "Reading between the lines...",
+    "Searching for that perfect opener...",
+    "Making it sound human...",
+    "Adding a dash of personality...",
+    "Polishing the prose...",
+    "Scanning LinkedIn for clues...",
+    "Checking the company vibe...",
+    "Finding common ground...",
+    "Avoiding corporate buzzwords...",
+    "Making sure it doesn't sound like AI...",
+    "Sprinkling in some authenticity...",
+    "Removing the cringe...",
+    "Double-checking the tone...",
+    "Almost there...",
+    "This is taking a bit, but trust the process...",
+  ];
+
+  // Rotate loading sayings every 4 seconds during loading
+  useEffect(() => {
+    if (!loading) {
+      setCurrentSayingIndex(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentSayingIndex((prev) => (prev + 1) % loadingSayings.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [loading, loadingSayings.length]);
+
+  // Track elapsed time during loading
+  useEffect(() => {
+    if (!loading) {
+      setElapsedTime(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setElapsedTime((prev) => Math.min(prev + 1, MAX_GENERATION_TIME));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [loading]);
+
   // Helper function to validate URL
   const isValidUrl = (url: string): boolean => {
     if (!url || typeof url !== 'string') return false;
@@ -335,6 +392,45 @@ export default function TunnelTestPage() {
   return (
     <div className="min-h-screen bg-[#0f1015]">
       <Navigation />
+
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-[#18192a] border border-purple-500/30 rounded-2xl p-8 max-w-lg w-full mx-4 text-center">
+            {/* Animated spinner */}
+            <div className="relative w-16 h-16 mx-auto mb-6">
+              <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-purple-500 rounded-full animate-spin"></div>
+              <div className="absolute inset-2 border-4 border-transparent border-t-cyan-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+            </div>
+
+            {/* Current saying */}
+            <p className="text-lg text-purple-200 font-medium mb-4 min-h-[28px]">
+              {loadingSayings[currentSayingIndex]}
+            </p>
+
+            {/* Progress bar */}
+            <div className="w-full mb-3">
+              <div className="h-2 bg-[#0f1015] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full transition-all duration-1000 ease-linear"
+                  style={{ width: `${(elapsedTime / MAX_GENERATION_TIME) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Time display */}
+            <div className="flex justify-between text-xs text-neutral-400">
+              <span>{elapsedTime}s elapsed</span>
+              <span>~{Math.max(0, MAX_GENERATION_TIME - elapsedTime)}s remaining</span>
+            </div>
+
+            <p className="text-sm text-neutral-500 mt-4">
+              Generating via N8N...
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-6xl mx-auto p-8">
         <div className="bg-[#11121b] rounded-xl border border-white/10 p-6">
