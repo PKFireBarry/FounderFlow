@@ -120,22 +120,16 @@ ${messageType === 'email' ? `EMAIL REQUIREMENTS:
 - Social media tone like messaging a friend
 - No formal greetings or signatures needed`}
 
-RESPONSE FORMAT - CRITICAL:
-Your ENTIRE response must be valid JSON. Nothing else.
+RESPONSE FORMAT:
+Respond with ONLY a valid JSON object. No explanation, no reasoning, no preamble.
+Do NOT describe your thought process or what you are doing.
+Do NOT mention accessing websites or tools.
+Do NOT say things like here is the plan or I will generate.
+Just output the JSON directly.
 
-FORBIDDEN - DO NOT DO ANY OF THESE:
-- Do NOT explain your reasoning or thought process
-- Do NOT describe what you are about to do
-- Do NOT mention accessing websites or gathering information
-- Do NOT say things like "Here is the plan" or "I will now generate"
-- Do NOT include ANY text before or after the JSON
-
-Your response must start with { and end with }
-
-Required JSON structure:
 ${jsonFormat}
 
-${messageType === 'email' ? 'For email, the message field should contain: Subject: [your subject line here] followed by two newlines then the email body.' : ''}`;
+${messageType === 'email' ? 'For email, the message field should contain: Subject: your subject line here followed by two newlines then the email body.' : ''}`;
   } else if (outreachType === 'collaboration') {
     prompt = `You are crafting a collaboration outreach message between founders and builders. This is about mutual value creation, not job seeking.
 
@@ -171,22 +165,16 @@ ${messageType === 'email' ? `EMAIL REQUIREMENTS:
 - Keep under 100 words
 - Direct and conversational`}
 
-RESPONSE FORMAT - CRITICAL:
-Your ENTIRE response must be valid JSON. Nothing else.
+RESPONSE FORMAT:
+Respond with ONLY a valid JSON object. No explanation, no reasoning, no preamble.
+Do NOT describe your thought process or what you are doing.
+Do NOT mention accessing websites or tools.
+Do NOT say things like here is the plan or I will generate.
+Just output the JSON directly.
 
-FORBIDDEN - DO NOT DO ANY OF THESE:
-- Do NOT explain your reasoning or thought process
-- Do NOT describe what you are about to do
-- Do NOT mention accessing websites or gathering information
-- Do NOT say things like "Here is the plan" or "I will now generate"
-- Do NOT include ANY text before or after the JSON
-
-Your response must start with { and end with }
-
-Required JSON structure:
 ${jsonFormat}
 
-${messageType === 'email' ? 'For email, the message field should contain: Subject: [your subject line here] followed by two newlines then the email body.' : ''}`;
+${messageType === 'email' ? 'For email, the message field should contain: Subject: your subject line here followed by two newlines then the email body.' : ''}`;
   } else if (outreachType === 'friendship') {
     prompt = `You are crafting a genuine networking message focused on building authentic professional relationships. This is about human connection and mutual learning, not immediate asks.
 
@@ -224,22 +212,16 @@ ${messageType === 'email' ? `EMAIL REQUIREMENTS:
 - Natural, conversational tone
 - About mutual following and engagement`}
 
-RESPONSE FORMAT - CRITICAL:
-Your ENTIRE response must be valid JSON. Nothing else.
+RESPONSE FORMAT:
+Respond with ONLY a valid JSON object. No explanation, no reasoning, no preamble.
+Do NOT describe your thought process or what you are doing.
+Do NOT mention accessing websites or tools.
+Do NOT say things like here is the plan or I will generate.
+Just output the JSON directly.
 
-FORBIDDEN - DO NOT DO ANY OF THESE:
-- Do NOT explain your reasoning or thought process
-- Do NOT describe what you are about to do
-- Do NOT mention accessing websites or gathering information
-- Do NOT say things like "Here is the plan" or "I will now generate"
-- Do NOT include ANY text before or after the JSON
-
-Your response must start with { and end with }
-
-Required JSON structure:
 ${jsonFormat}
 
-${messageType === 'email' ? 'For email, the message field should contain: Subject: [your subject line here] followed by two newlines then the email body.' : ''}`;
+${messageType === 'email' ? 'For email, the message field should contain: Subject: your subject line here followed by two newlines then the email body.' : ''}`;
   }
 
   return prompt;
