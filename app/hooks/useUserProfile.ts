@@ -28,8 +28,8 @@ export function useUserProfile(): UserProfileStatus {
 
         if (response.ok) {
           const profileData = await response.json();
-          const hasResume = !!(profileData.resumePdfBase64 || profileData.resumeText);
-          
+          const hasResume = !!profileData.resumeText && profileData.resumeText.length > 50;
+
           setStatus({
             hasProfile: true,
             hasResume,

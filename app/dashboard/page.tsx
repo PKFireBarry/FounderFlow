@@ -39,7 +39,6 @@ interface SavedJob {
 interface UserProfile {
   resumeText: string;
   goals: string;
-  resumePdfBase64: string;
   resumeFilename: string;
 }
 

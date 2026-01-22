@@ -10,10 +10,15 @@ interface FounderData {
   looking_for?: string;
   company_info?: string;
   company_url?: string;
+  url?: string;           // General URL (e.g., job posting or personal site)
+  apply_url?: string;     // Job application URL
   linkedinurl?: string;
   email?: string;
+  // Scraped content (populated by enrichPersonData)
   companyInfo?: string;
   linkedinInfo?: string;
+  applyUrlInfo?: string;  // Scraped job posting details
+  urlInfo?: string;       // Scraped general URL content
 }
 
 interface OutreachData {
@@ -24,6 +29,8 @@ interface OutreachData {
   userGoals: string;
   enrichedCompanyInfo?: string;
   enrichedLinkedinInfo?: string;
+  enrichedApplyUrlInfo?: string;
+  enrichedUrlInfo?: string;
 }
 
 // Helper to check if a value is meaningful (not empty/n/a)
@@ -38,46 +45,48 @@ async function enrichPersonData(jobData: FounderData): Promise<FounderData> {
   console.log('Starting data enrichment...');
   const enrichedData = { ...jobData };
 
-  try {
-    // If they have a company URL, scrape it directly
-    if (jobData.company_url && hasValue(jobData.company_url)) {
-      console.log('Scraping company website:', jobData.company_url);
-      try {
-        const response = await fetch(`https://r.jina.ai/${jobData.company_url}`, {
-          headers: {
-            'Accept': 'text/plain'
-          }
-        });
-        if (response.ok) {
-          const companyContent = await response.text();
-          enrichedData.companyInfo = companyContent.substring(0, 2000); // Limit to 2000 chars
-          console.log('Company info scraped, length:', companyContent.length);
+  // Helper function to scrape a URL with Jina.ai
+  const scrapeUrl = async (url: string, maxChars: number): Promise<string | undefined> => {
+    try {
+      const response = await fetch(`https://r.jina.ai/${url}`, {
+        headers: {
+          'Accept': 'text/plain'
         }
-      } catch (error) {
-        console.log('Company scraping failed:', error);
+      });
+      if (response.ok) {
+        const content = await response.text();
+        console.log(`Scraped ${url}, length: ${content.length}`);
+        return content.substring(0, maxChars);
       }
+    } catch (error) {
+      console.log(`Scraping ${url} failed:`, error);
+    }
+    return undefined;
+  };
+
+  try {
+    // Scrape company_url
+    if (hasValue(jobData.company_url)) {
+      console.log('Scraping company website:', jobData.company_url);
+      enrichedData.companyInfo = await scrapeUrl(jobData.company_url!, 2000);
     }
 
-    // If they have LinkedIn, do a Google search to get cached info
-    if (jobData.linkedinurl && hasValue(jobData.linkedinurl)) {
-      console.log('Searching Google for LinkedIn profile:', jobData.linkedinurl);
-      try {
-        const searchQuery = encodeURIComponent(`site:linkedin.com/in ${jobData.name || ''} ${jobData.company || ''}`);
-        const googleSearchUrl = `https://r.jina.ai/www.google.com/search?q=${searchQuery}`;
+    // Scrape apply_url (job posting details)
+    if (hasValue(jobData.apply_url)) {
+      console.log('Scraping job application URL:', jobData.apply_url);
+      enrichedData.applyUrlInfo = await scrapeUrl(jobData.apply_url!, 1500);
+    }
 
-        const response = await fetch(googleSearchUrl, {
-          headers: {
-            'Accept': 'text/plain'
-          }
-        });
-        if (response.ok) {
-          const searchResults = await response.text();
-          enrichedData.linkedinInfo = searchResults.substring(0, 1500); // Limit to 1500 chars
-          console.log('LinkedIn search info scraped, length:', searchResults.length);
-        }
-      } catch (error) {
-        console.log('LinkedIn search failed:', error);
-      }
+    // Scrape general url (if different from company_url)
+    if (hasValue(jobData.url) && jobData.url !== jobData.company_url) {
+      console.log('Scraping general URL:', jobData.url);
+      enrichedData.urlInfo = await scrapeUrl(jobData.url!, 1000);
+    }
+
+    // Scrape LinkedIn directly (not via Google search - avoids rate limits)
+    if (hasValue(jobData.linkedinurl)) {
+      console.log('Scraping LinkedIn profile:', jobData.linkedinurl);
+      enrichedData.linkedinInfo = await scrapeUrl(jobData.linkedinurl!, 1500);
     }
 
   } catch (error) {
@@ -90,7 +99,7 @@ async function enrichPersonData(jobData: FounderData): Promise<FounderData> {
 
 // Build the outreach prompt for N8N
 function buildOutreachPrompt(data: OutreachData): string {
-  const { founderData, outreachType, messageType, resumeText, userGoals, enrichedCompanyInfo, enrichedLinkedinInfo } = data;
+  const { founderData, outreachType, messageType, resumeText, userGoals, enrichedCompanyInfo, enrichedLinkedinInfo, enrichedApplyUrlInfo, enrichedUrlInfo } = data;
 
   // Build target info section - only include fields that have real values
   const targetInfo: string[] = [];
@@ -101,6 +110,8 @@ function buildOutreachPrompt(data: OutreachData): string {
   if (hasValue(founderData.looking_for)) targetInfo.push(`What they are looking for: ${founderData.looking_for}`);
   if (hasValue(founderData.linkedinurl)) targetInfo.push(`LinkedIn URL: ${founderData.linkedinurl}`);
   if (hasValue(founderData.company_url)) targetInfo.push(`Company URL: ${founderData.company_url}`);
+  if (hasValue(founderData.apply_url)) targetInfo.push(`Application URL: ${founderData.apply_url}`);
+  if (hasValue(founderData.url)) targetInfo.push(`Additional URL: ${founderData.url}`);
 
   const targetSection = targetInfo.length > 0
     ? `TARGET DETAILS (use what is available, skip what is missing):\n${targetInfo.join('\n')}`
@@ -108,13 +119,19 @@ function buildOutreachPrompt(data: OutreachData): string {
 
   // Build enriched context section from Jina.ai scraping
   let enrichedContextSection = '';
-  if (enrichedCompanyInfo || enrichedLinkedinInfo) {
+  if (enrichedCompanyInfo || enrichedLinkedinInfo || enrichedApplyUrlInfo || enrichedUrlInfo) {
     enrichedContextSection = '\nENRICHED CONTEXT (from web scraping - use this for personalization):\n';
     if (enrichedCompanyInfo) {
       enrichedContextSection += `\nCOMPANY WEBSITE CONTENT:\n${enrichedCompanyInfo}\n`;
     }
+    if (enrichedApplyUrlInfo) {
+      enrichedContextSection += `\nJOB POSTING DETAILS:\n${enrichedApplyUrlInfo}\n`;
+    }
+    if (enrichedUrlInfo) {
+      enrichedContextSection += `\nADDITIONAL CONTEXT:\n${enrichedUrlInfo}\n`;
+    }
     if (enrichedLinkedinInfo) {
-      enrichedContextSection += `\nLINKEDIN PROFILE CONTEXT:\n${enrichedLinkedinInfo}\n`;
+      enrichedContextSection += `\nLINKEDIN PROFILE:\n${enrichedLinkedinInfo}\n`;
     }
   }
 
@@ -355,28 +372,20 @@ export async function POST(request: NextRequest) {
 
     console.log('N8N webhook URL found');
 
-    // Determine if we have PDF or text resume
-    const hasPdfResume = userProfile?.resumePdfBase64;
-    const hasTextResume = userProfile?.resumeText;
+    // Get resume text (required)
+    const resumeText = userProfile?.resumeText;
 
     console.log('Resume check:', {
-      hasPdfResume: !!hasPdfResume,
-      hasTextResume: !!hasTextResume,
-      pdfLength: hasPdfResume ? userProfile.resumePdfBase64.length : 0,
-      textLength: hasTextResume ? userProfile.resumeText.length : 0
+      hasResumeText: !!resumeText,
+      textLength: resumeText ? resumeText.length : 0
     });
 
-    if (!hasPdfResume && !hasTextResume) {
+    if (!resumeText || resumeText.length < 50) {
       return NextResponse.json(
-        { error: 'No resume found. Please upload a PDF or add resume text in your profile.' },
+        { error: 'No resume text found. Please upload a PDF or add resume text in your profile.' },
         { status: 400 }
       );
     }
-
-    // For N8N, we need to send the resume as text
-    // If only PDF exists, we'll need text extraction done client-side
-    const resumeText = hasTextResume ? userProfile.resumeText :
-      'Resume uploaded as PDF. Please extract text from the PDF in your profile settings for better results.';
 
     // Build the prompt for N8N
     const prompt = buildOutreachPrompt({
@@ -387,6 +396,8 @@ export async function POST(request: NextRequest) {
       userGoals,
       enrichedCompanyInfo: enrichedJobData.companyInfo,
       enrichedLinkedinInfo: enrichedJobData.linkedinInfo,
+      enrichedApplyUrlInfo: enrichedJobData.applyUrlInfo,
+      enrichedUrlInfo: enrichedJobData.urlInfo,
     });
 
     console.log('Making N8N webhook call...');

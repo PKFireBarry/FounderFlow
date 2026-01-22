@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+// PDF.js will be loaded dynamically on client side only
+let pdfjsLib: typeof import('pdfjs-dist') | null = null;
+
 interface ProfileEditorProps {
   onProfileUpdate: (profile: UserProfile) => void;
 }
@@ -9,7 +12,6 @@ interface ProfileEditorProps {
 interface UserProfile {
   resumeText: string;
   goals: string;
-  resumePdfBase64: string;
   resumeFilename: string;
 }
 
@@ -17,7 +19,6 @@ export default function ProfileEditor({ onProfileUpdate }: ProfileEditorProps) {
   const [profile, setProfile] = useState<UserProfile>({
     resumeText: '',
     goals: '',
-    resumePdfBase64: '',
     resumeFilename: ''
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -25,6 +26,124 @@ export default function ProfileEditor({ onProfileUpdate }: ProfileEditorProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pdfJsLoaded, setPdfJsLoaded] = useState(false);
+
+  // Load PDF.js dynamically on client side
+  useEffect(() => {
+    const loadPdfJs = async () => {
+      if (typeof window !== 'undefined' && !pdfjsLib) {
+        const pdfjs = await import('pdfjs-dist');
+        pdfjs.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.js';
+        pdfjsLib = pdfjs;
+        setPdfJsLoaded(true);
+      }
+    };
+    loadPdfJs();
+  }, []);
+
+  // Extract text from PDF using pdfjs-dist with improved spacing
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    if (!pdfjsLib) {
+      throw new Error('PDF.js is not loaded yet. Please wait and try again.');
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+
+      // Get items with their positions
+      const items = textContent.items.map((item: unknown) => {
+        const typedItem = item as { str: string; transform: number[]; width: number; height?: number };
+        return {
+          str: typedItem.str,
+          x: typedItem.transform[4],
+          y: typedItem.transform[5],
+          width: typedItem.width,
+          height: typedItem.height || 12,
+        };
+      });
+
+      // Sort by Y (descending - PDF coords start from bottom) then X (ascending)
+      items.sort((a, b) => {
+        const yDiff = b.y - a.y;
+        if (Math.abs(yDiff) > 3) return yDiff; // Different lines
+        return a.x - b.x; // Same line, sort by X
+      });
+
+      let lastY: number | null = null;
+      let lastX: number | null = null;
+      let lastWidth: number = 0;
+      let pageText = '';
+
+      for (const item of items) {
+        if (!item.str.trim()) continue;
+
+        if (lastY !== null) {
+          const yGap = lastY - item.y;
+          const xGap = item.x - (lastX! + lastWidth);
+
+          // New line detection - if Y changed significantly
+          if (yGap > 8) {
+            // Large gap = new paragraph
+            pageText += '\n\n';
+          } else if (yGap > 3) {
+            // Small gap = new line
+            pageText += '\n';
+          } else if (xGap > 20) {
+            // Large horizontal gap on same line = tab/column
+            pageText += '  ';
+          } else if (xGap > 5) {
+            // Normal word spacing
+            pageText += ' ';
+          }
+        }
+
+        pageText += item.str;
+        lastY = item.y;
+        lastX = item.x;
+        lastWidth = item.width || item.str.length * 5;
+      }
+
+      fullText += pageText + '\n\n--- Page Break ---\n\n';
+    }
+
+    // Clean up and fix common PDF extraction issues
+    const cleaned = fullText
+      // Remove trailing page break
+      .replace(/--- Page Break ---\n\n$/g, '')
+      // Max 3 newlines
+      .replace(/\n{4,}/g, '\n\n\n')
+      // Max 2 spaces
+      .replace(/[ ]{3,}/g, '  ')
+      // Add space after colon if followed by letter/number (Languages:HTML -> Languages: HTML)
+      .replace(/:([A-Za-z0-9])/g, ': $1')
+      // Add space before opening paren if preceded by letter (Flow(Full -> Flow (Full)
+      .replace(/([A-Za-z])\(([A-Za-z])/g, '$1 ($2')
+      // Add space after closing paren if followed by letter (Stack)Next -> Stack) Next
+      .replace(/\)([A-Za-z])/g, ') $1')
+      // Add space between lowercase and uppercase (camelCase detection: FullStack -> Full Stack)
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      // Add space after comma if followed by letter (React,Next -> React, Next)
+      .replace(/,([A-Za-z])/g, ', $1')
+      // Fix common concatenations with ampersand (Development&Data -> Development & Data)
+      .replace(/([A-Za-z])&([A-Za-z])/g, '$1 & $2')
+      // Add space between number and letter if they look like separate items (15TypeScript -> 15, TypeScript)
+      .replace(/(\d)([A-Z][a-z])/g, '$1, $2')
+      // Fix double spaces that may have been created
+      .replace(/  +/g, ' ')
+      // Fix space before comma
+      .replace(/ ,/g, ',')
+      // Fix space before colon
+      .replace(/ :/g, ':')
+      .trim();
+
+    return cleaned;
+  };
 
   const loadProfile = useCallback(async () => {
     try {
@@ -34,13 +153,11 @@ export default function ProfileEditor({ onProfileUpdate }: ProfileEditorProps) {
         setProfile({
           resumeText: data.resumeText || '',
           goals: data.goals || '',
-          resumePdfBase64: data.resumePdfBase64 || '',
           resumeFilename: data.resumeFilename || ''
         });
         onProfileUpdate({
           resumeText: data.resumeText || '',
           goals: data.goals || '',
-          resumePdfBase64: data.resumePdfBase64 || '',
           resumeFilename: data.resumeFilename || ''
         });
       }
@@ -75,7 +192,6 @@ export default function ProfileEditor({ onProfileUpdate }: ProfileEditorProps) {
         onProfileUpdate({
           resumeText: updated.resumeText || '',
           goals: updated.goals || '',
-          resumePdfBase64: updated.resumePdfBase64 || '',
           resumeFilename: updated.resumeFilename || ''
         });
         setTimeout(() => setMessage(''), 3000);
@@ -112,24 +228,28 @@ export default function ProfileEditor({ onProfileUpdate }: ProfileEditorProps) {
     setMessage('');
 
     try {
-      // Convert PDF to base64
-      const arrayBuffer = await file.arrayBuffer();
-      const base64String = btoa(
-        new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-      );
+      // Extract text from PDF using PDF.js
+      const extractedText = await extractTextFromPdf(file);
+      console.log('PDF text extracted, length:', extractedText.length);
+
+      if (!extractedText || extractedText.length < 50) {
+        setMessage('Could not extract text from PDF. Please paste your resume text manually.');
+        setIsUploading(false);
+        return;
+      }
 
       setProfile(prev => ({
         ...prev,
-        resumePdfBase64: base64String,
-        resumeFilename: file.name
+        resumeFilename: file.name,
+        resumeText: extractedText
       }));
 
-      setMessage(`PDF "${file.name}" uploaded successfully! The AI can now read your resume directly.`);
+      setMessage(`Resume text extracted (${extractedText.length} characters). Save to apply.`);
       setTimeout(() => setMessage(''), 5000);
 
     } catch (error) {
-      console.error('Error uploading PDF:', error);
-      setMessage('Failed to upload PDF. Please try again.');
+      console.error('PDF text extraction failed:', error);
+      setMessage('Failed to extract PDF text. Please paste your resume text manually.');
     } finally {
       setIsUploading(false);
     }
