@@ -9,6 +9,8 @@ interface SubscriptionData {
   isPaid: boolean;
   plan: string | null;
   expiresAt: Date | null;
+  isTrial: boolean;
+  trialDaysRemaining: number | null;
 }
 
 export function useSubscription() {
@@ -16,13 +18,15 @@ export function useSubscription() {
   const [subscription, setSubscription] = useState<SubscriptionData>({
     isPaid: false,
     plan: null,
-    expiresAt: null
+    expiresAt: null,
+    isTrial: false,
+    trialDaysRemaining: null,
   });
   const [loading, setLoading] = useState(true);
 
   const checkSubscription = async () => {
     if (!isSignedIn || !user?.id) {
-      setSubscription({ isPaid: false, plan: null, expiresAt: null });
+      setSubscription({ isPaid: false, plan: null, expiresAt: null, isTrial: false, trialDaysRemaining: null });
       setLoading(false);
       return;
     }
@@ -30,28 +34,34 @@ export function useSubscription() {
     try {
       const userDocRef = doc(clientDb, 'user_subscriptions', user.id);
       const userDoc = await getDoc(userDocRef);
-      
+
       if (userDoc.exists()) {
         const data = userDoc.data();
         const expiresAt = data.expiresAt?.toDate() || null;
         const isActive = data.status === 'active' || data.status === 'trialing';
         const isNotExpired = expiresAt ? expiresAt > new Date() : false;
         const isPaid = isActive && (isNotExpired || data.status === 'active');
-        
-        // Subscription check completed
-        
+
+        // Trial detection
+        const isTrial = data.status === 'trialing' && isNotExpired;
+        const trialDaysRemaining = isTrial && expiresAt
+          ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+          : null;
+
         setSubscription({
           isPaid,
           plan: data.plan || null,
-          expiresAt
+          expiresAt,
+          isTrial,
+          trialDaysRemaining,
         });
       } else {
         // No subscription document = free user
-        setSubscription({ isPaid: false, plan: null, expiresAt: null });
+        setSubscription({ isPaid: false, plan: null, expiresAt: null, isTrial: false, trialDaysRemaining: null });
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
-      setSubscription({ isPaid: false, plan: null, expiresAt: null });
+      setSubscription({ isPaid: false, plan: null, expiresAt: null, isTrial: false, trialDaysRemaining: null });
     } finally {
       setLoading(false);
     }
@@ -80,7 +90,7 @@ export function useSubscription() {
     } catch (error) {
       console.error('❌ Error refreshing from Stripe:', error);
     }
-    
+
     // Always check Firestore after attempting Stripe refresh
     await checkSubscription();
   };

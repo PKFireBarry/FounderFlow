@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
-import { 
-  collection, 
-  getDocs, 
+import {
+  collection,
+  getDocs,
   doc,
   deleteDoc,
-  query, 
+  setDoc,
+  Timestamp,
+  query,
   limit as firestoreLimit,
-  orderBy 
+  orderBy
 } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase/server';
 
@@ -42,7 +44,7 @@ interface FilterStats {
 
 async function checkAdminAccess() {
   const { userId } = await auth();
-  
+
   if (!userId) {
     return { authorized: false, error: 'Unauthorized', status: 401 };
   }
@@ -74,11 +76,11 @@ function calculateStats(entries: EntryItem[]): FilterStats {
     if (!entry.email || entry.email === 'N/A' || entry.email.trim() === '') {
       stats.withoutEmail++;
     }
-    
+
     if (!entry.linkedinurl || entry.linkedinurl === 'N/A' || entry.linkedinurl.trim() === '') {
       stats.withoutLinkedIn++;
     }
-    
+
     if (!entry.company_url || entry.company_url === 'N/A' || entry.company_url.trim() === '') {
       stats.withoutCompanyUrl++;
     }
@@ -113,7 +115,7 @@ export async function GET(req: NextRequest) {
     // Get entries from the database - limit to reasonable number for UI
     const entryCollection = collection(db, 'entry');
     const entryQuery = query(
-      entryCollection, 
+      entryCollection,
       orderBy('published', 'desc'),
       firestoreLimit(1000) // Limit for performance
     );
@@ -121,7 +123,7 @@ export async function GET(req: NextRequest) {
 
     const entries: EntryItem[] = snapshot.docs.map(doc => {
       const data = doc.data();
-      
+
       // Handle Firebase Timestamp objects properly
       let publishedStr = '';
       if (data.published) {
@@ -147,7 +149,7 @@ export async function GET(req: NextRequest) {
       } else {
         publishedStr = 'Unknown';
       }
-      
+
       return {
         id: doc.id,
         name: data.name || '',
@@ -176,8 +178,110 @@ export async function GET(req: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error fetching entries for admin:', error);
-    return NextResponse.json({ 
-      success: false, 
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
+// PUT - Update a single entry
+export async function PUT(req: NextRequest) {
+  try {
+    const adminCheck = await checkAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.status });
+    }
+
+    const { entryId, updates } = await req.json().catch(() => ({}));
+
+    if (!entryId || typeof entryId !== 'string') {
+      return NextResponse.json({ success: false, error: 'Entry ID is required' }, { status: 400 });
+    }
+
+    if (!updates || typeof updates !== 'object' || Object.keys(updates).length === 0) {
+      return NextResponse.json({ success: false, error: 'No updates provided' }, { status: 400 });
+    }
+
+    // Sanitize: only allow known fields
+    const allowedFields = ['name', 'company', 'role', 'company_info', 'email', 'linkedinurl', 'company_url', 'apply_url', 'url', 'looking_for'];
+    const sanitized: Record<string, any> = {};
+    for (const key of Object.keys(updates)) {
+      if (allowedFields.includes(key)) {
+        sanitized[key] = typeof updates[key] === 'string' ? updates[key].trim() : updates[key];
+      }
+    }
+
+    if (Object.keys(sanitized).length === 0) {
+      return NextResponse.json({ success: false, error: 'No valid fields to update' }, { status: 400 });
+    }
+
+    console.log(`✏️ Admin ${adminCheck.userEmail} updating entry ${entryId}:`, Object.keys(sanitized));
+
+    const entryRef = doc(db, 'entry', entryId);
+    await setDoc(entryRef, sanitized, { merge: true });
+
+    return NextResponse.json({
+      success: true,
+      message: `Updated entry ${entryId}`,
+      updatedFields: Object.keys(sanitized)
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating entry:', error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
+// POST - Create a new entry
+export async function POST(req: NextRequest) {
+  try {
+    const adminCheck = await checkAdminAccess();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.status });
+    }
+
+    const body = await req.json().catch(() => ({}));
+
+    if (!body.name && !body.company) {
+      return NextResponse.json({ success: false, error: 'At least a name or company is required' }, { status: 400 });
+    }
+
+    const newEntry: Record<string, any> = {
+      name: body.name?.trim() || '',
+      company: body.company?.trim() || '',
+      role: body.role?.trim() || '',
+      company_info: body.company_info?.trim() || '',
+      email: body.email?.trim() || '',
+      linkedinurl: body.linkedinurl?.trim() || '',
+      company_url: body.company_url?.trim() || '',
+      apply_url: body.apply_url?.trim() || '',
+      url: body.url?.trim() || '',
+      looking_for: body.looking_for?.trim() || '',
+      published: Timestamp.now(),
+    };
+
+    // Generate a unique ID
+    const id = `manual_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    console.log(`➕ Admin ${adminCheck.userEmail} creating new entry: ${newEntry.name} @ ${newEntry.company}`);
+
+    const entryRef = doc(db, 'entry', id);
+    await setDoc(entryRef, newEntry);
+
+    return NextResponse.json({
+      success: true,
+      message: `Created entry ${id}`,
+      entryId: id
+    });
+
+  } catch (error) {
+    console.error('❌ Error creating entry:', error);
+    return NextResponse.json({
+      success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
@@ -192,19 +296,19 @@ export async function DELETE(req: NextRequest) {
     }
 
     const { entryIds } = await req.json().catch(() => ({}));
-    
+
     if (!entryIds || !Array.isArray(entryIds) || entryIds.length === 0) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No entry IDs provided' 
+      return NextResponse.json({
+        success: false,
+        error: 'No entry IDs provided'
       }, { status: 400 });
     }
 
     // Validate number of entries (safety limit)
     if (entryIds.length > 100) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Cannot delete more than 100 entries at once' 
+      return NextResponse.json({
+        success: false,
+        error: 'Cannot delete more than 100 entries at once'
       }, { status: 400 });
     }
 
@@ -243,8 +347,8 @@ export async function DELETE(req: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error in selective delete operation:', error);
-    return NextResponse.json({ 
-      success: false, 
+    return NextResponse.json({
+      success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }

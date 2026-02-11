@@ -22,7 +22,7 @@ const planFeatures: PlanFeature[] = [
 
 export default function BillingPage() {
   const { isSignedIn } = useUser();
-  const { isPaid, plan, expiresAt, refresh } = useSubscription();
+  const { isPaid, plan, expiresAt, isTrial, trialDaysRemaining, refresh } = useSubscription();
   const [billingLoading, setBillingLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -165,8 +165,8 @@ export default function BillingPage() {
         {/* Success/Error Messages */}
         {message && (
           <div className={`mb-6 rounded-lg border p-4 ${message.type === 'success'
-              ? 'border-green-500/30 bg-green-500/10 text-green-400'
-              : 'border-red-500/30 bg-red-500/10 text-red-400'
+            ? 'border-green-500/30 bg-green-500/10 text-green-400'
+            : 'border-red-500/30 bg-red-500/10 text-red-400'
             }`}>
             <div className="flex items-center gap-2">
               {message.type === 'success' ? (
@@ -191,6 +191,36 @@ export default function BillingPage() {
           </div>
         )}
 
+        {/* Trial Banner */}
+        {isTrial && (
+          <div className="mb-6 rounded-xl border p-5" style={{
+            borderColor: 'var(--wisteria)',
+            background: 'rgba(180,151,214,.08)',
+          }}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-[var(--wisteria)]/20 text-[var(--wisteria)] border border-[var(--wisteria)]/30">
+                    ⏳ Pro Trial
+                  </span>
+                  <span className="text-white font-semibold text-sm">
+                    {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''} remaining
+                  </span>
+                </div>
+                <p className="text-[#ccceda] text-sm">
+                  Your free trial ends on {formatDate(expiresAt)}. Subscribe to keep Pro features.
+                </p>
+              </div>
+              <button
+                onClick={handleSubscribe}
+                disabled={billingLoading}
+                className="btn-primary rounded-lg px-5 py-2.5 text-sm font-semibold whitespace-nowrap"
+              >
+                {billingLoading ? 'Loading...' : 'Subscribe — $3/mo'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Current Subscription Status */}
         <section className="mb-8">
@@ -200,14 +230,21 @@ export default function BillingPage() {
                 <h2 className="text-lg font-semibold text-white mb-2">Current Plan</h2>
                 <div className="flex items-center gap-3">
                   <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${isPaid
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                      : 'bg-neutral-500/20 text-neutral-400 border border-neutral-500/30'
+                    ? isTrial
+                      ? 'bg-[var(--wisteria)]/20 text-[var(--wisteria)] border border-[var(--wisteria)]/30'
+                      : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                    : 'bg-neutral-500/20 text-neutral-400 border border-neutral-500/30'
                     }`}>
-                    {isPaid ? 'Pro Plan' : 'Free Plan'}
+                    {isPaid ? (isTrial ? 'Pro Trial' : 'Pro Plan') : 'Free Plan'}
                   </span>
-                  {isPaid && (
+                  {isPaid && !isTrial && (
                     <span className="text-sm text-[#ccceda]">
                       {plan === 'yearly' ? 'Yearly Billing' : 'Monthly Billing'}
+                    </span>
+                  )}
+                  {isTrial && (
+                    <span className="text-sm text-[var(--wisteria)]">
+                      {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''} left
                     </span>
                   )}
                 </div>
@@ -221,7 +258,7 @@ export default function BillingPage() {
                 >
                   Refresh Status
                 </button>
-                {isPaid && (
+                {isPaid && !isTrial && (
                   <button
                     onClick={handleManageBilling}
                     disabled={billingLoading}
@@ -237,13 +274,13 @@ export default function BillingPage() {
               <div className="rounded-lg border border-white/10 bg-[#141522] p-4">
                 <div className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-1">Status</div>
                 <div className="text-white font-medium">
-                  {isPaid ? 'Active' : 'Free Tier'}
+                  {isPaid ? (isTrial ? 'Trial Active' : 'Active') : 'Free Tier'}
                 </div>
               </div>
 
               <div className="rounded-lg border border-white/10 bg-[#141522] p-4">
                 <div className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-1">
-                  {isPaid ? 'Renewal Date' : 'Upgrade Available'}
+                  {isPaid ? (isTrial ? 'Trial Ends' : 'Renewal Date') : 'Upgrade Available'}
                 </div>
                 <div className="text-white font-medium">
                   {isPaid ? formatDate(expiresAt) : 'Unlock all features'}
@@ -253,7 +290,7 @@ export default function BillingPage() {
               <div className="rounded-lg border border-white/10 bg-[#141522] p-4">
                 <div className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-1">Plan</div>
                 <div className="text-white font-medium">
-                  {isPaid ? `${plan?.charAt(0).toUpperCase()}${plan?.slice(1)} Plan` : 'Free Plan'}
+                  {isPaid ? (isTrial ? 'Pro Trial' : `${plan?.charAt(0).toUpperCase()}${plan?.slice(1)} Plan`) : 'Free Plan'}
                 </div>
               </div>
             </div>
@@ -325,8 +362,8 @@ export default function BillingPage() {
                 }}
                 disabled={!isPaid || billingLoading}
                 className={`w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors mt-6 ${!isPaid
-                    ? 'bg-neutral-600 text-neutral-400 cursor-not-allowed'
-                    : 'btn-ghost hover:bg-white/10 disabled:opacity-50'
+                  ? 'bg-neutral-600 text-neutral-400 cursor-not-allowed'
+                  : 'btn-ghost hover:bg-white/10 disabled:opacity-50'
                   }`}
               >
                 {!isPaid ? 'Current Plan' : (billingLoading ? 'Loading...' : 'Manage Subscription')}
@@ -396,8 +433,8 @@ export default function BillingPage() {
                 onClick={handleSubscribe}
                 disabled={billingLoading || isPaid}
                 className={`w-full rounded-lg px-4 py-3 text-sm font-semibold mt-6 ${isPaid
-                    ? 'bg-neutral-600 text-neutral-400 cursor-not-allowed'
-                    : 'btn-primary'
+                  ? 'bg-neutral-600 text-neutral-400 cursor-not-allowed'
+                  : 'btn-primary'
                   }`}
               >
                 {billingLoading ? 'Loading...' : isPaid ? 'Current Plan' : 'Upgrade to Pro'}

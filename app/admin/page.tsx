@@ -75,7 +75,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#0f1015]">
       <Navigation />
-      
+
       <div className="max-w-4xl mx-auto p-8">
         <div className="bg-[#11121b] rounded-xl border border-white/10 p-6">
           <div className="border-b border-white/10 pb-4 mb-6">
@@ -105,9 +105,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="text-neutral-300 text-sm">
-                  • Test webhook connectivity<br/>
-                  • Verify tunnel is working<br/>
-                  • Check response times<br/>
+                  • Test webhook connectivity<br />
+                  • Verify tunnel is working<br />
+                  • Check response times<br />
                   • Debug connection issues
                 </div>
               </div>
@@ -132,9 +132,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="text-neutral-300 text-sm">
-                  • Select startups from database<br/>
-                  • Generate copy-paste ready posts<br/>
-                  • Promote Founder Flow organically<br/>
+                  • Select startups from database<br />
+                  • Generate copy-paste ready posts<br />
+                  • Promote Founder Flow organically<br />
                   • Customizable website links
                 </div>
               </div>
@@ -146,7 +146,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mr-4">
                     <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                     </svg>
                   </div>
                   <div>
@@ -154,15 +154,15 @@ export default function AdminDashboard() {
                       Data Management
                     </h3>
                     <p className="text-neutral-400 text-sm">
-                      Filter and delete incorrect or junk data entries
+                      Full CRUD, export, and data quality tools
                     </p>
                   </div>
                 </div>
                 <div className="text-neutral-300 text-sm">
-                  • Filter by missing contact info<br/>
-                  • Identify invalid entries<br/>
-                  • Selective bulk deletion<br/>
-                  • Data quality statistics
+                  • Edit entries inline &amp; add new ones<br />
+                  • Export filtered data as CSV<br />
+                  • Detect duplicates &amp; junk data<br />
+                  • Sort, search, and bulk delete
                 </div>
               </div>
             </Link>
@@ -186,9 +186,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="text-neutral-300 text-sm">
-                  • Batch deletion with safe limits<br/>
-                  • Progress tracking<br/>
-                  • Firebase Spark plan optimized<br/>
+                  • Batch deletion with safe limits<br />
+                  • Progress tracking<br />
+                  • Firebase Spark plan optimized<br />
                   • Complete database clearing
                 </div>
               </div>
@@ -273,11 +273,10 @@ export default function AdminDashboard() {
                 </button>
 
                 {grantProForm.message && (
-                  <div className={`p-3 rounded-lg text-sm ${
-                    grantProForm.message.includes('✅') 
-                      ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
+                  <div className={`p-3 rounded-lg text-sm ${grantProForm.message.includes('✅')
+                      ? 'bg-green-500/20 text-green-300 border border-green-500/30'
                       : 'bg-red-500/20 text-red-300 border border-red-500/30'
-                  }`}>
+                    }`}>
                     {grantProForm.message}
                   </div>
                 )}

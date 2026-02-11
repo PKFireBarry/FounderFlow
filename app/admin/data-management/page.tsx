@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import Navigation from '../../components/Navigation';
 import { isValidActionableUrl } from '../../../lib/url-validation';
@@ -16,7 +16,7 @@ interface EntryItem {
   email: string;
   company_url: string;
   apply_url: string;
-  url: string; // careers/roles URL
+  url: string;
   looking_for: string;
   [key: string]: any;
 }
@@ -31,35 +31,57 @@ interface FilterStats {
   invalidRoles: number;
 }
 
+type SortField = 'name' | 'company' | 'published';
+type SortDir = 'asc' | 'desc';
+
+const EMPTY_FORM: Omit<EntryItem, 'id' | 'published'> = {
+  name: '', company: '', role: '', company_info: '',
+  linkedinurl: '', email: '', company_url: '',
+  apply_url: '', url: '', looking_for: '',
+};
+
 export default function DataManagementPage() {
   const { isLoaded, userId } = useAuth();
   const [entries, setEntries] = useState<EntryItem[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<EntryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filterType, setFilterType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [stats, setStats] = useState<FilterStats | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [deleteResults, setDeleteResults] = useState<string[]>([]);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Sorting
+  const [sortField, setSortField] = useState<SortField>('published');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+  // Edit/Create modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<EntryItem | null>(null); // null = create mode
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  // Toast auto-dismiss
+  useEffect(() => {
+    if (toast) {
+      const t = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    if (isLoaded && userId) {
-      loadEntries();
-    }
+    if (isLoaded && userId) { loadEntries(); }
   }, [isLoaded, userId]);
 
-  useEffect(() => {
-    applyFilters();
-  }, [entries, filterType, searchQuery]);
+  useEffect(() => { applyFilters(); }, [entries, filterType, searchQuery, sortField, sortDir]);
 
   const loadEntries = async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/admin/data-management');
       const data = await response.json();
-      
       if (data.success) {
         setEntries(data.entries);
         setStats(data.stats);
@@ -75,216 +97,203 @@ export default function DataManagementPage() {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...entries];
 
-    // Apply search query
+    // Search
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(entry =>
-        (typeof entry.name === 'string' && entry.name.toLowerCase().includes(query)) ||
-        (typeof entry.company === 'string' && entry.company.toLowerCase().includes(query)) ||
-        (typeof entry.role === 'string' && entry.role.toLowerCase().includes(query)) ||
-        (typeof entry.company_info === 'string' && entry.company_info.toLowerCase().includes(query))
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(e =>
+        (typeof e.name === 'string' && e.name.toLowerCase().includes(q)) ||
+        (typeof e.company === 'string' && e.company.toLowerCase().includes(q)) ||
+        (typeof e.role === 'string' && e.role.toLowerCase().includes(q)) ||
+        (typeof e.company_info === 'string' && e.company_info.toLowerCase().includes(q))
       );
     }
 
-    // Apply filter type
-    switch (filterType) {
-      case 'no-email':
-        filtered = filtered.filter(entry => 
-          !entry.email || 
-          entry.email === 'N/A' || 
-          entry.email.trim() === ''
-        );
-        break;
-      case 'no-linkedin':
-        filtered = filtered.filter(entry => 
-          !entry.linkedinurl || 
-          entry.linkedinurl === 'N/A' || 
-          entry.linkedinurl.trim() === ''
-        );
-        break;
-      case 'no-company-url':
-        filtered = filtered.filter(entry => 
-          !entry.company_url || 
-          entry.company_url === 'N/A' || 
-          entry.company_url.trim() === ''
-        );
-        break;
-      case 'invalid-names':
-        filtered = filtered.filter(entry =>
-          !entry.name ||
-          (typeof entry.name === 'string' && ['n/a', 'na', 'unknown', ''].includes(entry.name.toLowerCase().trim()))
-        );
-        break;
-      case 'invalid-companies':
-        filtered = filtered.filter(entry =>
-          !entry.company ||
-          typeof entry.company !== 'string' ||
-          ['n/a', 'na', 'unknown', ''].includes(entry.company.toLowerCase().trim())
-        );
-        break;
-      case 'invalid-roles':
-        filtered = filtered.filter(entry =>
-          !entry.role ||
-          (typeof entry.role === 'string' && ['n/a', 'na', 'unknown', ''].includes(entry.role.toLowerCase().trim()))
-        );
-        break;
-      case 'incomplete':
-        filtered = filtered.filter(entry => {
-          const noEmail = !entry.email || entry.email === 'N/A' || entry.email.trim() === '';
-          const noLinkedIn = !entry.linkedinurl || entry.linkedinurl === 'N/A' || entry.linkedinurl.trim() === '';
-          const noCompanyUrl = !entry.company_url || entry.company_url === 'N/A' || entry.company_url.trim() === '';
-          const invalidName = !entry.name || (typeof entry.name === 'string' && ['n/a', 'na', 'unknown', ''].includes(entry.name.toLowerCase().trim()));
-          const invalidCompany = !entry.company || typeof entry.company !== 'string' || ['n/a', 'na', 'unknown', ''].includes(entry.company.toLowerCase().trim());
-          const invalidRole = !entry.role || (typeof entry.role === 'string' && ['n/a', 'na', 'unknown', ''].includes(entry.role.toLowerCase().trim()));
+    // Filter type
+    const isEmpty = (v: string) => !v || v === 'N/A' || v.trim() === '';
+    const isInvalid = (v: any) => !v || (typeof v === 'string' && ['n/a', 'na', 'unknown', ''].includes(v.toLowerCase().trim()));
 
-          return noEmail && noLinkedIn && noCompanyUrl || invalidName || invalidCompany || invalidRole;
+    switch (filterType) {
+      case 'no-email': filtered = filtered.filter(e => isEmpty(e.email)); break;
+      case 'no-linkedin': filtered = filtered.filter(e => isEmpty(e.linkedinurl)); break;
+      case 'no-company-url': filtered = filtered.filter(e => isEmpty(e.company_url)); break;
+      case 'invalid-names': filtered = filtered.filter(e => isInvalid(e.name)); break;
+      case 'invalid-companies': filtered = filtered.filter(e => isInvalid(e.company)); break;
+      case 'invalid-roles': filtered = filtered.filter(e => isInvalid(e.role)); break;
+      case 'incomplete':
+        filtered = filtered.filter(e => {
+          return (isEmpty(e.email) && isEmpty(e.linkedinurl) && isEmpty(e.company_url)) || isInvalid(e.name) || isInvalid(e.company) || isInvalid(e.role);
         });
         break;
-      default:
-        // 'all' - no additional filtering
+      case 'duplicates': {
+        const combos: Record<string, string[]> = {};
+        entries.forEach(e => {
+          const key = `${(e.name || '').toLowerCase().trim()}|||${(e.company || '').toLowerCase().trim()}`;
+          if (key !== '|||') {
+            combos[key] = combos[key] || [];
+            combos[key].push(e.id);
+          }
+        });
+        const dupIds = new Set(Object.values(combos).filter(ids => ids.length > 1).flat());
+        filtered = filtered.filter(e => dupIds.has(e.id));
         break;
+      }
     }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal = (a[sortField] || '').toLowerCase();
+      let bVal = (b[sortField] || '').toLowerCase();
+      const cmp = aVal.localeCompare(bVal);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
 
     setFilteredEntries(filtered);
-  };
+  }, [entries, filterType, searchQuery, sortField, sortDir]);
 
-  const toggleSelectEntry = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
+  // ─── Selection ────────────────────────────────────────
+  const toggleSelect = (id: string) => {
+    const s = new Set(selectedIds);
+    s.has(id) ? s.delete(id) : s.add(id);
+    setSelectedIds(s);
   };
+  const selectAll = () => setSelectedIds(new Set(filteredEntries.map(e => e.id)));
+  const clearSelection = () => setSelectedIds(new Set());
 
-  const selectAll = () => {
-    setSelectedIds(new Set(filteredEntries.map(e => e.id)));
-  };
-
-  const clearSelection = () => {
-    setSelectedIds(new Set());
-  };
-
-  const deleteSelectedEntries = async () => {
+  // ─── Delete ───────────────────────────────────────────
+  const deleteSelected = async () => {
     if (selectedIds.size === 0) return;
-
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectedIds.size} selected entries? This action cannot be undone.`
-    );
-
-    if (!confirmed) return;
+    if (!window.confirm(`Delete ${selectedIds.size} selected entries? This cannot be undone.`)) return;
 
     setDeleting(true);
-    setError(null);
-    setDeleteResults([]);
-
     try {
-      const response = await fetch('/api/admin/data-management', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryIds: Array.from(selectedIds) })
+      const res = await fetch('/api/admin/data-management', {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entryIds: Array.from(selectedIds) }),
       });
-
-      const result = await response.json();
-
+      const result = await res.json();
       if (result.success) {
-        setDeleteResults([`Successfully deleted ${result.deletedCount} entries`]);
+        setToast({ type: 'success', text: `Deleted ${result.deletedCount} entries` });
         setSelectedIds(new Set());
-        // Reload entries to reflect changes
         await loadEntries();
       } else {
         setError(result.error || 'Delete failed');
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMsg);
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setDeleting(false);
     }
   };
 
-  // Helper functions from opportunities page
-  const getDomainFromUrl = (input?: string): string | null => {
+  // ─── Edit / Create ───────────────────────────────────
+  const openCreate = () => {
+    setEditingEntry(null);
+    setFormData({ ...EMPTY_FORM });
+    setModalOpen(true);
+  };
+
+  const openEdit = (entry: EntryItem) => {
+    setEditingEntry(entry);
+    setFormData({
+      name: entry.name || '',
+      company: entry.company || '',
+      role: entry.role || '',
+      company_info: entry.company_info || '',
+      linkedinurl: entry.linkedinurl || '',
+      email: entry.email || '',
+      company_url: entry.company_url || '',
+      apply_url: entry.apply_url || '',
+      url: entry.url || '',
+      looking_for: entry.looking_for || '',
+    });
+    setModalOpen(true);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      if (editingEntry) {
+        // Update
+        const res = await fetch('/api/admin/data-management', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entryId: editingEntry.id, updates: formData }),
+        });
+        const result = await res.json();
+        if (result.success) {
+          setToast({ type: 'success', text: `Updated ${formData.name || formData.company}` });
+          setModalOpen(false);
+          await loadEntries();
+        } else { setToast({ type: 'error', text: result.error }); }
+      } else {
+        // Create
+        if (!formData.name && !formData.company) {
+          setToast({ type: 'error', text: 'Name or company is required' });
+          setSaving(false);
+          return;
+        }
+        const res = await fetch('/api/admin/data-management', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        const result = await res.json();
+        if (result.success) {
+          setToast({ type: 'success', text: `Created entry for ${formData.name || formData.company}` });
+          setModalOpen(false);
+          await loadEntries();
+        } else { setToast({ type: 'error', text: result.error }); }
+      }
+    } catch (err) {
+      setToast({ type: 'error', text: err instanceof Error ? err.message : 'Save failed' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ─── CSV Export ───────────────────────────────────────
+  const exportCSV = () => {
+    const headers = ['name', 'company', 'role', 'email', 'linkedinurl', 'company_url', 'apply_url', 'url', 'company_info', 'looking_for', 'published'];
+    const escape = (v: string) => `"${(v || '').replace(/"/g, '""')}"`;
+    const rows = filteredEntries.map(e => headers.map(h => escape(e[h] || '')).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `founderflow-data-${filterType}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setToast({ type: 'success', text: `Exported ${filteredEntries.length} entries` });
+  };
+
+  // ─── Helpers ──────────────────────────────────────────
+  const getDomain = (input?: string): string | null => {
     if (!input) return null;
     let str = input.trim();
-    if (str.toLowerCase().startsWith('mailto:')) {
-      const email = str.slice(7);
-      const parts = email.split('@');
-      return parts[1] ? parts[1].toLowerCase() : null;
-    }
-    if (str.includes('@') && !/^https?:\/\//i.test(str)) {
-      const parts = str.split('@');
-      return parts[1] ? parts[1].toLowerCase() : null;
-    }
+    if (str.toLowerCase().startsWith('mailto:')) return str.slice(7).split('@')[1]?.toLowerCase() || null;
+    if (str.includes('@') && !/^https?:\/\//i.test(str)) return str.split('@')[1]?.toLowerCase() || null;
     try {
-      if (!/^https?:\/\//i.test(str)) {
-        str = `https://${str}`;
-      }
-      const u = new URL(str);
-      return u.hostname.replace(/^www\./i, '').toLowerCase();
+      if (!/^https?:\/\//i.test(str)) str = `https://${str}`;
+      return new URL(str).hostname.replace(/^www\./i, '').toLowerCase();
     } catch {
-      const host = str.replace(/^https?:\/\/(www\.)?/i, '').split('/')[0];
-      return host ? host.toLowerCase() : null;
+      return str.replace(/^https?:\/\/(www\.)?/i, '').split('/')[0]?.toLowerCase() || null;
     }
   };
 
-  const getEmailInfo = (input?: string): { email: string; href: string } | null => {
-    if (!input) return null;
-    let raw = input.trim();
-    if (raw.toLowerCase().startsWith('mailto:')) raw = raw.slice(7);
-    if (!raw.includes('@')) return null;
-    return { email: raw, href: `mailto:${raw}` };
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); }
+    else { setSortField(field); setSortDir('asc'); }
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr || dateStr === 'N/A') return 'Unknown';
-    try {
-      // Handle the format from opportunities page: "Dec 15, 2024 • 3 days ago"
-      const cleanDateStr = dateStr.split(' • ')[0];
-      return cleanDateStr;
-    } catch {
-      return dateStr || 'N/A';
-    }
-  };
+  const SortIcon = ({ field }: { field: SortField }) => (
+    <span className="ml-1 text-[10px]">
+      {sortField === field ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
+    </span>
+  );
 
-  const getAvatarInfo = (name?: string, company?: string, companyUrl?: string, url?: string) => {
-    const websiteUrl = companyUrl || url;
-    let faviconUrl = null;
-    
-    if (websiteUrl) {
-      const domain = getDomainFromUrl(websiteUrl);
-      if (domain) {
-        faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-      }
-    }
-    
-    let initials = 'UN';
-    if (name) {
-      const parts = name.split(' ');
-      if (parts.length >= 2) {
-        initials = (parts[0][0] + parts[1][0]).toUpperCase();
-      } else {
-        initials = parts[0].slice(0, 2).toUpperCase();
-      }
-    } else if (company) {
-      const parts = company.split(' ');
-      if (parts.length >= 2) {
-        initials = (parts[0][0] + parts[1][0]).toUpperCase();
-      } else {
-        initials = parts[0].slice(0, 2).toUpperCase();
-      }
-    }
-    
-    return { faviconUrl, initials, displayName: name || company || 'Unknown' };
-  };
-
-  if (!isLoaded) {
-    return <div className="p-8">Loading...</div>;
-  }
+  if (!isLoaded) return <div className="p-8 text-white">Loading...</div>;
 
   if (!userId) {
     return (
@@ -303,73 +312,75 @@ export default function DataManagementPage() {
   return (
     <div className="min-h-screen bg-[#0f1015]">
       <Navigation />
-      
-      <div className="max-w-7xl mx-auto p-8">
+
+      <div className="max-w-7xl mx-auto p-4 sm:p-8">
         <div className="bg-[#11121b] rounded-xl border border-white/10 p-6">
-          <div className="border-b border-white/10 pb-4 mb-6">
-            <h1 className="text-2xl font-bold text-white">Admin: Data Management</h1>
-            <p className="text-neutral-400 mt-2">
-              Filter and selectively delete junk or incorrect data entries from the database.
-            </p>
+          {/* Header */}
+          <div className="border-b border-white/10 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Data Management</h1>
+              <p className="text-neutral-400 mt-1 text-sm">Edit, create, filter, export, and clean up your founder data.</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={openCreate} className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Add Entry
+              </button>
+              <button onClick={exportCSV} disabled={filteredEntries.length === 0} className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Export CSV
+              </button>
+            </div>
           </div>
+
+          {/* Toast */}
+          {toast && (
+            <div className={`mb-4 rounded-lg border px-4 py-3 text-sm font-medium flex items-center justify-between ${toast.type === 'success' ? 'border-green-500/30 bg-green-500/10 text-green-400' : 'border-red-500/30 bg-red-500/10 text-red-400'
+              }`}>
+              <span>{toast.text}</span>
+              <button onClick={() => setToast(null)} className="ml-4 opacity-70 hover:opacity-100">✕</button>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6">
-              <h3 className="text-red-200 font-semibold">Error</h3>
-              <p className="text-red-300">{error}</p>
+              <p className="text-red-300 font-medium">{error}</p>
             </div>
           )}
 
-          {/* Stats Overview */}
+          {/* Stats Cards */}
           {stats && (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
-              <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3">
-                <h3 className="font-semibold text-blue-200 text-sm">Total</h3>
-                <p className="text-xl font-bold text-blue-100">{stats.total}</p>
-              </div>
-              <div className="bg-orange-500/20 border border-orange-500/30 rounded-lg p-3">
-                <h3 className="font-semibold text-orange-200 text-sm">No Email</h3>
-                <p className="text-xl font-bold text-orange-100">{stats.withoutEmail}</p>
-              </div>
-              <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg p-3">
-                <h3 className="font-semibold text-purple-200 text-sm">No LinkedIn</h3>
-                <p className="text-xl font-bold text-purple-100">{stats.withoutLinkedIn}</p>
-              </div>
-              <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3">
-                <h3 className="font-semibold text-green-200 text-sm">No Company URL</h3>
-                <p className="text-xl font-bold text-green-100">{stats.withoutCompanyUrl}</p>
-              </div>
-              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
-                <h3 className="font-semibold text-red-200 text-sm">Invalid Names</h3>
-                <p className="text-xl font-bold text-red-100">{stats.invalidNames}</p>
-              </div>
-              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-3">
-                <h3 className="font-semibold text-yellow-200 text-sm">Invalid Companies</h3>
-                <p className="text-xl font-bold text-yellow-100">{stats.invalidCompanies}</p>
-              </div>
-              <div className="bg-pink-500/20 border border-pink-500/30 rounded-lg p-3">
-                <h3 className="font-semibold text-pink-200 text-sm">Invalid Roles</h3>
-                <p className="text-xl font-bold text-pink-100">{stats.invalidRoles}</p>
-              </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+              {[
+                { label: 'Total', value: stats.total, color: 'blue' },
+                { label: 'No Email', value: stats.withoutEmail, color: 'orange' },
+                { label: 'No LinkedIn', value: stats.withoutLinkedIn, color: 'purple' },
+                { label: 'No Website', value: stats.withoutCompanyUrl, color: 'green' },
+                { label: 'Bad Names', value: stats.invalidNames, color: 'red' },
+                { label: 'Bad Companies', value: stats.invalidCompanies, color: 'yellow' },
+                { label: 'Bad Roles', value: stats.invalidRoles, color: 'pink' },
+              ].map(s => (
+                <div key={s.label} className={`bg-${s.color}-500/20 border border-${s.color}-500/30 rounded-lg p-3`}>
+                  <div className={`font-semibold text-${s.color}-200 text-xs`}>{s.label}</div>
+                  <div className={`text-xl font-bold text-${s.color}-100`}>{s.value}</div>
+                </div>
+              ))}
             </div>
           )}
 
-          {/* Filters and Controls */}
-          <div className="flex flex-wrap gap-4 items-center mb-6">
-            <div className="flex-1 min-w-[300px]">
-              <input
-                type="text"
-                placeholder="Search by name, company, role, or description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white placeholder-neutral-400 focus:outline-none focus:border-white/30"
-              />
-            </div>
-            
+          {/* Filters Row */}
+          <div className="flex flex-wrap gap-3 items-center mb-4">
+            <input
+              type="text"
+              placeholder="Search name, company, role..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="flex-1 min-w-[200px] bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-500 focus:outline-none focus:border-white/30"
+            />
             <select
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-white/30"
+              onChange={e => setFilterType(e.target.value)}
+              className="bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
             >
               <option value="all">All Entries</option>
               <option value="no-email">Missing Email</option>
@@ -378,266 +389,274 @@ export default function DataManagementPage() {
               <option value="invalid-names">Invalid Names</option>
               <option value="invalid-companies">Invalid Companies</option>
               <option value="invalid-roles">Invalid Roles</option>
-              <option value="incomplete">Incomplete/Junk Data</option>
+              <option value="incomplete">Incomplete / Junk</option>
+              <option value="duplicates">🔁 Duplicates</option>
             </select>
           </div>
 
-          {/* Selection Controls */}
-          <div className="flex flex-wrap gap-4 items-center mb-6">
-            <span className="text-neutral-400">
-              {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'No selection'}
-            </span>
-            
-            <button
-              onClick={selectAll}
-              disabled={filteredEntries.length === 0}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-            >
-              Select All ({filteredEntries.length})
-            </button>
-            
-            <button
-              onClick={clearSelection}
-              disabled={selectedIds.size === 0}
-              className="bg-gray-600 hover:bg-gray-700 disabled:bg-neutral-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-            >
-              Clear Selection
-            </button>
-            
-            <button
-              onClick={deleteSelectedEntries}
-              disabled={deleting || selectedIds.size === 0}
-              className="bg-red-600 hover:bg-red-700 disabled:bg-neutral-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-            >
-              {deleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
-            </button>
-          </div>
-
-          {/* Results */}
-          {deleteResults.length > 0 && (
-            <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-green-200">Deletion Results</h3>
-              {deleteResults.map((result, index) => (
-                <p key={index} className="text-green-300">{result}</p>
+          {/* Sort Buttons + Selection Controls */}
+          <div className="flex flex-wrap gap-3 items-center mb-6 text-sm">
+            {/* Sort */}
+            <div className="flex items-center gap-1 mr-4">
+              <span className="text-neutral-500 text-xs mr-1">Sort:</span>
+              {(['name', 'company', 'published'] as SortField[]).map(f => (
+                <button key={f} onClick={() => toggleSort(f)} className={`px-2 py-1 rounded text-xs font-medium transition-colors ${sortField === f ? 'bg-white/10 text-white' : 'text-neutral-400 hover:text-white hover:bg-white/5'}`}>
+                  {f.charAt(0).toUpperCase() + f.slice(1)}<SortIcon field={f} />
+                </button>
               ))}
             </div>
-          )}
 
-          {/* Data Cards */}
+            {/* Selection */}
+            <span className="text-neutral-400 text-xs">
+              {selectedIds.size > 0 ? `${selectedIds.size} selected` : `${filteredEntries.length} entries`}
+            </span>
+            <button onClick={selectAll} disabled={filteredEntries.length === 0} className="bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors text-xs">
+              Select All
+            </button>
+            <button onClick={clearSelection} disabled={selectedIds.size === 0} className="bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500 text-white px-3 py-1.5 rounded-lg font-medium transition-colors text-xs">
+              Clear
+            </button>
+            <button onClick={deleteSelected} disabled={deleting || selectedIds.size === 0} className="bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 disabled:text-neutral-500 text-white px-3 py-1.5 rounded-lg font-medium transition-colors text-xs">
+              {deleting ? 'Deleting...' : `Delete (${selectedIds.size})`}
+            </button>
+          </div>
+
+          {/* Data Table */}
           {loading ? (
-            <div className="text-center py-8">
-              <div className="inline-flex items-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                <span className="text-white">Loading entries...</span>
+            <div className="text-center py-12">
+              <div className="inline-flex items-center text-neutral-300">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3" />
+                Loading entries...
               </div>
             </div>
+          ) : filteredEntries.length === 0 ? (
+            <div className="text-center py-16 text-neutral-400">
+              <div className="text-5xl mb-3">🔍</div>
+              <h3 className="text-base font-semibold mb-1">No entries found</h3>
+              <p className="text-sm">No entries match the current filter.</p>
+            </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredEntries.map((entry) => {
-                const avatarInfo = getAvatarInfo(entry.name, entry.company, entry.company_url, entry.url);
-                const emailInfo = getEmailInfo(entry.email);
-                const lookingForTags = entry.looking_for ? entry.looking_for.split(',').map(tag => tag.trim()).filter(Boolean) : [];
-                
-                return (
-                  <div 
-                    key={entry.id} 
-                    className={`bg-[#18192a] border rounded-xl p-4 hover:bg-white/5 transition-colors ${
-                      selectedIds.has(entry.id) ? 'border-blue-400' : 'border-white/10'
-                    }`}
-                  >
-                    {/* Selection checkbox and avatar */}
-                    <div className="flex items-start gap-3 mb-3">
+            <div className="overflow-x-auto rounded-xl border border-white/10">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/[0.03]">
+                    <th className="px-3 py-2.5 text-left w-8">
                       <input
                         type="checkbox"
-                        checked={selectedIds.has(entry.id)}
-                        onChange={() => toggleSelectEntry(entry.id)}
-                        className="mt-1 rounded"
+                        checked={selectedIds.size === filteredEntries.length && filteredEntries.length > 0}
+                        onChange={() => selectedIds.size === filteredEntries.length ? clearSelection() : selectAll()}
+                        className="rounded"
                       />
-                      
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden bg-neutral-800">
-                        {avatarInfo.faviconUrl ? (
-                          <img 
-                            src={avatarInfo.faviconUrl} 
-                            alt={`${avatarInfo.displayName} favicon`}
-                            className="w-10 h-10 rounded-sm"
-                            onError={(e) => {
-                              const target = e.currentTarget as HTMLImageElement;
-                              target.style.display = 'none';
-                              const nextElement = target.nextElementSibling as HTMLElement;
-                              if (nextElement) {
-                                nextElement.style.display = 'block';
-                              }
-                            }}
-                          />
-                        ) : null}
-                        <span 
-                          className={`font-semibold text-sm text-neutral-300 ${avatarInfo.faviconUrl ? 'hidden' : 'block'}`}
-                        >
-                          {avatarInfo.initials}
-                        </span>
-                      </div>
+                    </th>
+                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Company</th>
+                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Contact</th>
+                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-neutral-400 uppercase tracking-wider hidden md:table-cell">Role</th>
+                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-neutral-400 uppercase tracking-wider hidden lg:table-cell">Links</th>
+                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-neutral-400 uppercase tracking-wider hidden xl:table-cell">Published</th>
+                    <th className="px-3 py-2.5 text-right text-[10px] font-semibold text-neutral-400 uppercase tracking-wider w-16">Edit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredEntries.map(entry => {
+                    const domain = getDomain(entry.company_url || entry.url);
+                    const hasLinkedIn = entry.linkedinurl && entry.linkedinurl !== 'N/A' && entry.linkedinurl.trim();
+                    const hasEmail = entry.email && entry.email !== 'N/A' && entry.email.trim() && entry.email.includes('@');
+                    const hasWebsite = entry.company_url && entry.company_url !== 'N/A' && isValidActionableUrl(entry.company_url, { context: 'company_url' });
 
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider">Company</div>
-                        <h3 className="text-lg font-semibold text-white truncate">
-                          {entry.company || <span className="text-red-400 italic">Unknown Company</span>}
-                        </h3>
-                        {entry.company_info && (
-                          <p className="text-xs text-neutral-400 mt-1 line-clamp-2">
-                            {entry.company_info}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                    return (
+                      <tr
+                        key={entry.id}
+                        className={`border-b border-white/5 transition-colors hover:bg-white/[0.03] ${selectedIds.has(entry.id) ? 'bg-blue-500/5' : ''}`}
+                      >
+                        <td className="px-3 py-2.5">
+                          <input type="checkbox" checked={selectedIds.has(entry.id)} onChange={() => toggleSelect(entry.id)} className="rounded" />
+                        </td>
 
-                    {/* Contact Name */}
-                    <div className="mb-3">
-                      <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider">Contact</span>
-                      <div className="text-sm font-medium text-white">
-                        {entry.name && entry.name !== entry.company ? entry.name : (entry.name || "Unknown")}
-                      </div>
-                    </div>
+                        {/* Company */}
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-neutral-800 flex items-center justify-center overflow-hidden">
+                              {domain ? (
+                                <img src={`https://icons.duckduckgo.com/ip3/${domain}.ico`} alt="" className="w-5 h-5 rounded-sm" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                              ) : (
+                                <span className="text-neutral-500 text-[10px] font-bold">{(entry.company || '??').slice(0, 2).toUpperCase()}</span>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium text-white truncate max-w-[180px]">
+                                {entry.company || <span className="text-red-400 italic text-xs">Unknown</span>}
+                              </div>
+                              {entry.company_info && (
+                                <div className="text-[11px] text-neutral-500 truncate max-w-[180px]">{entry.company_info}</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
 
-                    {/* Role */}
-                    <div className="mb-3">
-                      <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider">Role</span>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {entry.role ? (
-                          entry.role.split(',').slice(0, 2).map((singleRole, index) => {
-                            const trimmedRole = singleRole.trim();
-                            return (
-                              <span 
-                                key={index} 
-                                className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                                title={trimmedRole}
-                              >
-                                {trimmedRole.length > 15 ? trimmedRole.substring(0, 15) + '...' : trimmedRole}
-                              </span>
-                            );
-                          })
-                        ) : (
-                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                            Founder
+                        {/* Contact Name */}
+                        <td className="px-3 py-2.5">
+                          <span className="text-white text-sm">{entry.name || <span className="text-red-400 italic text-xs">Unknown</span>}</span>
+                        </td>
+
+                        {/* Role */}
+                        <td className="px-3 py-2.5 hidden md:table-cell">
+                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/20 max-w-[140px] truncate">
+                            {(entry.role || 'Founder').split(',')[0].trim()}
                           </span>
-                        )}
-                      </div>
-                    </div>
+                        </td>
 
-                    {/* Contact Info */}
-                    <div className="mb-3">
-                      <div className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider mb-1">Contact Info</div>
-                      <div className="flex flex-wrap gap-1">
-                        {entry.linkedinurl && entry.linkedinurl !== 'N/A' && isValidActionableUrl(entry.linkedinurl, { context: 'linkedin_url' }) ? (
-                          <a href={entry.linkedinurl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded border border-blue-500/30 bg-blue-500/20 px-1.5 py-0.5 hover:bg-blue-500/30 transition-colors text-[10px] text-blue-300">
-                            <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3">
-                              <path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM0 8h5v16H0zM8 8h4.8v2.2h.07c.67-1.2 2.3-2.46 4.74-2.46 5.07 0 6 3.34 6 7.68V24h-5V16.4c0-1.81-.03-4.14-2.52-4.14-2.52 0-2.91 1.97-2.91 4v7.74H8z"/>
-                            </svg>
-                            LinkedIn
-                          </a>
-                        ) : (
-                          <span className="text-xs bg-red-500/20 text-red-300 px-2 py-1 rounded">No LinkedIn</span>
-                        )}
-                        
-                        {emailInfo ? (
-                          <a href={emailInfo.href} className="inline-flex items-center gap-1 rounded border border-green-500/30 bg-green-500/20 px-1.5 py-0.5 hover:bg-green-500/30 transition-colors text-[10px] text-green-300">
-                            <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3">
-                              <path d="M2 6.75A2.75 2.75 0 0 1 4.75 4h14.5A2.75 2.75 0 0 1 22 6.75v10.5A2.75 2.75 0 0 1 19.25 20H4.75A2.75 2.75 0 0 1 2 17.25V6.75Z"/><path d="m4 6 8 6 8-6" opacity=".35"/>
-                            </svg>
-                            Email
-                          </a>
-                        ) : (
-                          <span className="text-xs bg-red-500/20 text-red-300 px-2 py-1 rounded">No Email</span>
-                        )}
+                        {/* Links */}
+                        <td className="px-3 py-2.5 hidden lg:table-cell">
+                          <div className="flex gap-1">
+                            {hasLinkedIn ? (
+                              <a href={entry.linkedinurl} target="_blank" rel="noopener noreferrer" className="w-6 h-6 rounded bg-blue-500/20 flex items-center justify-center hover:bg-blue-500/30 transition-colors" title="LinkedIn">
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3 text-blue-400"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM0 8h5v16H0zM8 8h4.8v2.2h.07c.67-1.2 2.3-2.46 4.74-2.46 5.07 0 6 3.34 6 7.68V24h-5V16.4c0-1.81-.03-4.14-2.52-4.14-2.52 0-2.91 1.97-2.91 4v7.74H8z" /></svg>
+                              </a>
+                            ) : (
+                              <span className="w-6 h-6 rounded bg-red-500/10 flex items-center justify-center" title="No LinkedIn"><span className="text-red-400 text-[9px]">LI</span></span>
+                            )}
+                            {hasEmail ? (
+                              <a href={`mailto:${entry.email}`} className="w-6 h-6 rounded bg-green-500/20 flex items-center justify-center hover:bg-green-500/30 transition-colors" title={entry.email}>
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3 text-green-400"><path d="M2 6l10 7 10-7v12H2z" opacity=".5" /><path d="M22 6l-10 7L2 6h20z" /></svg>
+                              </a>
+                            ) : (
+                              <span className="w-6 h-6 rounded bg-red-500/10 flex items-center justify-center" title="No email"><span className="text-red-400 text-[9px]">@</span></span>
+                            )}
+                            {hasWebsite ? (
+                              <a href={entry.company_url.startsWith('http') ? entry.company_url : `https://${entry.company_url}`} target="_blank" rel="noopener noreferrer" className="w-6 h-6 rounded bg-neutral-500/20 flex items-center justify-center hover:bg-neutral-500/30 transition-colors" title="Website">
+                                <svg className="h-3 w-3 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" /></svg>
+                              </a>
+                            ) : (
+                              <span className="w-6 h-6 rounded bg-red-500/10 flex items-center justify-center" title="No website"><span className="text-red-400 text-[9px]">🌐</span></span>
+                            )}
+                          </div>
+                        </td>
 
-                        {entry.company_url && entry.company_url !== 'N/A' && isValidActionableUrl(entry.company_url, { context: 'company_url' }) && (() => {
-                          const domain = getDomainFromUrl(entry.company_url);
-                          if (!domain) return null;
-                          const href = entry.company_url.startsWith('http') ? entry.company_url : `https://${entry.company_url}`;
-                          return (
-                            <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded border border-neutral-500/30 bg-neutral-500/20 px-1.5 py-0.5 hover:bg-neutral-500/30 transition-colors text-[10px] text-neutral-300">
-                              <img
-                                src={`https://icons.duckduckgo.com/ip3/${domain}.ico`}
-                                alt=""
-                                className="h-3 w-3 rounded-sm"
-                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/globe.svg'; }}
-                              />
-                              Website
-                            </a>
-                          );
-                        })()}
-                      </div>
-                    </div>
+                        {/* Published */}
+                        <td className="px-3 py-2.5 hidden xl:table-cell">
+                          <span className="text-neutral-400 text-xs">{entry.published || 'Unknown'}</span>
+                        </td>
 
-                    {/* Looking For Tags */}
-                    {lookingForTags.length > 0 && (
-                      <div className="mb-3">
-                        <div className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider mb-1">Looking for</div>
-                        <div className="flex flex-wrap gap-1">
-                          {lookingForTags.slice(0, 3).map((tag, index) => (
-                            <span key={index} className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] bg-neutral-700 text-neutral-300 border border-neutral-600">
-                              {tag}
-                            </span>
-                          ))}
-                          {lookingForTags.length > 3 && (
-                            <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] bg-neutral-700 text-neutral-300 border border-neutral-600">
-                              +{lookingForTags.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Published Date and Actions */}
-                    <div className="border-t border-white/10 pt-3 mt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider">Published</span>
-                          <div className="text-sm text-neutral-300">{formatDate(entry.published)}</div>
-                        </div>
-                        
-                        {/* Apply URL button if available */}
-                        {entry.apply_url && isValidActionableUrl(entry.apply_url, { context: 'apply_url' }) && (
-                          <a 
-                            href={entry.apply_url.startsWith('http') ? entry.apply_url : `https://${entry.apply_url}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="inline-flex items-center gap-1 rounded border border-green-200 bg-green-50 px-2 py-1 hover:bg-green-100 dark:border-green-500/30 dark:bg-green-500/10 dark:hover:bg-green-500/20 transition-colors text-xs text-green-700 dark:text-green-400 font-semibold"
+                        {/* Edit button */}
+                        <td className="px-3 py-2.5 text-right">
+                          <button
+                            onClick={() => openEdit(entry)}
+                            className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors ml-auto"
+                            title="Edit entry"
                           >
-                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-                              <path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/>
-                            </svg>
-                            Apply
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              
-              {filteredEntries.length === 0 && !loading && (
-                <div className="col-span-full text-center py-12 text-neutral-400">
-                  <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-lg font-semibold mb-2">No entries found</h3>
-                  <p>No entries match the current filter criteria.</p>
-                </div>
-              )}
+                            <svg className="w-3.5 h-3.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
-
-          {/* Warning */}
-          <div className="mt-6 bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
-            <h3 className="font-semibold text-yellow-200">⚠️ Important Notes</h3>
-            <ul className="text-yellow-300 text-sm mt-2 space-y-1">
-              <li>• This permanently deletes entries from your database</li>
-              <li>• Use filters to identify and remove low-quality or incorrect data</li>
-              <li>• Always review your selection before deleting</li>
-              <li>• Consider exporting data before bulk deletions</li>
-              <li>• Only accessible by admin email configured in the API</li>
-            </ul>
-          </div>
         </div>
       </div>
+
+      {/* ─── Edit / Create Modal ──────────────────────────── */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setModalOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div
+            className="relative w-full max-w-2xl bg-[#11121b] border border-white/10 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-[#11121b] border-b border-white/10 px-6 py-4 flex items-center justify-between z-10 rounded-t-2xl">
+              <h2 className="text-lg font-bold text-white">
+                {editingEntry ? 'Edit Entry' : 'Add New Entry'}
+              </h2>
+              <button onClick={() => setModalOpen(false)} className="text-neutral-400 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              {/* Row: Name + Company */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Full Name</label>
+                  <input type="text" value={formData.name} onChange={e => setFormData(f => ({ ...f, name: e.target.value }))} placeholder="Jane Doe" className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-white/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Company</label>
+                  <input type="text" value={formData.company} onChange={e => setFormData(f => ({ ...f, company: e.target.value }))} placeholder="Acme Inc." className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-white/20" />
+                </div>
+              </div>
+
+              {/* Row: Role */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-400 mb-1.5">Role / Title</label>
+                <input type="text" value={formData.role} onChange={e => setFormData(f => ({ ...f, role: e.target.value }))} placeholder="CEO, CTO..." className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-white/20" />
+              </div>
+
+              {/* Row: Email + LinkedIn */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Email</label>
+                  <input type="email" value={formData.email} onChange={e => setFormData(f => ({ ...f, email: e.target.value }))} placeholder="jane@acme.com" className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-white/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">LinkedIn URL</label>
+                  <input type="url" value={formData.linkedinurl} onChange={e => setFormData(f => ({ ...f, linkedinurl: e.target.value }))} placeholder="https://linkedin.com/in/..." className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-white/20" />
+                </div>
+              </div>
+
+              {/* Row: Company URL + Apply URL */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Company Website</label>
+                  <input type="url" value={formData.company_url} onChange={e => setFormData(f => ({ ...f, company_url: e.target.value }))} placeholder="https://acme.com" className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-white/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1.5">Apply / Careers URL</label>
+                  <input type="url" value={formData.apply_url} onChange={e => setFormData(f => ({ ...f, apply_url: e.target.value }))} placeholder="https://acme.com/careers" className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-white/20" />
+                </div>
+              </div>
+
+              {/* Row: Roles/Careers URL */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-400 mb-1.5">Roles Page URL</label>
+                <input type="url" value={formData.url} onChange={e => setFormData(f => ({ ...f, url: e.target.value }))} placeholder="https://..." className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-white/20" />
+              </div>
+
+              {/* Company Info */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-400 mb-1.5">Company Description</label>
+                <textarea rows={2} value={formData.company_info} onChange={e => setFormData(f => ({ ...f, company_info: e.target.value }))} placeholder="What does the company do?" className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-white/20 resize-none" />
+              </div>
+
+              {/* Looking For */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-400 mb-1.5">Looking For (comma-separated tags)</label>
+                <input type="text" value={formData.looking_for} onChange={e => setFormData(f => ({ ...f, looking_for: e.target.value }))} placeholder="Backend Engineer, Product Manager..." className="w-full bg-[#18192a] border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-neutral-600 focus:outline-none focus:border-white/20" />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-[#11121b] border-t border-white/10 px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
+              <button onClick={() => setModalOpen(false)} className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-neutral-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
+                    Saving...
+                  </>
+                ) : editingEntry ? 'Save Changes' : 'Create Entry'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
