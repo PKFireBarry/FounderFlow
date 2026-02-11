@@ -143,7 +143,21 @@ export default function DataManagementPage() {
     }
 
     // Sort
+    // Sort
     filtered.sort((a, b) => {
+      if (sortField === 'published') {
+        // Handle date sorting
+        const dateA = a.published ? new Date(a.published).getTime() : 0;
+        const dateB = b.published ? new Date(b.published).getTime() : 0;
+
+        // Handle invalid dates (NaN) by treating them as 0 (oldest)
+        const valA = isNaN(dateA) ? 0 : dateA;
+        const valB = isNaN(dateB) ? 0 : dateB;
+
+        return sortDir === 'asc' ? valA - valB : valB - valA;
+      }
+
+      // Handle string sorting for other fields
       let aVal = (a[sortField] || '').toLowerCase();
       let bVal = (b[sortField] || '').toLowerCase();
       const cmp = aVal.localeCompare(bVal);

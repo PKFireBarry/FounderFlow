@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, SignInButton } from '@clerk/nextjs';
 import Image from 'next/image';
@@ -19,8 +19,9 @@ export default function TrialPage() {
     const [claimed, setClaimed] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [durationDays, setDurationDays] = useState(30);
+    const claimAttempted = useRef(false);
 
-    // Validate the token on mount
+    // Validate the token on mount (for UI display only)
     useEffect(() => {
         async function validateToken() {
             try {
@@ -45,13 +46,17 @@ export default function TrialPage() {
         if (token) validateToken();
     }, [token]);
 
-    // Auto-claim after sign-in if token is valid
+    // Auto-claim as soon as user is signed in — don't wait for
+    // client-side token validation since the claim API validates server-side.
+    // This fixes the race condition where Clerk auth resolves at a different
+    // time than the token validation after a fresh sign-up redirect.
     useEffect(() => {
-        if (isLoaded && isSignedIn && tokenStatus === 'valid' && !claiming && !claimed) {
+        if (isLoaded && isSignedIn && !claimAttempted.current && !claimed) {
+            claimAttempted.current = true;
             handleClaim();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isLoaded, isSignedIn, tokenStatus]);
+    }, [isLoaded, isSignedIn]);
 
     async function handleClaim() {
         if (claiming || claimed) return;
@@ -68,13 +73,13 @@ export default function TrialPage() {
 
             if (res.ok && data.success) {
                 setClaimed(true);
-                // Brief pause then redirect to dashboard
                 setTimeout(() => router.push('/dashboard'), 2000);
             } else {
                 setErrorMessage(data.error || 'Failed to activate trial');
-                if (res.status === 409 && data.currentPlan) {
-                    setTokenStatus('redeemed');
-                }
+                // Map server errors to token status for proper UI display
+                if (res.status === 410) setTokenStatus('expired');
+                else if (res.status === 409) setTokenStatus('redeemed');
+                else if (res.status === 404) setTokenStatus('invalid');
             }
         } catch {
             setErrorMessage('Something went wrong. Please try again.');
