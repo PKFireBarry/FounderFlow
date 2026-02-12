@@ -3,57 +3,67 @@
 import { useEffect, useRef, useState } from 'react';
 import { Search, CheckCircle, Sparkles, BarChart3 } from 'lucide-react';
 
-interface Benefit {
+interface Step {
   icon: React.ElementType;
+  number: string;
   title: string;
   description: string;
-  color: string;
 }
 
-const benefits: Benefit[] = [
+const steps: Step[] = [
   {
     icon: Search,
-    title: "Searchable Founder Directory",
-    description: "Browse 500+ verified early-stage founders with advanced filters. Search by industry, funding stage, location, and tech stack to find perfect matches for your goals.",
-    color: "#b497d6"
+    number: '01',
+    title: 'Browse the Founder Directory',
+    description:
+      'Search 500+ verified early-stage founders with advanced filters. Find matches by industry, funding stage, location, and tech stack.',
   },
   {
     icon: CheckCircle,
-    title: "Verified Contact Information",
-    description: "Get direct access to verified email addresses and LinkedIn profiles. No more guessing at email formats or hunting through profiles. Everything's accurate and ready to use.",
-    color: "#e1e2ef"
+    number: '02',
+    title: 'Get Verified Contact Info',
+    description:
+      'Access direct email addresses and LinkedIn profiles—no guessing at formats or hunting through profiles. Everything accurate and ready.',
   },
   {
     icon: Sparkles,
-    title: "AI-Powered Outreach",
-    description: "Generate personalized outreach messages in seconds. Our AI analyzes your background and the founder's profile to create authentic, human-sounding messages that get responses.",
-    color: "#b497d6"
+    number: '03',
+    title: 'Generate AI-Powered Outreach',
+    description:
+      'Create personalized messages in seconds. Our AI analyzes your background and the founder\'s profile to craft authentic outreach.',
   },
   {
     icon: BarChart3,
-    title: "Visual CRM Tracking",
-    description: "Track all your conversations on an intuitive kanban board. Drag and drop contacts through stages, add notes, and never lose track of important relationships.",
-    color: "#e1e2ef"
-  }
+    number: '04',
+    title: 'Track on Your Kanban Board',
+    description:
+      'Manage every conversation on an intuitive drag-and-drop board. Move contacts through stages, add notes, never lose track.',
+  },
 ];
 
 export default function Benefits() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [visibleSteps, setVisibleSteps] = useState<Set<number>>(new Set());
   const sectionRef = useRef<HTMLElement>(null);
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute('data-step-index'));
+            if (!isNaN(index)) {
+              setVisibleSteps((prev) => new Set(prev).add(index));
+            }
+          }
+        });
       },
-      { threshold: 0.1 }
+      { threshold: 0.2 }
     );
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
+    stepRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
 
     return () => observer.disconnect();
   }, []);
@@ -61,55 +71,123 @@ export default function Benefits() {
   return (
     <section
       ref={sectionRef}
-      className="mx-auto max-w-7xl px-4 py-12 sm:py-20"
+      className="mx-auto max-w-6xl px-4 py-16 sm:py-24"
       aria-labelledby="benefits-heading"
     >
-      <div className="mb-6">
-        <h2 id="benefits-heading" className="text-xl sm:text-2xl font-bold text-white" style={{ letterSpacing: '-0.02em' }}>
-          Everything You Need to Connect
+      {/* Section heading */}
+      <div className="text-center mb-16">
+        <h2
+          id="benefits-heading"
+          className="font-display text-3xl sm:text-4xl text-white"
+          style={{ lineHeight: '1.15', letterSpacing: '-0.02em' }}
+        >
+          How Founder Flow Works
         </h2>
+        <p className="mt-4 text-neutral-400 max-w-xl mx-auto text-base">
+          Four steps from discovery to meaningful connection.
+        </p>
       </div>
 
-      {/* Benefits Grid - 2x2 on Desktop */}
-      <div className="mt-4 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
-          {benefits.map((benefit, index) => {
-            const Icon = benefit.icon;
-            return (
-              <div
-                key={index}
-                className={`group rounded-2xl border border-white/10 bg-[#11121b] p-8 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}
-                style={{
-                  animationDelay: `${index * 100}ms`
-                }}
-              >
-                {/* Icon */}
+      {/* Step flow with timeline */}
+      <div className="step-timeline relative">
+        {steps.map((step, index) => {
+          const Icon = step.icon;
+          const isEven = index % 2 === 0;
+          const isVisible = visibleSteps.has(index);
+          const animClass = isVisible
+            ? isEven
+              ? 'animate-fade-in-left'
+              : 'animate-fade-in-right'
+            : 'opacity-0';
+
+          return (
+            <div
+              key={index}
+              ref={(el) => { stepRefs.current[index] = el; }}
+              data-step-index={index}
+              className={`relative mb-12 last:mb-0 lg:grid lg:grid-cols-2 lg:gap-12 ${animClass}`}
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              {/* Timeline dot */}
+              <div className="hidden lg:block absolute left-1/2 top-6 -translate-x-1/2 z-10">
                 <div
-                  className="w-16 h-16 rounded-xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110"
+                  className="w-4 h-4 rounded-full border-2"
                   style={{
-                    background: `linear-gradient(135deg, ${benefit.color}22, ${benefit.color}11)`,
-                    border: `1px solid ${benefit.color}33`
+                    borderColor: 'var(--wisteria)',
+                    background: '#0c0d16',
+                    boxShadow: '0 0 12px rgba(180, 151, 214, 0.4)',
+                  }}
+                />
+              </div>
+
+              {/* Mobile timeline dot */}
+              <div className="lg:hidden absolute left-[24px] top-6 -translate-x-1/2 z-10">
+                <div
+                  className="w-3 h-3 rounded-full border-2"
+                  style={{
+                    borderColor: 'var(--wisteria)',
+                    background: '#0c0d16',
+                  }}
+                />
+              </div>
+
+              {/* Card - alternating sides on desktop */}
+              <div
+                className={`lg:col-span-1 ${
+                  isEven ? 'lg:col-start-1' : 'lg:col-start-2'
+                } ml-10 lg:ml-0`}
+              >
+                <div
+                  className="relative glass-card p-6 sm:p-8 rounded-xl group"
+                  style={{
+                    borderLeft: `3px solid ${
+                      index % 2 === 0
+                        ? 'var(--wisteria)'
+                        : 'var(--lavender-web)'
+                    }`,
                   }}
                 >
-                  <Icon
-                    className="w-8 h-8"
-                    style={{ color: benefit.color }}
-                    strokeWidth={1.5}
-                    aria-hidden="true"
-                  />
+                  {/* Watermark number */}
+                  <span className="step-watermark right-4 sm:right-6">
+                    {step.number}
+                  </span>
+
+                  {/* Icon */}
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
+                    style={{
+                      background:
+                        'linear-gradient(135deg, rgba(180,151,214,0.15), rgba(180,151,214,0.05))',
+                      border: '1px solid rgba(180,151,214,0.25)',
+                    }}
+                  >
+                    <Icon
+                      className="w-6 h-6"
+                      style={{ color: 'var(--wisteria)' }}
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
+                  </div>
+
+                  {/* Content */}
+                  <h3 className="font-display text-2xl text-white mb-3">
+                    {step.title}
+                  </h3>
+                  <p className="text-neutral-400 leading-relaxed text-base">
+                    {step.description}
+                  </p>
                 </div>
-
-                {/* Title */}
-                <h3 className="font-display text-2xl text-white mb-4 group-hover:text-[var(--wisteria)] transition-colors">
-                  {benefit.title}
-                </h3>
-
-                {/* Description */}
-                <p className="text-neutral-400 leading-relaxed">
-                  {benefit.description}
-                </p>
               </div>
-            );
-          })}
+
+              {/* Empty spacer for alternating layout */}
+              {isEven ? (
+                <div className="hidden lg:block lg:col-start-2" />
+              ) : (
+                <div className="hidden lg:block lg:col-start-1 lg:row-start-1" />
+              )}
+            </div>
+          );
+        })}
       </div>
     </section>
   );

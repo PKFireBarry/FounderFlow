@@ -63,9 +63,11 @@ body {
   min-height: 100vh !important;
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif !important;
   background:
-    radial-gradient(900px 500px at 10% -10%, var(--oxford-12) 0%, transparent 60%),
-    radial-gradient(900px 500px at 90% -10%, var(--wisteria-12) 0%, transparent 60%),
-    linear-gradient(180deg, #0c0d14, #0a0b12 60%, #08090f 100%) !important;
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 900px 600px at 8% 5%, rgba(5, 32, 74, 0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 800px 500px at 92% 5%, rgba(180, 151, 214, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 1000px 600px at 50% 55%, rgba(180, 151, 214, 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #0c0d16, #090a11 40%, #070810) !important;
   background-attachment: fixed !important;
   color: #ececf1 !important;
   -webkit-font-smoothing: antialiased;
@@ -1473,5 +1475,195 @@ select:disabled {
   .button-shimmer::before {
     display: none;
   }
+}
+
+/* === MIDNIGHT OBSERVATORY - HERO & LAYOUT === */
+
+/* Frosted glass card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  border-radius: var(--radius-lg);
+  backdrop-filter: var(--blur-md);
+  box-shadow: var(--shadow-md);
+}
+
+/* Conic gradient animated border wrapper */
+.conic-border {
+  position: relative;
+  border-radius: var(--radius-lg);
+  padding: 2px;
+  background: conic-gradient(from var(--conic-angle, 0deg), var(--oxford-blue), var(--wisteria), var(--lavender-web), var(--oxford-blue));
+  animation: conic-spin 4s linear infinite;
+}
+
+@property --conic-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes conic-spin {
+  to { --conic-angle: 360deg; }
+}
+
+.conic-border > * {
+  border-radius: calc(var(--radius-lg) - 2px);
+}
+
+/* Green pulse dot for badges */
+@keyframes green-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(74, 222, 128, 0);
+  }
+}
+
+.pulse-dot-green {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: green-pulse 2s ease-in-out infinite;
+}
+
+/* Hero floating card stack */
+.hero-card-stack {
+  position: relative;
+  perspective: 1000px;
+}
+
+.hero-card-stack .stack-card {
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.hero-card-stack:hover .stack-card:nth-child(1) {
+  transform: translateX(-12px) translateY(-8px) rotate(-3deg);
+}
+
+.hero-card-stack:hover .stack-card:nth-child(2) {
+  transform: translateX(0px) translateY(-12px) rotate(0deg);
+}
+
+.hero-card-stack:hover .stack-card:nth-child(3) {
+  transform: translateX(12px) translateY(-8px) rotate(3deg);
+}
+
+/* Timeline for step flow */
+.step-timeline {
+  position: relative;
+}
+
+.step-timeline::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(180, 151, 214, 0.3) 0px,
+    rgba(180, 151, 214, 0.3) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  transform: translateX(-50%);
+}
+
+@media (max-width: 1023px) {
+  .step-timeline::before {
+    left: 24px;
+  }
+}
+
+/* Step watermark number */
+.step-watermark {
+  position: absolute;
+  font-family: var(--font-display);
+  font-size: 80px;
+  font-weight: 400;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.04);
+  top: -10px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Gradient border for Pro pricing */
+.pro-gradient-border {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: visible;
+}
+
+.pro-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--radius-xl) + 2px);
+  background: linear-gradient(135deg, var(--wisteria), var(--lavender-web), var(--wisteria));
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+  z-index: -1;
+}
+
+/* FAQ plus/minus icon morph */
+.faq-icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.faq-icon::before,
+.faq-icon::after {
+  content: '';
+  position: absolute;
+  background: var(--wisteria);
+  border-radius: 2px;
+  transition: all var(--transition-base);
+}
+
+.faq-icon::before {
+  top: 50%;
+  left: 3px;
+  right: 3px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.faq-icon::after {
+  left: 50%;
+  top: 3px;
+  bottom: 3px;
+  width: 2px;
+  transform: translateX(-50%);
+}
+
+.faq-icon.open::after {
+  transform: translateX(-50%) scaleY(0);
+  opacity: 0;
+}
+
+/* Recommended pill floating above pricing */
+.recommended-pill {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--wisteria), var(--lavender-web));
+  color: #0f1018;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 16px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(180, 151, 214, 0.4);
 }
 
