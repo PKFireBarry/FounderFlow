@@ -1,15 +1,29 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, DM_Sans, DM_Serif_Display } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
 import StructuredData from './components/StructuredData';
 import NotificationProvider from './components/NotificationProvider';
 import "./globals.css";
 import "./globals-founder-flow.css";
+import "./design-system.css";
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+});
+
+const dmSans = DM_Sans({
+  variable: "--font-body",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const dmSerifDisplay = DM_Serif_Display({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -76,7 +90,7 @@ export default function RootLayout({
           <StructuredData />
         </head>
         <body
-          className={`${inter.variable} antialiased min-h-screen`}
+          className={`${inter.variable} ${dmSans.variable} ${dmSerifDisplay.variable} antialiased min-h-screen`}
         >
           <NotificationProvider>
             {children}

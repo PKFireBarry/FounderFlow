@@ -3,6 +3,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import {
   collection,
   getDocs,
+  getCountFromServer,
   doc,
   deleteDoc,
   setDoc,
@@ -60,6 +61,14 @@ async function checkAdminAccess() {
   return { authorized: true, userEmail };
 }
 
+// Treat falsy, whitespace-only, and common placeholder strings as "no value"
+function isEmptyValue(v: any): boolean {
+  if (!v) return true;
+  if (typeof v !== 'string') return true;
+  const normalized = v.toLowerCase().trim();
+  return normalized === '' || ['n/a', 'na', 'unknown', 'none', '-', '--', 'null', 'undefined'].includes(normalized);
+}
+
 function calculateStats(entries: EntryItem[]): FilterStats {
   const stats: FilterStats = {
     total: entries.length,
@@ -72,31 +81,12 @@ function calculateStats(entries: EntryItem[]): FilterStats {
   };
 
   entries.forEach(entry => {
-    // Count missing contact info
-    if (!entry.email || entry.email === 'N/A' || entry.email.trim() === '') {
-      stats.withoutEmail++;
-    }
-
-    if (!entry.linkedinurl || entry.linkedinurl === 'N/A' || entry.linkedinurl.trim() === '') {
-      stats.withoutLinkedIn++;
-    }
-
-    if (!entry.company_url || entry.company_url === 'N/A' || entry.company_url.trim() === '') {
-      stats.withoutCompanyUrl++;
-    }
-
-    // Count invalid data
-    if (!entry.name || (typeof entry.name === 'string' && ['n/a', 'na', 'unknown', ''].includes(entry.name.toLowerCase().trim()))) {
-      stats.invalidNames++;
-    }
-
-    if (!entry.company || typeof entry.company !== 'string' || ['n/a', 'na', 'unknown', ''].includes(entry.company.toLowerCase().trim())) {
-      stats.invalidCompanies++;
-    }
-
-    if (!entry.role || (typeof entry.role === 'string' && ['n/a', 'na', 'unknown', ''].includes(entry.role.toLowerCase().trim()))) {
-      stats.invalidRoles++;
-    }
+    if (isEmptyValue(entry.email)) stats.withoutEmail++;
+    if (isEmptyValue(entry.linkedinurl)) stats.withoutLinkedIn++;
+    if (isEmptyValue(entry.company_url)) stats.withoutCompanyUrl++;
+    if (isEmptyValue(entry.name)) stats.invalidNames++;
+    if (isEmptyValue(entry.company)) stats.invalidCompanies++;
+    if (isEmptyValue(entry.role)) stats.invalidRoles++;
   });
 
   return stats;
@@ -114,6 +104,11 @@ export async function GET(req: NextRequest) {
 
     // Get entries from the database - limit to reasonable number for UI
     const entryCollection = collection(db, 'entry');
+
+    // Get real total count from the database (not limited by query)
+    const countSnapshot = await getCountFromServer(entryCollection);
+    const totalCount = countSnapshot.data().count;
+
     const entryQuery = query(
       entryCollection,
       orderBy('published', 'desc'),
@@ -124,30 +119,30 @@ export async function GET(req: NextRequest) {
     const entries: EntryItem[] = snapshot.docs.map(doc => {
       const data = doc.data();
 
-      // Handle Firebase Timestamp objects properly
-      let publishedStr = '';
+      // Convert published to ISO string for reliable client-side sorting & display
+      let publishedISO = '';
       if (data.published) {
         if (data.published.toDate && typeof data.published.toDate === 'function') {
-          // It's a Firebase Timestamp
+          // Firebase Timestamp
           try {
-            publishedStr = data.published.toDate().toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            });
+            publishedISO = data.published.toDate().toISOString();
           } catch (e) {
             console.warn('Failed to convert Timestamp to date:', e);
-            publishedStr = 'Unknown';
           }
         } else if (typeof data.published === 'string') {
-          // It's already a string
-          publishedStr = data.published;
-        } else {
-          // Try to convert to string
-          publishedStr = String(data.published);
+          // Already a string — try to parse it into ISO
+          const parsed = new Date(data.published);
+          if (!isNaN(parsed.getTime())) {
+            publishedISO = parsed.toISOString();
+          } else {
+            // Unparseable string, pass through as-is
+            publishedISO = data.published;
+          }
+        } else if (typeof data.published === 'number') {
+          // Epoch millis or seconds
+          const ts = data.published > 1e12 ? data.published : data.published * 1000;
+          publishedISO = new Date(ts).toISOString();
         }
-      } else {
-        publishedStr = 'Unknown';
       }
 
       return {
@@ -156,7 +151,7 @@ export async function GET(req: NextRequest) {
         company: data.company || '',
         role: data.role || '',
         company_info: data.company_info || '',
-        published: publishedStr,
+        published: publishedISO,
         linkedinurl: data.linkedinurl || '',
         email: data.email || '',
         company_url: data.company_url || '',
@@ -173,7 +168,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       entries,
-      stats
+      stats,
+      totalCount
     });
 
   } catch (error) {

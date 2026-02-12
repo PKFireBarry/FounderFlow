@@ -17,18 +17,18 @@ export default function Navigation() {
     <nav className="navbar">
       <div className="mx-auto max-w-7xl px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          {/* Logo/Brand */}
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 shrink-0 rounded-full ring-2 ring-white/30 overflow-hidden bg-white/10">
+          {/* Logo/Brand - Enhanced with Display Font */}
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 shrink-0 rounded-full ring-2 ring-white/30 overflow-hidden bg-white/10">
               <Image
                 src="/favicon.png"
                 alt="Founder Flow Logo"
-                width={28}
-                height={28}
+                width={40}
+                height={40}
                 className="w-full h-full object-cover"
               />
             </div>
-            <Link href="/" className="text-sm font-semibold text-white">
+            <Link href="/" className="text-base font-display font-normal text-white hover:opacity-80 transition-opacity">
               Founder Flow
             </Link>
           </div>
@@ -119,7 +119,7 @@ export default function Navigation() {
             ) : (
               <div className="flex items-center gap-2 rounded-xl px-2 py-1.5 panel">
                 <SignInButton mode="modal">
-                  <button className="focus-ring rounded-lg px-2.5 py-1 text-xs font-semibold btn-primary">
+                  <button className="btn btn-primary btn-sm ripple-effect">
                     Sign In
                   </button>
                 </SignInButton>

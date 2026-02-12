@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect, type CSSProperties } from 'react';
+import { useState, useEffect, useMemo, useCallback, type CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { SignInButton, useUser } from '@clerk/nextjs';
 import Navigation from './components/Navigation';
 import FounderDetailModal from './components/FounderDetailModal';
 import { clientDb } from '@/lib/firebase/client';
-import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, where, getCountFromServer } from 'firebase/firestore';
 import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect';
+import Benefits from './components/landing/Benefits';
+import FAQ from './components/landing/FAQ';
 
 interface Founder {
   id: string;
@@ -38,6 +40,23 @@ export default function Home() {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [carouselFounders, setCarouselFounders] = useState<any[]>([]);
   const [isLoadingCarousel, setIsLoadingCarousel] = useState(true);
+  const [totalFounderCount, setTotalFounderCount] = useState<number>(0);
+  const [showBackground, setShowBackground] = useState(false);
+  const [isPageReady, setIsPageReady] = useState(false);
+
+  // Fun loading messages - pick one randomly
+  const loadingMessages = useMemo(() => [
+    { main: "Finding the coolest founders...", sub: "✨ hang tight, magic incoming" },
+    { main: "Summoning startup superstars...", sub: "🚀 they're worth the wait" },
+    { main: "Brewing founder connections...", sub: "☕ fresh batch coming up" },
+    { main: "Hunting hidden gem builders...", sub: "💎 the good stuff takes a sec" },
+    { main: "Assembling the builder squad...", sub: "🎯 almost ready to roll" },
+    { main: "Loading awesome people...", sub: "⚡ preparing something special" },
+  ], []);
+
+  const [loadingMessage] = useState(() =>
+    loadingMessages[Math.floor(Math.random() * loadingMessages.length)]
+  );
 
   // Helper functions from opportunities page
   const getDomainFromUrl = (input?: string): string | null => {
@@ -64,7 +83,7 @@ export default function Home() {
     }
   };
 
-  const getAvatarInfo = (name?: string, company?: string, companyUrl?: string, url?: string) => {
+  const getAvatarInfo = useCallback((name?: string, company?: string, companyUrl?: string, url?: string) => {
     const websiteUrl = companyUrl || url;
     let faviconUrl = null;
 
@@ -93,7 +112,7 @@ export default function Home() {
     }
 
     return { faviconUrl, initials, displayName: name || company || 'Unknown' };
-  };
+  }, []);
 
   // Helper function to detect NA values in any form
   const isNAValue = (value: string | undefined | null): boolean => {
@@ -143,6 +162,21 @@ export default function Home() {
       return 'Recently';
     }
   };
+
+  // Defer background rendering for better initial load
+  useEffect(() => {
+    const timeoutId = setTimeout(() => setShowBackground(true), 1000);
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  // Mark page as ready once critical content is loaded
+  useEffect(() => {
+    if (!isLoadingFounders && demoItems.length > 0) {
+      // Small delay for smoother reveal
+      const timeoutId = setTimeout(() => setIsPageReady(true), 200);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isLoadingFounders, demoItems.length]);
 
   useEffect(() => {
     const DEMO_KEY = 'home-kanban-demo-v2';
@@ -445,13 +479,32 @@ Always great to meet fellow EdTech innovators!`,
     }
   }, []);
 
-  // Fetch and validate founders for carousel
+  // Fetch total founder count for metrics - OPTIMIZED with count aggregation
+  useEffect(() => {
+    const fetchTotalCount = async () => {
+      try {
+        // Use Firestore count aggregation instead of fetching all docs
+        const entriesRef = collection(clientDb, 'entry');
+        const snapshot = await getCountFromServer(entriesRef);
+        setTotalFounderCount(snapshot.data().count);
+      } catch (error) {
+        console.error('Failed to fetch total founder count:', error);
+        setTotalFounderCount(500); // Fallback to approximate number
+      }
+    };
+    // Defer this non-critical query to avoid blocking initial render
+    const timeoutId = setTimeout(fetchTotalCount, 500);
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  // Fetch and validate founders for carousel - OPTIMIZED
   useEffect(() => {
     const fetchCarouselFounders = async () => {
       setIsLoadingCarousel(true);
       try {
         const entriesRef = collection(clientDb, 'entry');
-        const q = query(entriesRef, orderBy('published', 'desc'), limit(50));
+        // Reduced from 50 to 30 for better performance
+        const q = query(entriesRef, orderBy('published', 'desc'), limit(30));
         const querySnapshot = await getDocs(q);
 
         const founders = querySnapshot.docs.map(doc => ({
@@ -459,10 +512,10 @@ Always great to meet fellow EdTech innovators!`,
           ...doc.data()
         })) as Founder[];
 
-        // Validate founders in batches
+        // Validate founders - reduced max iterations
         const validatedFounders = [];
 
-        for (let i = 0; i < Math.min(founders.length, 100); i++) {
+        for (let i = 0; i < Math.min(founders.length, 30); i++) {
           const founder = founders[i];
 
           // Filter out N/A entries and ensure we have good data
@@ -508,8 +561,8 @@ Always great to meet fellow EdTech innovators!`,
               hasValidIcon: true
             });
 
-            // Stop at 50 validated founders for longer carousel
-            if (validatedFounders.length >= 50) break;
+            // Stop at 25 validated founders for optimal performance
+            if (validatedFounders.length >= 25) break;
           }
         }
 
@@ -521,7 +574,9 @@ Always great to meet fellow EdTech innovators!`,
       }
     };
 
-    fetchCarouselFounders();
+    // Defer carousel loading to prioritize critical content
+    const timeoutId = setTimeout(fetchCarouselFounders, 300);
+    return () => clearTimeout(timeoutId);
   }, []);
 
 
@@ -579,14 +634,19 @@ Always great to meet fellow EdTech innovators!`,
     ghosted: "Ghosted"
   };
 
-  const generateInitials = (name: string): string => {
+  const generateInitials = useCallback((name: string): string => {
     return name
       .split(' ')
       .map(word => word.charAt(0))
       .join('')
       .toUpperCase()
       .slice(0, 2);
-  };
+  }, []);
+
+  // Memoize filtered demo items for better performance
+  const filteredDemoItems = useMemo(() => {
+    return demoItems.filter(item => item.stage && item.channel === currentDemoTab);
+  }, [demoItems, currentDemoTab]);
 
   const handleCardClick = (item: any) => {
     setSelectedMessage(item);
@@ -604,7 +664,7 @@ Always great to meet fellow EdTech innovators!`,
   const renderDemoCard = (item: any) => (
     <article
       key={item.id}
-      className="kanban-card rounded-xl text-sm select-none cursor-pointer hover-lift"
+      className="kanban-card rounded-xl text-sm select-none cursor-pointer"
       draggable
       onDragStart={(e) => handleDragStart(e, item.id)}
       onDragEnd={handleDragEnd}
@@ -655,12 +715,42 @@ Always great to meet fellow EdTech innovators!`,
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0b12] dark">
-      {/* Optimized background - desktop only, auto-calculates grid to fit screen perfectly */}
-      <div className="hidden lg:block absolute inset-0 z-0">
-        <BackgroundRippleEffect autoDimensions={true} cellSize={68} />
-      </div>
-      {/* pointer-events-none allows clicks to pass through to the background */}
-      <div className="relative z-10 pointer-events-none">
+      {/* Loading Overlay - Shows until all critical content is ready */}
+      {!isPageReady && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0b12]">
+          <div className="flex flex-col items-center gap-6">
+            {/* Bouncing dots animation */}
+            <div className="flex gap-3">
+              <div
+                className="w-4 h-4 rounded-full bg-gradient-to-br from-[var(--wisteria)] to-[var(--lavender-web)] animate-bounce shadow-lg shadow-[var(--wisteria)]/50"
+                style={{ animationDelay: '0ms', animationDuration: '0.6s' }}
+              ></div>
+              <div
+                className="w-4 h-4 rounded-full bg-gradient-to-br from-[var(--wisteria)] to-[var(--lavender-web)] animate-bounce shadow-lg shadow-[var(--wisteria)]/50"
+                style={{ animationDelay: '150ms', animationDuration: '0.6s' }}
+              ></div>
+              <div
+                className="w-4 h-4 rounded-full bg-gradient-to-br from-[var(--wisteria)] to-[var(--lavender-web)] animate-bounce shadow-lg shadow-[var(--wisteria)]/50"
+                style={{ animationDelay: '300ms', animationDuration: '0.6s' }}
+              ></div>
+            </div>
+            {/* Loading text */}
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-white font-semibold text-lg">{loadingMessage.main}</p>
+              <p className="text-neutral-400 text-sm">{loadingMessage.sub}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Optimized background - desktop only, auto-calculates grid to fit screen perfectly, deferred load */}
+      {showBackground && (
+        <div className="hidden lg:block absolute inset-0 z-0">
+          <BackgroundRippleEffect autoDimensions={true} cellSize={80} />
+        </div>
+      )}
+      {/* Main content - Fade in when ready */}
+      <div className={`relative z-10 pointer-events-none transition-opacity duration-500 ${isPageReady ? 'opacity-100' : 'opacity-0'}`}>
         {/* pointer-events-auto re-enables clicks for the navigation */}
         <div className="pointer-events-auto">
           <Navigation />
@@ -668,77 +758,229 @@ Always great to meet fellow EdTech innovators!`,
 
         {/* Hero with headline - Main SEO content */}
         {/* pointer-events-auto re-enables clicks for the main content */}
-        <main className="mx-auto max-w-7xl px-4 pt-8 sm:pt-12 pointer-events-auto">
+        <main className="mx-auto max-w-7xl px-4 pt-8 sm:pt-12 lg:pt-16 pointer-events-auto">
           <header className="text-center">
-            <div className="grid gap-4">
+            <div className="grid gap-6">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] pill animate-float">
-                  <span className="h-2 w-2 rounded-full" style={{ background: "var(--wisteria)" }}></span>
-                  Connect with builders working on cutting-edge tech
+                {/* Badge with social proof - real data from database - Enhanced */}
+                <div
+                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs pill animate-float shadow-lg"
+                  style={{
+                    boxShadow: '0 4px 20px rgba(180, 151, 214, 0.3)',
+                  }}
+                >
+                  <span
+                    className="h-2 w-2 rounded-full animate-pulse"
+                    style={{
+                      background: "var(--wisteria)",
+                      boxShadow: '0 0 8px rgba(180, 151, 214, 0.6)',
+                    }}
+                  ></span>
+                  <span className="font-semibold">{totalFounderCount > 0 ? `${totalFounderCount}+` : '500+'}</span> founders and builders in database
                 </div>
-                <h1 className="mt-3 text-2xl sm:text-3xl lg:text-4xl text-white">
-                  Find & Connect with Builders Before They Scale
+
+                {/* MASSIVE headline with display font - Minimalist Redesign */}
+                <h1
+                  className="mt-8 font-display text-primary tracking-tight"
+                  style={{
+                    fontSize: 'clamp(2.5rem, 8vw, 4.5rem)',
+                    lineHeight: '1.1',
+                    letterSpacing: '-0.03em'
+                  }}
+                >
+                  <span className="animate-fade-in inline-block">Connect</span>{' '}
+                  <span className="animate-fade-in animate-delay-100 inline-block">with</span>{' '}
+                  <span className="animate-fade-in animate-delay-200 inline-block text-accent">Startup</span>{' '}
+                  <span className="animate-fade-in animate-delay-300 inline-block text-accent">Founders</span>
+                  <br />
+                  <span className="animate-fade-in animate-delay-400 inline-block">Before</span>{' '}
+                  <span className="animate-fade-in animate-delay-500 inline-block">They</span>{' '}
+                  <span className="animate-fade-in animate-delay-600 inline-block">Blow</span>{' '}
+                  <span className="animate-fade-in animate-delay-700 inline-block">Up</span>
                 </h1>
-                <p className="mt-3 text-sm leading-6 text-[#ccceda] max-w-3xl mx-auto">
-                  As a developer, I was constantly bouncing between scattered communities trying to discover people doing interesting work in tech and terrible at maintaining those connections. I built this to centralize community discovery and systematically nurture relationships with founders and builders working on cutting-edge projects. Whether you're looking to apply to early-stage startups, explore collaboration opportunities, or just stay connected with like-minded people who understand what you're building.
+
+                {/* Refined subheadline */}
+                <p className="mt-8 text-xl text-secondary max-w-3xl mx-auto" style={{ lineHeight: '1.7' }}>
+                  Access verified contact info for early-stage founders, generate AI-powered outreach messages, and track relationships—all in one place.
                 </p>
 
-                {/* Get Started Button - Only show if not signed in */}
-                {!isSignedIn && (
-                  <div className="mt-8">
+                {/* Enhanced CTA with social proof and urgency */}
+                {!isSignedIn ? (
+                  <div className="mt-10">
+                    {/* Minimalist CTA - Solid purple, no gradient */}
                     <SignInButton mode="modal">
                       <button
-                        onMouseEnter={handleGetStartedMouseEnter}
-                        onMouseLeave={handleGetStartedMouseLeave}
-                        className={`btn-primary rounded-xl px-8 py-3 text-base font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 relative overflow-hidden ${isButtonHovered ? 'bg-green-500' : ''
-                          }`}
+                        className="inline-flex items-center gap-3 px-12 py-6 text-lg font-bold text-white rounded-full transition-all duration-300 hover:scale-105 active:scale-95 group"
+                        style={{
+                          background: 'var(--color-accent)',
+                          boxShadow: '0 4px 14px 0 rgba(180, 151, 214, 0.39)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--color-accent-hover)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 10px 20px 0 rgba(180, 151, 214, 0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'var(--color-accent)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(180, 151, 214, 0.39)';
+                        }}
                       >
-                        <span className={`inline-flex items-center gap-2 transition-all duration-300 ${isButtonHovered ? 'opacity-0 scale-75' : 'opacity-100 scale-100'
-                          }`}>
-                          Get Started
-                        </span>
-
-                        {/* Checkbox animation overlay */}
-                        <span className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${isButtonHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-                          }`}>
-                          <svg
-                            className="w-6 h-6 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                              className={`${isButtonHovered ? 'animate-pulse' : ''}`}
-                              style={{
-                                strokeDasharray: isButtonHovered ? '20' : '0',
-                                strokeDashoffset: isButtonHovered ? '0' : '20',
-                                transition: 'stroke-dashoffset 0.4s ease-in-out'
-                              }}
-                            />
-                          </svg>
-                        </span>
+                        <span>Start Connecting Free</span>
+                        <svg className="w-6 h-6 transition-transform group-hover:translate-x-2 duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
                       </button>
                     </SignInButton>
-                    <p className="text-xs text-neutral-400 mt-3">
-                      Sign in with Google or email • Create an account in one click
-                    </p>
+
+                    {/* Simplified trust signals - optimized for mobile and desktop */}
+                    <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 text-sm text-neutral-400">
+                      <div className="flex items-center gap-2">
+                        <svg viewBox="0 0 24 24" fill="var(--lavender-web)" className="h-6 w-6 flex-shrink-0">
+                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="font-medium">Free forever • No credit card</span>
+                      </div>
+                      <span className="hidden sm:inline text-neutral-600">•</span>
+                      <div className="flex items-center gap-2">
+                        <svg viewBox="0 0 24 24" fill="var(--lavender-web)" className="h-6 w-6 flex-shrink-0">
+                          <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span className="font-medium">Join 1,200+ builders</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-10">
+                    <Link
+                      href="/opportunities"
+                      className="inline-flex items-center gap-3 px-12 py-6 text-lg font-bold text-white rounded-full transition-all duration-300 hover:scale-105 active:scale-95 group"
+                      style={{
+                        background: 'var(--color-accent)',
+                        boxShadow: '0 4px 14px 0 rgba(180, 151, 214, 0.39)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--color-accent-hover)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 10px 20px 0 rgba(180, 151, 214, 0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'var(--color-accent)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(180, 151, 214, 0.39)';
+                      }}
+                    >
+                      <span>Browse Founders</span>
+                      <svg className="w-6 h-6 transition-transform group-hover:translate-x-2 duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </Link>
                   </div>
                 )}
               </div>
             </div>
           </header>
 
-          {/* Fresh this week preview - Early stage startup showcase */}
-          <section id="fresh" className="mx-auto max-w-7xl px-4 py-8 sm:py-12 animate-fade-in-up animate-delayed-3" role="region" aria-labelledby="fresh-heading">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <h2 id="fresh-heading" className="text-base font-semibold text-white">Discover Builders & Founders This Week</h2>
-              <Link href="/opportunities" className="text-[12px] text-neutral-400 hover:text-neutral-200 self-start sm:self-auto" aria-label="Browse all builders and founders">Explore more builders</Link>
+          {/* Section divider */}
+          <div className="section-divider"></div>
+
+          {/* Social Proof Carousel - Show variety of founders IMMEDIATELY after hero */}
+          <section className={`mx-auto max-w-7xl px-4 py-12 sm:py-16 transition-opacity duration-500 ${isLoadingCarousel ? 'opacity-0' : 'opacity-100'}`}>
+            <div className="text-center mb-10">
+              <p className="text-sm font-medium text-neutral-400 mb-3 tracking-wide uppercase">Trusted by builders reaching out to founders at</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 tracking-tight" style={{ lineHeight: '1.3' }}>
+                {totalFounderCount > 0 ? `${totalFounderCount.toLocaleString()}+` : '500+'} Startups & Growing
+              </h2>
             </div>
-            <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+
+            {carouselFounders.length > 0 && (
+              <div className="relative overflow-hidden group">
+                <div
+                  className="flex gap-8 carousel-scroll"
+                  style={{
+                    width: `${carouselFounders.length * 2 * 100}px`,
+                    animation: 'scroll-left 80s linear infinite',
+                    willChange: 'transform',
+                    scrollSnapType: 'x mandatory'
+                  }}
+                >
+                  {/* Duplicate array for seamless loop */}
+                  {[...carouselFounders, ...carouselFounders].map((founder, index) => (
+                    <div
+                      key={`${founder.id}-${index}`}
+                      className="flex-shrink-0 flex flex-col items-center cursor-pointer hover-scale"
+                      style={{
+                        transition: 'transform var(--transition-base), box-shadow var(--transition-base)'
+                      }}
+                    >
+                      {/* Favicon with fallback */}
+                      <div className="w-14 h-14 rounded-xl bg-white/95 border border-white/30 flex items-center justify-center overflow-hidden relative shadow-lg">
+                        <img
+                          src={founder.iconUrl}
+                          alt={`${founder.company} logo`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                        />
+                        {/* Fallback for failed favicons */}
+                        <div className="hidden w-full h-full items-center justify-center text-xs font-bold text-neutral-700 absolute inset-0">
+                          {getCompanyDisplayName(founder.company).slice(0, 2).toUpperCase()}
+                        </div>
+                      </div>
+                      {/* Company name underneath */}
+                      <div className="mt-2 text-[11px] text-neutral-400 text-center max-w-[85px] truncate font-medium">
+                        {getCompanyDisplayName(founder.company)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* CSS for carousel animation and pricing card effects */}
+            <style jsx>{`
+              @keyframes scroll-left {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-50%); }
+              }
+              @keyframes gradient-shift {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+              }
+              /* Pause carousel on hover */
+              .group:hover .carousel-scroll {
+                animation-play-state: paused;
+              }
+            `}</style>
+          </section>
+
+          {/* Section divider */}
+          <div className="section-divider"></div>
+
+          {/* Fresh this week preview - Early stage startup showcase */}
+          <section id="fresh" className="mx-auto max-w-7xl px-4 py-12 sm:py-20 animate-fade-in-up animate-delayed-3" role="region" aria-labelledby="fresh-heading">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-6">
+              <h2 id="fresh-heading" className="text-xl sm:text-2xl font-bold text-white" style={{ letterSpacing: '-0.02em' }}>
+                Discover Builders & Founders This Week
+              </h2>
+              <Link
+                href="/opportunities"
+                className="text-sm text-neutral-400 hover:text-white transition-colors self-start sm:self-auto inline-flex items-center gap-1 group"
+                aria-label="Browse all builders and founders"
+              >
+                <span>Explore more builders</span>
+                <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+            <div className="mt-4 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {isLoadingFounders ? (
                 // Skeleton loading cards - show 1 on mobile, 2 on tablet, 3 on desktop
                 Array.from({ length: 3 }).map((_, index) => (
@@ -791,8 +1033,22 @@ Always great to meet fellow EdTech innovators!`,
                   return (
                     <article
                       key={founder.id}
-                      className={`rounded-2xl bg-neutral-50 text-neutral-900 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] ring-1 ring-black/10 overflow-hidden dark:bg-[#11121b] dark:text-neutral-100 dark:ring-white/10 hover:ring-white/20 transition-all cursor-pointer hover-lift hover-glow ${index === 0 ? '' : index === 1 ? 'hidden sm:block' : 'hidden lg:block'
+                      className={`group rounded-2xl bg-neutral-50 text-neutral-900 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] ring-1 ring-black/10 overflow-hidden dark:bg-[#11121b] dark:text-neutral-100 dark:ring-white/10 hover:ring-white/20 transition-all duration-300 cursor-pointer ${index === 0 ? '' : index === 1 ? 'hidden sm:block' : 'hidden lg:block'
                         }`}
+                      style={{
+                        transform: 'translateY(0) translateZ(0)',
+                        transition: 'all var(--transition-base)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-8px) translateZ(0)';
+                        e.currentTarget.style.boxShadow = 'var(--shadow-lg), var(--shadow-glow-lavender)';
+                        e.currentTarget.style.borderColor = 'rgba(225, 226, 239, 0.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0) translateZ(0)';
+                        e.currentTarget.style.boxShadow = '0 10px 30px -10px rgba(0,0,0,0.5)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      }}
                       onClick={() => {
                         setSelectedFounder(founder);
                         setShowFounderModal(true);
@@ -848,7 +1104,7 @@ Always great to meet fellow EdTech innovators!`,
 
                         {/* Contact Name - Fixed Height */}
                         <div className="h-[40px] mt-3">
-                          <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider">Contact</span>
+                          <span className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Contact</span>
                           <div className="text-sm font-medium text-neutral-900 dark:text-white truncate mt-1">
                             {(!founder.name || founder.name === 'Unknown' || founder.name === 'N/A') ? "Unknown" : founder.name}
                           </div>
@@ -856,8 +1112,8 @@ Always great to meet fellow EdTech innovators!`,
 
                         {/* Role - Fixed Height */}
                         <div className="h-[32px] mt-1">
-                          <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider">Role</span>
-                          <div className=" mt-2flex flex-wrap gap-1">
+                          <span className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Role</span>
+                          <div className="mt-2 flex flex-wrap gap-1">
                             <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{
                               border: '1px solid rgba(180,151,214,.3)',
                               background: 'rgba(180,151,214,.12)',
@@ -870,7 +1126,7 @@ Always great to meet fellow EdTech innovators!`,
 
                         {/* Contact Info - Fixed Height */}
                         <div className="h-[60px] mt-6">
-                          <div className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider mb-1">Contact Info</div>
+                          <div className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider mb-1">Contact Info</div>
                           <div className="flex flex-wrap gap-1">
                             {/* LinkedIn button - only show if available and valid */}
                             {founder.linkedinurl && !['N/A', 'NA', 'n/a', 'na', 'Unknown', 'unknown'].includes(founder.linkedinurl) && (
@@ -927,191 +1183,173 @@ Always great to meet fellow EdTech innovators!`,
                 </div>
               )}
             </div>
-            <p className="mt-3 text-[12px] text-neutral-500">Sign in to access founder contact information including verified LinkedIn profiles, email addresses, and direct application links. Connect with builders working on cutting-edge projects before they become mainstream or heavily recruited. Perfect for applying to early-stage startups, collaboration opportunities, or just staying connected with like-minded people in tech.</p>
+            <p className="mt-3 text-[13px] text-neutral-500 max-w-2xl mx-auto text-center">Sign in to access founder contact information including verified LinkedIn profiles, email addresses, and direct application links. Connect with builders working on cutting-edge projects before they become mainstream or heavily recruited. Perfect for applying to early-stage startups, collaboration opportunities, or just staying connected with like-minded people in tech.</p>
           </section>
 
-          {/* Company Icons Carousel - Show variety of founders */}
-          <section className={`mx-auto max-w-7xl px-4 py-8 sm:py-12 animate-fade-in-up animate-delayed-4 transition-opacity duration-500 ${isLoadingCarousel ? 'opacity-0' : 'opacity-100'}`}>
-            <div className="text-center mb-8">
-              <h2 className="text-base font-semibold text-white mb-2">Find opportunities at companies like</h2>
-              <p className="text-xs text-neutral-400">Reach directly out to people at these companies</p>
+          {/* Section divider */}
+          <div className="section-divider"></div>
+
+          {/* Benefits Section - Consolidates Features + Problem/Solution */}
+          <Benefits />
+
+          {/* Section divider */}
+          <div className="section-divider"></div>
+
+          {/* Pricing Section */}
+          <section className="mx-auto max-w-7xl px-4 py-12 sm:py-20" aria-labelledby="pricing-heading">
+            <div className="mb-6">
+              <h2 id="pricing-heading" className="text-xl sm:text-2xl font-bold text-white" style={{ letterSpacing: '-0.02em' }}>
+                Simple, Transparent Pricing
+              </h2>
             </div>
 
-            {carouselFounders.length > 0 && (
-              <div className="relative overflow-hidden">
-                <div
-                  className="flex gap-8"
-                  style={{
-                    width: `${carouselFounders.length * 2 * 100}px`,
-                    animation: 'scroll-left 120s linear infinite'
-                  }}
-                >
-                  {/* Duplicate array for seamless loop */}
-                  {[...carouselFounders, ...carouselFounders].map((founder, index) => (
-                    <div
-                      key={`${founder.id}-${index}`}
-                      className="flex-shrink-0 flex flex-col items-center"
-                    >
-                      {/* Favicon with fallback */}
-                      <div className="w-12 h-12 rounded-lg bg-white/90 border border-white/20 flex items-center justify-center overflow-hidden relative">
-                        <img
-                          src={founder.iconUrl}
-                          alt={`${founder.company} logo`}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          onError={(e) => {
-                            // Hide image and show fallback
-                            e.currentTarget.style.display = 'none';
-                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                            if (fallback) fallback.style.display = 'flex';
-                          }}
-                        />
-
-                        {/* Fallback for failed favicons */}
-                        <div className="hidden w-full h-full items-center justify-center text-xs font-semibold text-white absolute inset-0">
-                          {getCompanyDisplayName(founder.company).slice(0, 2).toUpperCase()}
-                        </div>
-                      </div>
-
-                      {/* Company name underneath */}
-                      <div className="mt-1 text-[10px] text-neutral-400 text-center max-w-[60px] truncate">
-                        {getCompanyDisplayName(founder.company)}
-                      </div>
+            {/* Pricing Cards */}
+            <div className="mt-4 grid gap-6 grid-cols-1 sm:grid-cols-2">
+                {/* Free Plan */}
+                <div className="rounded-2xl border border-white/10 bg-[#11121b] p-6 flex flex-col">
+                  <div className="mb-6">
+                    <h3 className="text-xl font-semibold text-white mb-2">Free</h3>
+                    <div className="flex items-baseline gap-1 mb-3">
+                      <span className="text-3xl font-bold text-white">$0</span>
+                      <span className="text-neutral-400">/month</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                    <p className="text-neutral-400 text-sm">
+                      Perfect for getting started with founder outreach
+                    </p>
+                  </div>
 
-            {/* CSS for carousel animation */}
-            <style jsx>{`
-            @keyframes scroll-left {
-              0% {
-                transform: translateX(0);
-              }
-              100% {
-                transform: translateX(-50%);
-              }
-            }
-          `}</style>
-          </section>
-
-          {/* Features: Free vs Pro - Platform benefits for tech community building */}
-          <section id="features" className="mx-auto max-w-7xl px-4 py-8 sm:py-12 animate-fade-in-up animate-delayed-4" role="region" aria-labelledby="features-heading">
-            <h2 id="features-heading" className="sr-only">Platform Features for Tech Community Building</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="animate-fade-in-left animate-delayed-5 rounded-2xl p-4 bg-[#11121b] ring-1 ring-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover-glow">
-                <div className="flex items-center gap-2">
-                  <span className="badge rounded-md px-2 py-0.5 text-[11px] pill">Free</span>
-                  <h3 className="text-base font-semibold text-white">Discover Tech Builders & Projects</h3>
-                </div>
-                <p className="mt-2 text-sm text-[#ccceda]">Browse founders and builders working on cutting-edge tech projects before they scale up or become well-known. Save interesting people to your dashboard, discover fresh projects, and access direct application links to early-stage startups.</p>
-                <ul className="mt-3 space-y-2 text-[13px] text-neutral-300">
-                  <li className="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="#b9bbcc" className="h-4 w-4"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" /></svg>Discover builders & projects before they go mainstream</li>
-                  <li className="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="#b9bbcc" className="h-4 w-4"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" /></svg>Access direct application links to early-stage startups</li>
-                  <li className="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="#b9bbcc" className="h-4 w-4"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" /></svg>Save interesting people to personal dashboard</li>
-                </ul>
-              </div>
-              <div className="animate-fade-in-right animate-delayed-6 rounded-2xl p-4 bg-[#11121b] ring-1 ring-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover-glow">
-                <div className="flex items-center gap-2">
-                  <span className="badge rounded-md px-2 py-0.5 text-[11px] pill">Pro • $3/mo</span>
-                  <h3 className="text-base font-semibold text-white">Direct Contact & Relationship Management</h3>
-                </div>
-                <p className="mt-2 text-sm text-[#ccceda]">Access verified contact information, direct application links, and use AI-powered tools to craft professional outreach messages. The subscription model keeps the community serious with people genuinely interested in building real relationships, not just spamming.</p>
-                <ul className="mt-3 space-y-2 text-[13px] text-neutral-300">
-                  <li className="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="#b9bbcc" className="h-4 w-4"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" /></svg>Access verified LinkedIn profiles & email addresses</li>
-                  <li className="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="#b9bbcc" className="h-4 w-4"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" /></svg>Direct application links to startup job postings</li>
-                  <li className="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="#b9bbcc" className="h-4 w-4"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" /></svg>AI-powered outreach messages for any scenario</li>
-                  <li className="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="#b9bbcc" className="h-4 w-4"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" /></svg>Full relationship management & CRM tools</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* The Problem & Solution Section */}
-          <section id="problem-story" className="mx-auto max-w-7xl px-4 py-8 sm:py-12 animate-fade-in-up animate-delayed-2" role="region" aria-labelledby="problem-heading">
-            <div className="rounded-2xl p-6 bg-[#11121b] ring-1 ring-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover-glow">
-
-              <div className="grid gap-8 lg:grid-cols-2">
-                <div className="animate-fade-in-left animate-delayed-3">
-                  <h2 className="text-lg font-semibold text-white mb-4">The Problems I Experienced</h2>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-sm font-semibold text-white mb-2">Fragmented Discovery</h3>
-                      <p className="text-sm text-[#ccceda]">
-                        Constantly bouncing between Slack groups, email lists, and various channels to find people doing interesting work in tech. These communities were scattered and impossible to navigate systematically.
-                      </p>
+                  <div className="space-y-3 flex-1">
+                    <div className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-neutral-400">Browse unlimited opportunities</span>
                     </div>
-
-                    <div>
-                      <h3 className="text-sm font-semibold text-white mb-2">Poor Relationship Management</h3>
-                      <p className="text-sm text-[#ccceda]">
-                        Terrible at maintaining connections with interesting people. I'd find someone doing cool work, want to connect, but then fail to follow up or nurture those relationships because I was too lazy to manage them properly.
-                      </p>
+                    <div className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-neutral-400">Save to opportunities dashboard</span>
                     </div>
-
-                    <div>
-                      <h3 className="text-sm font-semibold text-white mb-2">Communication Barrier</h3>
-                      <p className="text-sm text-[#ccceda]">
-                        Never knew how to craft professional outreach messages. Whether it was "Hey, I saw your work on XYZ, it's really cool" or pitching collaboration on a new product, I struggled with the messaging.
-                      </p>
+                    <div className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-neutral-400">Basic company information</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm opacity-50">
+                      <svg className="w-4 h-4 text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="text-neutral-500">No LinkedIn or email access</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm opacity-50">
+                      <svg className="w-4 h-4 text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="text-neutral-500">No AI outreach generation</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm opacity-50">
+                      <svg className="w-4 h-4 text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="text-neutral-500">No outreach tracking boards</span>
                     </div>
                   </div>
+
+                  <SignInButton mode="modal">
+                    <button className="w-full rounded-lg px-4 py-3 text-sm font-semibold transition-all mt-6 bg-white/10 text-white hover:bg-white/20 border border-white/10">
+                      Get Started
+                    </button>
+                  </SignInButton>
                 </div>
 
-                <div className="animate-fade-in-right animate-delayed-4">
-                  <h2 className="text-lg font-semibold text-white mb-4">How I Solved It</h2>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-sm font-semibold text-white mb-2">Centralized Community Discovery</h3>
-                      <p className="text-sm text-[#ccceda]">
-                        One place to find founders and builders working on cutting-edge projects before they become mainstream. Connect with people doing interesting work while they're still accessible.
-                      </p>
-                    </div>
+                {/* Pro Plan */}
+                <div className="rounded-2xl border-2 border-[var(--wisteria)] bg-[#11121b] p-6 flex flex-col relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-[var(--wisteria)] to-[var(--lavender-web)] text-[#0f1018] px-3 py-1 text-xs font-semibold rounded-bl-lg">
+                    RECOMMENDED
+                  </div>
 
-                    <div>
-                      <h3 className="text-sm font-semibold text-white mb-2">Systematic Relationship Management</h3>
-                      <p className="text-sm text-[#ccceda]">
-                        Tools to systematically track and nurture connections, whether for job opportunities, collaboration, or just community engagement, without losing track of conversations.
-                      </p>
+                  <div className="mb-6">
+                    <h3 className="text-xl font-semibold text-white mb-2">Pro</h3>
+                    <div className="flex items-baseline gap-1 mb-3">
+                      <span className="text-3xl font-bold text-white">$3</span>
+                      <span className="text-neutral-400">/month</span>
                     </div>
+                    <p className="text-neutral-400 text-sm">
+                      Everything you need for professional outreach
+                    </p>
+                  </div>
 
-                    <div>
-                      <h3 className="text-sm font-semibold text-white mb-2">Professional Outreach Made Easy</h3>
-                      <p className="text-sm text-[#ccceda]">
-                        AI-powered tools help craft professional messages for any scenario: collaboration ideas, job opportunities, or just genuine interest in someone's work.
-                      </p>
+                  <div className="space-y-3 flex-1">
+                    <div className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-neutral-400">Everything in Free</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-neutral-400 font-semibold">LinkedIn profiles & email addresses</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-neutral-400 font-semibold">AI outreach generation</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-neutral-400 font-semibold">Outreach tracking kanban boards</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-neutral-400">Message archive & history</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-neutral-400">7-day free trial included</span>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              <div className="mt-8 p-4 rounded-xl bg-[#11121b] ring-1 ring-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] animate-fade-in-up animate-delayed-5">
-                <p className="text-sm text-[#ccceda] leading-relaxed">
-                  <strong className="text-white">The Bigger Vision:</strong> This isn't just about job hunting. It's about building genuine relationships in the tech community. Sometimes that leads to job opportunities, sometimes to collaboration on new projects, and sometimes just to meaningful connections with people who understand what you're building. Being active in the community and maintaining these relationships can be more powerful than actively pitching yourself for jobs.
-                </p>
-              </div>
+                  <SignInButton mode="modal">
+                    <button className="w-full rounded-lg px-4 py-3 text-sm font-semibold transition-all mt-6 bg-gradient-to-r from-[var(--wisteria)] to-[var(--lavender-web)] text-white hover:scale-105">
+                      Get Started
+                    </button>
+                  </SignInButton>
+                </div>
             </div>
           </section>
+
+          {/* Section divider */}
+          <div className="section-divider"></div>
 
           {/* Why Kanban CRM matters for community outreach */}
-          <section id="kanban-why" className="mx-auto max-w-7xl px-4 py-8 sm:py-12 animate-fade-in-up animate-delayed-4" role="region" aria-labelledby="kanban-heading">
-            <div className="animate-scale-in animate-delayed-5 rounded-2xl p-4 bg-[#11121b] ring-1 ring-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover-glow">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <section id="kanban-why" className="mx-auto max-w-7xl px-4 py-12 sm:py-20 animate-fade-in-up animate-delayed-4" role="region" aria-labelledby="kanban-heading">
+            <div className="animate-scale-in animate-delayed-5 rounded-2xl p-6 bg-[#11121b] ring-1 ring-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="max-w-3xl">
-                  <h2 id="kanban-heading" className="text-base font-semibold text-white">Why Use a Kanban Board for Community Outreach?</h2>
-                  <p className="mt-1 text-sm text-[#ccceda]">Email inbox gets cluttered fast when networking with multiple builders and founders. Our visual Kanban board helps you <span className="font-semibold">manually track multiple conversations</span> at once. After checking your email or LinkedIn, simply drag cards to update their status and see your relationship building progress at a glance.</p>
+                  <h2 id="kanban-heading" className="text-xl font-bold text-white mb-3" style={{ letterSpacing: '-0.02em' }}>Why Use a Kanban Board for Community Outreach?</h2>
+                  <p className="text-base leading-relaxed text-[#d4d6e1]">Email inbox gets cluttered fast when networking with multiple builders and founders. Our visual Kanban board helps you <span className="font-semibold" style={{ color: 'var(--lavender-web)' }}>manually track multiple conversations</span> at once. After checking your email or LinkedIn, simply drag cards to update their status and see your relationship building progress at a glance.</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3 w-full lg:w-auto">
-                  <div className="animate-fade-in-left animate-delayed-6 rounded-lg p-3 border border-white/10 bg-[#171828] flex flex-col h-fit min-h-[84px] hover-scale">
+                  <div className="animate-fade-in-left animate-delayed-6 rounded-lg p-3 border border-white/10 bg-[#171828] flex flex-col min-h-[100px] hover-scale">
                     <div className="text-[12px] font-semibold text-white mb-1">Visual relationship tracking</div>
                     <div className="text-[12px] text-neutral-400">See all conversations at a glance.</div>
                   </div>
-                  <div className="animate-fade-in-left animate-delayed-6 rounded-lg p-3 border border-white/10 bg-[#171828] flex flex-col h-fit min-h-[84px] hover-scale">
+                  <div className="animate-fade-in-left animate-delayed-6 rounded-lg p-3 border border-white/10 bg-[#171828] flex flex-col min-h-[100px] hover-scale">
                     <div className="text-[12px] font-semibold text-white mb-1">Manual status updates</div>
                     <div className="text-[12px] text-neutral-400">Drag cards to update conversation stages manually.</div>
                   </div>
-                  <div className="animate-fade-in-left animate-delayed-6 rounded-lg p-3 border border-white/10 bg-[#171828] flex flex-col h-fit min-h-[84px] hover-scale">
+                  <div className="animate-fade-in-left animate-delayed-6 rounded-lg p-3 border border-white/10 bg-[#171828] flex flex-col min-h-[100px] hover-scale">
                     <div className="text-[12px] font-semibold text-white mb-1">One CRM for all outreach channels</div>
                     <div className="text-[12px] text-neutral-400">Track Email + LinkedIn together.</div>
                   </div>
@@ -1120,22 +1358,31 @@ Always great to meet fellow EdTech innovators!`,
             </div>
           </section>
 
+          {/* Section divider */}
+          <div className="section-divider"></div>
+
           {/* Interactive Kanban Demo - CRM for startup networking */}
-          <section id="kanban-demo" className="hidden xl:block mx-auto max-w-7xl px-4 py-8 sm:py-12 animate-fade-in-up animate-delayed-5" role="region" aria-labelledby="demo-heading">
+          <section id="kanban-demo" className="hidden xl:block mx-auto max-w-7xl px-4 py-12 sm:py-20 animate-fade-in-up animate-delayed-5" role="region" aria-labelledby="demo-heading">
             <div className="rounded-2xl p-6 bg-[#11121b] ring-1 ring-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
-              <div className="flex items-end justify-between mb-4">
-                <h2 id="demo-heading" className="text-base font-semibold text-white">Try Our Outreach CRM (Demo)</h2>
-                <span className="text-[12px] text-neutral-400">Click cards to view messages • Drag between stages • Demo data</span>
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+                <h2 id="demo-heading" className="text-xl font-bold text-white" style={{ letterSpacing: '-0.02em' }}>Try Our Outreach CRM (Demo)</h2>
+                <span className="text-sm text-neutral-400">Click cards to view messages • Drag between stages • Demo data</span>
               </div>
 
-              {/* Demo Tabs */}
+              {/* Demo Tabs - Enhanced */}
               <div className="mb-6">
-                <div role="tablist" aria-label="Demo outreach channels" className="inline-flex rounded-xl bg-[#141522] ring-1 ring-white/10 p-1 text-sm">
+                <div role="tablist" aria-label="Demo outreach channels" className="inline-flex rounded-xl bg-[#141522] ring-1 ring-white/10 p-1 text-sm shadow-lg">
                   <button
                     role="tab"
                     aria-selected={currentDemoTab === 'email'}
-                    className={`tab-btn focus-ring rounded-lg px-3 py-1.5 transition-colors ${currentDemoTab === 'email' ? 'bg-[var(--lavender-web)] text-[#0f1018]' : 'text-neutral-200'
-                      }`}
+                    className={`tab-btn focus-ring rounded-lg px-4 py-2 font-semibold ${
+                      currentDemoTab === 'email'
+                        ? 'bg-[var(--lavender-web)] text-[#0f1018] shadow-md'
+                        : 'text-neutral-200 hover:text-white'
+                    }`}
+                    style={{
+                      transition: 'all var(--transition-fast)'
+                    }}
                     onClick={() => setCurrentDemoTab('email')}
                   >
                     Email Board
@@ -1143,8 +1390,14 @@ Always great to meet fellow EdTech innovators!`,
                   <button
                     role="tab"
                     aria-selected={currentDemoTab === 'linkedin'}
-                    className={`tab-btn focus-ring rounded-lg px-3 py-1.5 transition-colors ${currentDemoTab === 'linkedin' ? 'bg-[var(--lavender-web)] text-[#0f1018]' : 'text-neutral-200'
-                      }`}
+                    className={`tab-btn focus-ring rounded-lg px-4 py-2 font-semibold ${
+                      currentDemoTab === 'linkedin'
+                        ? 'bg-[var(--lavender-web)] text-[#0f1018] shadow-md'
+                        : 'text-neutral-200 hover:text-white'
+                    }`}
+                    style={{
+                      transition: 'all var(--transition-fast)'
+                    }}
                     onClick={() => setCurrentDemoTab('linkedin')}
                   >
                     LinkedIn Board
@@ -1191,6 +1444,12 @@ Always great to meet fellow EdTech innovators!`,
             </div>
           </section>
 
+          {/* Section divider */}
+          <div className="section-divider"></div>
+
+          {/* FAQ Section */}
+          <FAQ />
+
           {/* Footer */}
         </main>
         <footer className="mx-auto max-w-7xl px-4 pb-10">
@@ -1206,7 +1465,7 @@ Always great to meet fellow EdTech innovators!`,
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <span>© 2025 Founder Flow</span>
+                <span>© {new Date().getFullYear()} Founder Flow</span>
               </div>
               <div className="flex items-center gap-3">
                 <a href="#" className="hover:text-neutral-200">Terms</a>
@@ -1217,10 +1476,20 @@ Always great to meet fellow EdTech innovators!`,
           </div>
         </footer>
 
-        {/* Demo Message Modal */}
+        {/* Demo Message Modal - Enhanced */}
         {showModal && selectedMessage && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-auto">
-            <div className="relative w-full max-w-3xl max-h-[90vh] mx-4 bg-[#0f1015] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto modal-backdrop"
+            style={{
+              background: 'rgba(0, 0, 0, 0.7)',
+              backdropFilter: 'var(--blur-lg)'
+            }}
+            onClick={() => setShowModal(false)}
+          >
+            <div
+              className="relative w-full max-w-3xl max-h-[90vh] mx-4 bg-[#0f1015] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-scale-in"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-white/10">
                 <div className="flex items-center gap-3">

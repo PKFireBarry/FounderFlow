@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User profiles - users can only read/write their own
+    match /user_profiles/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Saved jobs - users can only access their own
+    match /saved_jobs/{jobId} {
+      allow read, write: if isAuthenticated() &&
+        resource.data.ownerUserId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.ownerUserId == request.auth.uid;
+    }
+
+    // Outreach records - users can only access their own
+    match /outreach_records/{recordId} {
+      allow read, write: if isAuthenticated() &&
+        resource.data.ownerUserId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+        request.resource.data.ownerUserId == request.auth.uid;
+    }
+
+    // Entry collection - read-only for authenticated users
+    match /entry/{entryId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Backend only
+    }
+
+    // User subscriptions - read own, backend writes only
+    match /user_subscriptions/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false; // Backend/webhook only
+    }
+
+    // Trial tokens - backend only
+    match /trial_tokens/{tokenId} {
+      allow read: if false; // Backend only
+      allow write: if false; // Backend only
+    }
+
+    // Rate limits - backend only (used for rate limiting)
+    match /rate_limits/{limitId} {
+      allow read: if false; // Backend only
+      allow write: if false; // Backend only
+    }
+
+    // Processed Stripe events - backend only (webhook idempotency)
+    match /processed_stripe_events/{eventId} {
+      allow read: if false; // Backend only
+      allow write: if false; // Backend only
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

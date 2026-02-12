@@ -1,0 +1,311 @@
+/* ========================================
+   FOUNDER FLOW - MINIMALIST & REFINED DESIGN SYSTEM
+   Distinctive typography • Strategic purple palette • Generous whitespace
+   ======================================== */
+
+/* === TYPOGRAPHY SYSTEM === */
+/* Fonts loaded via Next.js font system in layout.tsx */
+
+:root {
+  /* === TYPOGRAPHY SYSTEM === */
+  /* Display Font: DM Serif Display - Elegant serif for headings */
+  --font-display: 'DM Serif Display', Georgia, serif;
+
+  /* Body Font: DM Sans - Clean, refined sans-serif */
+  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Typography Scale - Massive contrasts for minimalist impact */
+  --font-h1: 4.5rem;      /* 72px - MASSIVE hero headline */
+  --font-h2: 3rem;        /* 48px - Section headings */
+  --font-h3: 2rem;        /* 32px - Subsection headings */
+  --font-h4: 1.5rem;      /* 24px - Card titles */
+  --font-body-lg: 1.25rem; /* 20px - Large body text */
+  --font-body: 1rem;      /* 16px - Standard body */
+  --font-sm: 0.875rem;    /* 14px - Small text */
+
+  /* Line Heights */
+  --lh-display: 1.1;      /* Tight for display headings */
+  --lh-heading: 1.3;      /* Balanced for subheadings */
+  --lh-body: 1.7;         /* Generous for body text */
+
+  /* Letter Spacing */
+  --ls-tight: -0.03em;    /* Display headings */
+  --ls-normal: -0.01em;   /* Subheadings */
+
+  /* === COLOR SYSTEM - STRATEGIC PURPLE (60-30-10 RULE) === */
+
+  /* Existing Brand Colors (Keep these) */
+  --wisteria: #b497d6ff;
+  --lavender-web: #e1e2efff;
+  --oxford-blue: #05204aff;
+
+  /* Dominant (60%) - Neutral Foundation */
+  --color-background: #fafafa;        /* Off-white background */
+  --color-surface: #ffffff;           /* Card backgrounds */
+  --color-text-primary: #1a1a1a;      /* Near-black text */
+  --color-text-secondary: #6b6b6b;    /* Gray secondary text */
+  --color-text-tertiary: #9ca3af;     /* Lighter gray */
+
+  /* Supporting (30%) - Subtle Purple Tints */
+  --color-surface-purple: rgba(180, 151, 214, 0.03); /* Barely-there purple bg */
+  --color-border: rgba(180, 151, 214, 0.12);          /* Subtle purple borders */
+  --color-border-light: rgba(180, 151, 214, 0.08);    /* Even lighter borders */
+
+  /* Accent (10%) - Bold Purple for CTAs */
+  --color-accent: var(--wisteria);             /* Primary CTA buttons */
+  --color-accent-hover: #9d7fc4;               /* Darker on hover */
+  --color-accent-light: var(--lavender-web);   /* Secondary accents */
+
+  /* === SPACING SYSTEM - GENEROUS WHITESPACE === */
+  --space-xs: 0.5rem;   /* 8px */
+  --space-sm: 1rem;     /* 16px */
+  --space-md: 2rem;     /* 32px */
+  --space-lg: 4rem;     /* 64px - generous section padding */
+  --space-xl: 6rem;     /* 96px - massive section gaps */
+  --space-2xl: 8rem;    /* 128px - hero breathing room */
+
+  /* === BORDER RADIUS === */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* === SHADOWS - SUBTLE ELEVATION === */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Purple accent shadows for hover states */
+  --shadow-purple-sm: 0 0 0 3px rgba(180, 151, 214, 0.1);
+  --shadow-purple-md: 0 0 20px rgba(180, 151, 214, 0.15);
+
+  /* === TRANSITIONS === */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* === BASE TYPOGRAPHY STYLES === */
+
+/* Display Headings - DM Serif Display */
+.font-display,
+h1.font-display,
+h2.font-display {
+  font-family: var(--font-display);
+  font-weight: 400; /* DM Serif Display looks best at regular weight */
+  letter-spacing: var(--ls-tight);
+  line-height: var(--lh-display);
+}
+
+/* Body Text - DM Sans */
+body,
+.font-body {
+  font-family: var(--font-body);
+  line-height: var(--lh-body);
+}
+
+/* Heading Scale */
+.text-display-xl {
+  font-size: var(--font-h1);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-tight);
+}
+
+.text-display-lg {
+  font-size: var(--font-h2);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-tight);
+}
+
+.text-display-md {
+  font-size: var(--font-h3);
+  line-height: var(--lh-heading);
+  letter-spacing: var(--ls-normal);
+}
+
+/* === MINIMALIST ANIMATIONS === */
+
+/* Fade In with Subtle Lift */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 600ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Staggered delays for sequential animations */
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+
+/* Fade In on Scroll (for sections) */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 600ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Underline animation (left to right) */
+@keyframes underline-grow {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* === MINIMALIST COMPONENT STYLES === */
+
+/* Clean Card Design */
+.card-minimal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  transition: all var(--transition-base);
+}
+
+.card-minimal:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md), var(--shadow-purple-sm);
+}
+
+/* Minimalist Button - Solid Purple */
+.btn-minimal-primary {
+  background: var(--color-accent);
+  color: white;
+  padding: 0.875rem 1.75rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: var(--font-body);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-minimal-primary:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-minimal-primary:active {
+  transform: translateY(0);
+}
+
+/* Ghost Button */
+.btn-minimal-ghost {
+  background: transparent;
+  color: var(--color-text-primary);
+  padding: 0.875rem 1.75rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: var(--font-body);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btn-minimal-ghost:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+/* Section Spacing */
+.section-minimal {
+  padding-top: var(--space-xl);
+  padding-bottom: var(--space-xl);
+}
+
+/* Container */
+.container-minimal {
+  max-width: 72rem; /* 1152px */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-md);
+  padding-right: var(--space-md);
+}
+
+/* === ACCESSIBILITY === */
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus visible styles */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* === RESPONSIVE TYPOGRAPHY === */
+@media (max-width: 1024px) {
+  :root {
+    --font-h1: 3.5rem;      /* 56px on tablet */
+    --font-h2: 2.5rem;      /* 40px */
+    --font-h3: 1.75rem;     /* 28px */
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --font-h1: 2.5rem;      /* 40px on mobile */
+    --font-h2: 2rem;        /* 32px */
+    --font-h3: 1.5rem;      /* 24px */
+    --space-lg: 3rem;       /* Reduce section spacing on mobile */
+    --space-xl: 4rem;
+  }
+}
+
+/* === UTILITY CLASSES === */
+
+/* Text Colors */
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+.text-accent { color: var(--color-accent); }
+
+/* Backgrounds */
+.bg-surface { background-color: var(--color-surface); }
+.bg-surface-purple { background-color: var(--color-surface-purple); }
+.bg-background { background-color: var(--color-background); }
+
+/* Spacing */
+.space-lg { padding: var(--space-lg); }
+.space-xl { padding: var(--space-xl); }
+.gap-lg { gap: var(--space-lg); }
+.gap-md { gap: var(--space-md); }

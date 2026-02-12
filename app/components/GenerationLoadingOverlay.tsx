@@ -69,16 +69,11 @@ export default function GenerationLoadingOverlay({ isLoading }: GenerationLoadin
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-[#18192a] border border-purple-500/30 rounded-2xl p-8 max-w-lg w-full mx-4 text-center">
-        {/* Animated spinner */}
-        <div className="relative w-16 h-16 mx-auto mb-6">
-          <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-transparent border-t-purple-500 rounded-full animate-spin"></div>
-          <div
-            className="absolute inset-2 border-4 border-transparent border-t-cyan-400 rounded-full animate-spin"
-            style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}
-          ></div>
+    <div className="modal-backdrop flex items-center justify-center p-4">
+      <div className="modal-content card-elevated p-premium-lg max-w-lg w-full mx-4 text-center">
+        {/* Premium multi-ring spinner */}
+        <div className="spinner-premium mx-auto mb-6">
+          <div className="inner"></div>
         </div>
 
         {/* Current saying */}

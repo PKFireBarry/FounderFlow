@@ -2,21 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { stripe } from '../../../../lib/stripe';
 import { findOrCreateStripeCustomer } from '../../../../lib/stripe-utils';
+import { checkCheckoutLimit } from '../../../../lib/ratelimit-firebase';
+import { createErrorResponse, ApiErrors } from '../../../../lib/api-error-handler';
 
 export async function POST(req: NextRequest) {
+  // Capture userId at the top for error logging
+  let userId: string | null = null;
+
   try {
     // Stripe checkout session request started
     // Environment check completed
-    
+
     if (!stripe) {
       console.error('❌ Stripe not configured - missing STRIPE_SECRET_KEY');
       return NextResponse.json({ error: 'Stripe not configured - missing API keys' }, { status: 500 });
     }
 
-    const { userId } = await auth();
-    
+    const authResult = await auth();
+    userId = authResult.userId;
+
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate Limiting: Prevent checkout session spam
+    const rateLimitResult = await checkCheckoutLimit(userId);
+    if (!rateLimitResult.allowed) {
+      console.log(`⚠️ Checkout rate limit exceeded for user: ${userId}`);
+      return rateLimitResult.response!;
     }
 
     const { priceId, successUrl, cancelUrl } = await req.json();
@@ -62,17 +75,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (error) {
-    console.error('❌ Error creating checkout session:', error);
-    console.error('❌ Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+    return createErrorResponse(error, {
+      endpoint: '/api/stripe/create-checkout-session',
+      userId: userId || undefined,
+      action: 'create_checkout_session',
+      defaultMessage: 'Failed to create checkout session. Please try again.'
     });
-    return NextResponse.json(
-      { 
-        error: 'Failed to create checkout session',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
   }
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { stripe } from '../../../../lib/stripe';
 import { clientDb } from '../../../../lib/firebase/client';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { calculateSubscriptionPeriods } from '../../../../lib/stripe-utils';
 import Stripe from 'stripe';
 
@@ -44,9 +44,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
+  // Idempotency Check: Prevent duplicate processing
+  const eventId = event.id;
+  const processedEventRef = doc(clientDb, 'processed_stripe_events', eventId);
+
+  try {
+    const processedEventDoc = await getDoc(processedEventRef);
+
+    if (processedEventDoc.exists()) {
+      // Event already processed - return success to acknowledge webhook
+      console.log(`✅ Webhook event ${eventId} already processed (idempotent), skipping`);
+      return NextResponse.json({
+        received: true,
+        message: 'Event already processed',
+        eventId
+      });
+    }
+  } catch (idempotencyError) {
+    console.error('⚠️ Error checking idempotency, proceeding with processing:', idempotencyError);
+    // If idempotency check fails, proceed anyway to avoid blocking webhook
+  }
+
   try {
     // Processing webhook event
-    
+    console.log(`📥 Processing Stripe webhook: ${event.type} (${eventId})`);
+
     switch (event.type) {
       case 'checkout.session.completed': {
         // Processing checkout.session.completed
@@ -174,12 +196,29 @@ export async function POST(req: NextRequest) {
 
       default:
         // Unhandled event type
+        console.log(`ℹ️ Unhandled webhook event type: ${event.type}`);
+    }
+
+    // Mark event as processed (idempotency)
+    try {
+      await setDoc(processedEventRef, {
+        eventId,
+        eventType: event.type,
+        processedAt: serverTimestamp(),
+        created: event.created
+      });
+      console.log(`✅ Marked event ${eventId} as processed`);
+    } catch (markError) {
+      console.error('⚠️ Failed to mark event as processed (non-fatal):', markError);
+      // Don't fail the webhook if we can't mark it processed
     }
 
     // Webhook processed successfully
-    return NextResponse.json({ received: true });
+    console.log(`✅ Webhook ${event.type} (${eventId}) processed successfully`);
+    return NextResponse.json({ received: true, eventId });
   } catch (error) {
-    console.error('❌ Webhook error:', error);
+    console.error('❌ Webhook processing error:', error);
+    // Don't mark as processed if processing failed - allow retry
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
   }
 }

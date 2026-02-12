@@ -1,0 +1,1361 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e13]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - img "Founder Flow Logo" [ref=e18]
+          - link "Founder Flow" [ref=e19] [cursor=pointer]:
+            - /url: /
+        - generic [ref=e20]:
+          - link "Dashboard" [ref=e21] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Opportunities" [ref=e22] [cursor=pointer]:
+            - /url: /opportunities
+          - link "Outreach Board" [ref=e23] [cursor=pointer]:
+            - /url: /outreach
+          - link "Billing" [ref=e24] [cursor=pointer]:
+            - /url: /billing
+        - generic [ref=e25]:
+          - button "Notifications" [ref=e27]:
+            - img [ref=e28]
+          - button "Open user menu Darion George barry0719@gmail.com" [ref=e31]:
+            - button "Open user menu" [ref=e34] [cursor=pointer]:
+              - img "Darion George's logo" [ref=e37]
+            - generic [ref=e39]:
+              - generic [ref=e40]: Darion George
+              - generic [ref=e41]: barry0719@gmail.com
+    - generic [ref=e43]:
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - heading "Data Management" [level=1] [ref=e46]
+          - paragraph [ref=e47]: Edit, create, filter, export, and clean up your founder data.
+        - generic [ref=e48]:
+          - button "Add Entry" [ref=e49]:
+            - img [ref=e50]
+            - text: Add Entry
+          - button "Export CSV" [ref=e52]:
+            - img [ref=e53]
+            - text: Export CSV
+      - generic [ref=e55]:
+        - button "Total Entries 📊 2,507 Active Filter" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]:
+            - generic [ref=e58]: Total Entries
+            - generic [ref=e59]: 📊
+          - generic [ref=e60]: 2,507
+          - generic [ref=e61]: Active Filter
+        - button "No Email 📧 609" [ref=e62] [cursor=pointer]:
+          - generic [ref=e63]:
+            - generic [ref=e64]: No Email
+            - generic [ref=e65]: 📧
+          - generic [ref=e66]: "609"
+        - button "No LinkedIn 💼 378" [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]:
+            - generic [ref=e69]: No LinkedIn
+            - generic [ref=e70]: 💼
+          - generic [ref=e71]: "378"
+        - button "No Website 🌐 136" [ref=e72] [cursor=pointer]:
+          - generic [ref=e73]:
+            - generic [ref=e74]: No Website
+            - generic [ref=e75]: 🌐
+          - generic [ref=e76]: "136"
+        - button "Bad Names 👤 126" [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]:
+            - generic [ref=e79]: Bad Names
+            - generic [ref=e80]: 👤
+          - generic [ref=e81]: "126"
+        - button "Bad Companies 🏢 72" [ref=e82] [cursor=pointer]:
+          - generic [ref=e83]:
+            - generic [ref=e84]: Bad Companies
+            - generic [ref=e85]: 🏢
+          - generic [ref=e86]: "72"
+        - button "Bad Roles 🎯 766" [ref=e87] [cursor=pointer]:
+          - generic [ref=e88]:
+            - generic [ref=e89]: Bad Roles
+            - generic [ref=e90]: 🎯
+          - generic [ref=e91]: "766"
+      - generic [ref=e93]:
+        - generic [ref=e94]:
+          - generic:
+            - img
+          - textbox "Search name, company, role..." [ref=e95]
+        - combobox [ref=e96] [cursor=pointer]:
+          - option "All Entries" [selected]
+          - option "Missing Email"
+          - option "Missing LinkedIn"
+          - option "Missing Company URL"
+          - option "Invalid Names"
+          - option "Invalid Companies"
+          - option "Invalid Roles"
+          - option "Incomplete / Junk"
+          - option "🔁 Duplicates"
+      - generic [ref=e97]:
+        - generic [ref=e98]:
+          - generic [ref=e99]: "Sort by:"
+          - generic [ref=e100]:
+            - button "Name⇅" [ref=e101]
+            - button "Company⇅" [ref=e102]
+            - button "Published▼" [ref=e103]
+        - generic [ref=e104]: Showing 1,000 of 2,507 entries
+      - generic [ref=e105]:
+        - generic [ref=e106]:
+          - generic [ref=e107]:
+            - text: Showing
+            - generic [ref=e108]: 1–50
+            - text: of 1,000
+          - generic [ref=e109]:
+            - generic [ref=e110]: "Per page:"
+            - combobox [ref=e111] [cursor=pointer]:
+              - option "25"
+              - option "50" [selected]
+              - option "100"
+        - table [ref=e112]:
+          - rowgroup [ref=e113]:
+            - row "Company Contact Role Links Published Edit" [ref=e114]:
+              - columnheader [ref=e115]:
+                - checkbox [ref=e116] [cursor=pointer]
+              - columnheader "Company" [ref=e117]
+              - columnheader "Contact" [ref=e118]
+              - columnheader "Role" [ref=e119]
+              - columnheader "Links" [ref=e120]
+              - columnheader "Published" [ref=e121]
+              - columnheader "Edit" [ref=e122]
+          - rowgroup [ref=e123]:
+            - row "Traba building an industrial staffing platform. (NYC) Mike n/a Feb 10, 2026" [ref=e124]:
+              - cell [ref=e125]:
+                - checkbox [ref=e126] [cursor=pointer]
+              - cell "Traba building an industrial staffing platform. (NYC)" [ref=e127]:
+                - generic [ref=e130]:
+                  - generic [ref=e131]: Traba
+                  - generic [ref=e132]: building an industrial staffing platform. (NYC)
+              - cell "Mike" [ref=e133]
+              - cell "n/a" [ref=e134]:
+                - generic [ref=e135]: n/a
+              - cell [ref=e136]:
+                - generic [ref=e137]:
+                  - link "LinkedIn" [ref=e138] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/mike-shebat/
+                    - img [ref=e139]
+                  - generic "No email" [ref=e141]:
+                    - img [ref=e142]
+                  - link "Website" [ref=e144] [cursor=pointer]:
+                    - /url: https://traba.work/
+                    - img [ref=e145]
+              - cell "Feb 10, 2026" [ref=e147]
+              - cell [ref=e148]:
+                - button "Edit entry" [ref=e149]:
+                  - img [ref=e150]
+            - row "n/a building social AI that helps people care about other people. (SF, Remote) Jason human interface designer Feb 10, 2026" [ref=e152]:
+              - cell [ref=e153]:
+                - checkbox [ref=e154] [cursor=pointer]
+              - cell "n/a building social AI that helps people care about other people. (SF, Remote)" [ref=e155]:
+                - generic [ref=e158]:
+                  - generic [ref=e159]: n/a
+                  - generic [ref=e160]: building social AI that helps people care about other people. (SF, Remote)
+              - cell "Jason" [ref=e161]
+              - cell "human interface designer" [ref=e162]:
+                - generic [ref=e163]: human interface designer
+              - cell [ref=e164]:
+                - generic [ref=e165]:
+                  - link "LinkedIn" [ref=e166] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/jasonyuandesign/
+                    - img [ref=e167]
+                  - generic "No email" [ref=e169]:
+                    - img [ref=e170]
+                  - generic "No website" [ref=e172]:
+                    - img [ref=e173]
+              - cell "Feb 10, 2026" [ref=e175]
+              - cell [ref=e176]:
+                - button "Edit entry" [ref=e177]:
+                  - img [ref=e178]
+            - row "n/a looking to building something in the mental health/wellness space. (n/a) Rishav growth and analytics person Feb 10, 2026" [ref=e180]:
+              - cell [ref=e181]:
+                - checkbox [ref=e182] [cursor=pointer]
+              - cell "n/a looking to building something in the mental health/wellness space. (n/a)" [ref=e183]:
+                - generic [ref=e186]:
+                  - generic [ref=e187]: n/a
+                  - generic [ref=e188]: looking to building something in the mental health/wellness space. (n/a)
+              - cell "Rishav" [ref=e189]
+              - cell "growth and analytics person" [ref=e190]:
+                - generic [ref=e191]: growth and analytics person
+              - cell [ref=e192]:
+                - generic [ref=e193]:
+                  - link "LinkedIn" [ref=e194] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/rishavdey/
+                    - img [ref=e195]
+                  - link "rishavdey1025@gmail.com" [ref=e197] [cursor=pointer]:
+                    - /url: mailto:rishavdey1025@gmail.com
+                    - img [ref=e198]
+                  - generic "No website" [ref=e200]:
+                    - img [ref=e201]
+              - cell "Feb 10, 2026" [ref=e203]
+              - cell [ref=e204]:
+                - button "Edit entry" [ref=e205]:
+                  - img [ref=e206]
+            - row "Clay data platform for GTM. (London) Bruno n/a Feb 10, 2026" [ref=e208]:
+              - cell [ref=e209]:
+                - checkbox [ref=e210] [cursor=pointer]
+              - cell "Clay data platform for GTM. (London)" [ref=e211]:
+                - generic [ref=e214]:
+                  - generic [ref=e215]: Clay
+                  - generic [ref=e216]: data platform for GTM. (London)
+              - cell "Bruno" [ref=e217]
+              - cell "n/a" [ref=e218]:
+                - generic [ref=e219]: n/a
+              - cell [ref=e220]:
+                - generic [ref=e221]:
+                  - link "LinkedIn" [ref=e222] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/brunoestrella/
+                    - img [ref=e223]
+                  - generic "No email" [ref=e225]:
+                    - img [ref=e226]
+                  - link "Website" [ref=e228] [cursor=pointer]:
+                    - /url: https://www.clay.com/
+                    - img [ref=e229]
+              - cell "Feb 10, 2026" [ref=e231]
+              - cell [ref=e232]:
+                - button "Edit entry" [ref=e233]:
+                  - img [ref=e234]
+            - row "Yoshi agentic personal finance platform backed by Ribbit Capital. (n/a) Ross founder Feb 10, 2026" [ref=e236]:
+              - cell [ref=e237]:
+                - checkbox [ref=e238] [cursor=pointer]
+              - cell "Yoshi agentic personal finance platform backed by Ribbit Capital. (n/a)" [ref=e239]:
+                - generic [ref=e242]:
+                  - generic [ref=e243]: Yoshi
+                  - generic [ref=e244]: agentic personal finance platform backed by Ribbit Capital. (n/a)
+              - cell "Ross" [ref=e245]
+              - cell "founder" [ref=e246]:
+                - generic [ref=e247]: founder
+              - cell [ref=e248]:
+                - generic [ref=e249]:
+                  - link "LinkedIn" [ref=e250] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/ross-lipson-477b0814a/
+                    - img [ref=e251]
+                  - link "Ross@yoshi.ai" [ref=e253] [cursor=pointer]:
+                    - /url: mailto:Ross@yoshi.ai
+                    - img [ref=e254]
+                  - link "Website" [ref=e256] [cursor=pointer]:
+                    - /url: https://yoshi.ai/
+                    - img [ref=e257]
+              - cell "Feb 10, 2026" [ref=e259]
+              - cell [ref=e260]:
+                - button "Edit entry" [ref=e261]:
+                  - img [ref=e262]
+            - row "Checkmate Performance Network launched out of stealth and has grown to $10m+ run rate profitably in the last 20 weeks. (Remote) Rory n/a Feb 10, 2026" [ref=e264]:
+              - cell [ref=e265]:
+                - checkbox [ref=e266] [cursor=pointer]
+              - cell "Checkmate Performance Network launched out of stealth and has grown to $10m+ run rate profitably in the last 20 weeks. (Remote)" [ref=e267]:
+                - generic [ref=e270]:
+                  - generic [ref=e271]: Checkmate Performance Network
+                  - generic [ref=e272]: launched out of stealth and has grown to $10m+ run rate profitably in the last 20 weeks. (Remote)
+              - cell "Rory" [ref=e273]
+              - cell "n/a" [ref=e274]:
+                - generic [ref=e275]: n/a
+              - cell [ref=e276]:
+                - generic [ref=e277]:
+                  - link "LinkedIn" [ref=e278] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/rorygartonsmith/
+                    - img [ref=e279]
+                  - generic "No email" [ref=e281]:
+                    - img [ref=e282]
+                  - link "Website" [ref=e284] [cursor=pointer]:
+                    - /url: https://checkmateforbrands.com/
+                    - img [ref=e285]
+              - cell "Feb 10, 2026" [ref=e287]
+              - cell [ref=e288]:
+                - button "Edit entry" [ref=e289]:
+                  - img [ref=e290]
+            - row "InkWell Games platform with thousands of players. (n/a) Anastasia founder Feb 10, 2026" [ref=e292]:
+              - cell [ref=e293]:
+                - checkbox [ref=e294] [cursor=pointer]
+              - cell "InkWell Games platform with thousands of players. (n/a)" [ref=e295]:
+                - generic [ref=e298]:
+                  - generic [ref=e299]: InkWell Games
+                  - generic [ref=e300]: platform with thousands of players. (n/a)
+              - cell "Anastasia" [ref=e301]
+              - cell "founder" [ref=e302]:
+                - generic [ref=e303]: founder
+              - cell [ref=e304]:
+                - generic [ref=e305]:
+                  - link "LinkedIn" [ref=e306] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/anastasiamiliano/
+                    - img [ref=e307]
+                  - link "anastasia@inkwellgames.com" [ref=e309] [cursor=pointer]:
+                    - /url: mailto:anastasia@inkwellgames.com
+                    - img [ref=e310]
+                  - generic "No website" [ref=e312]:
+                    - img [ref=e313]
+              - cell "Feb 10, 2026" [ref=e315]
+              - cell [ref=e316]:
+                - button "Edit entry" [ref=e317]:
+                  - img [ref=e318]
+            - row "Siro building an in-person sales analysis and coaching platform. (NYC) Brian n/a Feb 10, 2026" [ref=e320]:
+              - cell [ref=e321]:
+                - checkbox [ref=e322] [cursor=pointer]
+              - cell "Siro building an in-person sales analysis and coaching platform. (NYC)" [ref=e323]:
+                - generic [ref=e326]:
+                  - generic [ref=e327]: Siro
+                  - generic [ref=e328]: building an in-person sales analysis and coaching platform. (NYC)
+              - cell "Brian" [ref=e329]
+              - cell "n/a" [ref=e330]:
+                - generic [ref=e331]: n/a
+              - cell [ref=e332]:
+                - generic [ref=e333]:
+                  - link "LinkedIn" [ref=e334] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/brian-kasdan/
+                    - img [ref=e335]
+                  - generic "No email" [ref=e337]:
+                    - img [ref=e338]
+                  - link "Website" [ref=e340] [cursor=pointer]:
+                    - /url: https://www.siro.ai/
+                    - img [ref=e341]
+              - cell "Feb 10, 2026" [ref=e343]
+              - cell [ref=e344]:
+                - button "Edit entry" [ref=e345]:
+                  - img [ref=e346]
+            - row "stealth early-stage healthcare startup stealth early-stage healthcare startup on-track to break $10m ARR soon. (NYC) Michael n/a Feb 10, 2026" [ref=e348]:
+              - cell [ref=e349]:
+                - checkbox [ref=e350] [cursor=pointer]
+              - cell "stealth early-stage healthcare startup stealth early-stage healthcare startup on-track to break $10m ARR soon. (NYC)" [ref=e351]:
+                - generic [ref=e354]:
+                  - generic [ref=e355]: stealth early-stage healthcare startup
+                  - generic [ref=e356]: stealth early-stage healthcare startup on-track to break $10m ARR soon. (NYC)
+              - cell "Michael" [ref=e357]
+              - cell "n/a" [ref=e358]:
+                - generic [ref=e359]: n/a
+              - cell [ref=e360]:
+                - generic [ref=e361]:
+                  - link "LinkedIn" [ref=e362] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/michaelxbloch/
+                    - img [ref=e363]
+                  - generic "No email" [ref=e365]:
+                    - img [ref=e366]
+                  - generic "No website" [ref=e368]:
+                    - img [ref=e369]
+              - cell "Feb 10, 2026" [ref=e371]
+              - cell [ref=e372]:
+                - button "Edit entry" [ref=e373]:
+                  - img [ref=e374]
+            - row "CRV venture capital firm building AI for venture capital. (SF) Brittany n/a Feb 10, 2026" [ref=e376]:
+              - cell [ref=e377]:
+                - checkbox [ref=e378] [cursor=pointer]
+              - cell "CRV venture capital firm building AI for venture capital. (SF)" [ref=e379]:
+                - generic [ref=e382]:
+                  - generic [ref=e383]: CRV
+                  - generic [ref=e384]: venture capital firm building AI for venture capital. (SF)
+              - cell "Brittany" [ref=e385]
+              - cell "n/a" [ref=e386]:
+                - generic [ref=e387]: n/a
+              - cell [ref=e388]:
+                - generic [ref=e389]:
+                  - link "LinkedIn" [ref=e390] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/brittwalker1/
+                    - img [ref=e391]
+                  - generic "No email" [ref=e393]:
+                    - img [ref=e394]
+                  - link "Website" [ref=e396] [cursor=pointer]:
+                    - /url: https://www.crv.com/
+                    - img [ref=e397]
+              - cell "Feb 10, 2026" [ref=e399]
+              - cell [ref=e400]:
+                - button "Edit entry" [ref=e401]:
+                  - img [ref=e402]
+            - row "The General Intelligence Company of New York building AI that will run businesses autonomously. (NYC) Andrew n/a Feb 10, 2026" [ref=e404]:
+              - cell [ref=e405]:
+                - checkbox [ref=e406] [cursor=pointer]
+              - cell "The General Intelligence Company of New York building AI that will run businesses autonomously. (NYC)" [ref=e407]:
+                - generic [ref=e410]:
+                  - generic [ref=e411]: The General Intelligence Company of New York
+                  - generic [ref=e412]: building AI that will run businesses autonomously. (NYC)
+              - cell "Andrew" [ref=e413]
+              - cell "n/a" [ref=e414]:
+                - generic [ref=e415]: n/a
+              - cell [ref=e416]:
+                - generic [ref=e417]:
+                  - link "LinkedIn" [ref=e418] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/andrewpignanelli/
+                    - img [ref=e419]
+                  - generic "No email" [ref=e421]:
+                    - img [ref=e422]
+                  - link "Website" [ref=e424] [cursor=pointer]:
+                    - /url: https://www.generalintelligencecompany.com/
+                    - img [ref=e425]
+              - cell "Feb 10, 2026" [ref=e427]
+              - cell [ref=e428]:
+                - button "Edit entry" [ref=e429]:
+                  - img [ref=e430]
+            - row "Single Aim building a platform to match qualified collaborating physicians. (Remote) Chris n/a Feb 10, 2026" [ref=e432]:
+              - cell [ref=e433]:
+                - checkbox [ref=e434] [cursor=pointer]
+              - cell "Single Aim building a platform to match qualified collaborating physicians. (Remote)" [ref=e435]:
+                - generic [ref=e438]:
+                  - generic [ref=e439]: Single Aim
+                  - generic [ref=e440]: building a platform to match qualified collaborating physicians. (Remote)
+              - cell "Chris" [ref=e441]
+              - cell "n/a" [ref=e442]:
+                - generic [ref=e443]: n/a
+              - cell [ref=e444]:
+                - generic [ref=e445]:
+                  - link "LinkedIn" [ref=e446] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/turitzin/
+                    - img [ref=e447]
+                  - generic "No email" [ref=e449]:
+                    - img [ref=e450]
+                  - link "Website" [ref=e452] [cursor=pointer]:
+                    - /url: https://www.singleaimhealth.com/
+                    - img [ref=e453]
+              - cell "Feb 10, 2026" [ref=e455]
+              - cell [ref=e456]:
+                - button "Edit entry" [ref=e457]:
+                  - img [ref=e458]
+            - row "n/a looking to join a cofounder in the b2b space, focusing on industries like construction, energy, and logistics. (n/a) Sabih 2x technical founder Feb 10, 2026" [ref=e460]:
+              - cell [ref=e461]:
+                - checkbox [ref=e462] [cursor=pointer]
+              - cell "n/a looking to join a cofounder in the b2b space, focusing on industries like construction, energy, and logistics. (n/a)" [ref=e463]:
+                - generic [ref=e466]:
+                  - generic [ref=e467]: n/a
+                  - generic [ref=e468]: looking to join a cofounder in the b2b space, focusing on industries like construction, energy, and logistics. (n/a)
+              - cell "Sabih" [ref=e469]
+              - cell "2x technical founder" [ref=e470]:
+                - generic [ref=e471]: 2x technical founder
+              - cell [ref=e472]:
+                - generic [ref=e473]:
+                  - link "LinkedIn" [ref=e474] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/sabihsarowar/
+                    - img [ref=e475]
+                  - link "antpalmolive@gmail.com" [ref=e477] [cursor=pointer]:
+                    - /url: mailto:antpalmolive@gmail.com
+                    - img [ref=e478]
+                  - generic "No website" [ref=e480]:
+                    - img [ref=e481]
+              - cell "Feb 10, 2026" [ref=e483]
+              - cell [ref=e484]:
+                - button "Edit entry" [ref=e485]:
+                  - img [ref=e486]
+            - row "Sully building AI that augment healthcare clinicians. (SF) Ahmed n/a Feb 10, 2026" [ref=e488]:
+              - cell [ref=e489]:
+                - checkbox [ref=e490] [cursor=pointer]
+              - cell "Sully building AI that augment healthcare clinicians. (SF)" [ref=e491]:
+                - generic [ref=e494]:
+                  - generic [ref=e495]: Sully
+                  - generic [ref=e496]: building AI that augment healthcare clinicians. (SF)
+              - cell "Ahmed" [ref=e497]
+              - cell "n/a" [ref=e498]:
+                - generic [ref=e499]: n/a
+              - cell [ref=e500]:
+                - generic [ref=e501]:
+                  - link "LinkedIn" [ref=e502] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/ao7
+                    - img [ref=e503]
+                  - generic "No email" [ref=e505]:
+                    - img [ref=e506]
+                  - link "Website" [ref=e508] [cursor=pointer]:
+                    - /url: https://www.sully.ai/
+                    - img [ref=e509]
+              - cell "Feb 10, 2026" [ref=e511]
+              - cell [ref=e512]:
+                - button "Edit entry" [ref=e513]:
+                  - img [ref=e514]
+            - row "GiveDirectly raised over $1 billion for philanthropy since 2011. (SF) Olivia n/a Feb 10, 2026" [ref=e516]:
+              - cell [ref=e517]:
+                - checkbox [ref=e518] [cursor=pointer]
+              - cell "GiveDirectly raised over $1 billion for philanthropy since 2011. (SF)" [ref=e519]:
+                - generic [ref=e522]:
+                  - generic [ref=e523]: GiveDirectly
+                  - generic [ref=e524]: raised over $1 billion for philanthropy since 2011. (SF)
+              - cell "Olivia" [ref=e525]
+              - cell "n/a" [ref=e526]:
+                - generic [ref=e527]: n/a
+              - cell [ref=e528]:
+                - generic [ref=e529]:
+                  - link "LinkedIn" [ref=e530] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/oliviachen216/
+                    - img [ref=e531]
+                  - generic "No email" [ref=e533]:
+                    - img [ref=e534]
+                  - link "Website" [ref=e536] [cursor=pointer]:
+                    - /url: https://www.givedirectly.org/
+                    - img [ref=e537]
+              - cell "Feb 10, 2026" [ref=e539]
+              - cell [ref=e540]:
+                - button "Edit entry" [ref=e541]:
+                  - img [ref=e542]
+            - row "Raspberry AI building a generative AI platform for the fashion industry. (NYC, Remote) Drake n/a Feb 10, 2026" [ref=e544]:
+              - cell [ref=e545]:
+                - checkbox [ref=e546] [cursor=pointer]
+              - cell "Raspberry AI building a generative AI platform for the fashion industry. (NYC, Remote)" [ref=e547]:
+                - generic [ref=e550]:
+                  - generic [ref=e551]: Raspberry AI
+                  - generic [ref=e552]: building a generative AI platform for the fashion industry. (NYC, Remote)
+              - cell "Drake" [ref=e553]
+              - cell "n/a" [ref=e554]:
+                - generic [ref=e555]: n/a
+              - cell [ref=e556]:
+                - generic [ref=e557]:
+                  - link "LinkedIn" [ref=e558] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/drakevolz/
+                    - img [ref=e559]
+                  - link "drake@raspberry.ai" [ref=e561] [cursor=pointer]:
+                    - /url: mailto:drake@raspberry.ai
+                    - img [ref=e562]
+                  - link "Website" [ref=e564] [cursor=pointer]:
+                    - /url: https://www.raspberry.ai/
+                    - img [ref=e565]
+              - cell "Feb 10, 2026" [ref=e567]
+              - cell [ref=e568]:
+                - button "Edit entry" [ref=e569]:
+                  - img [ref=e570]
+            - row "Gamma building a presentation and website builder. (SF) Deeni n/a Feb 10, 2026" [ref=e572]:
+              - cell [ref=e573]:
+                - checkbox [ref=e574] [cursor=pointer]
+              - cell "Gamma building a presentation and website builder. (SF)" [ref=e575]:
+                - generic [ref=e578]:
+                  - generic [ref=e579]: Gamma
+                  - generic [ref=e580]: building a presentation and website builder. (SF)
+              - cell "Deeni" [ref=e581]
+              - cell "n/a" [ref=e582]:
+                - generic [ref=e583]: n/a
+              - cell [ref=e584]:
+                - generic [ref=e585]:
+                  - link "LinkedIn" [ref=e586] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/deenifatiha/
+                    - img [ref=e587]
+                  - link "deeni@gamma.app" [ref=e589] [cursor=pointer]:
+                    - /url: mailto:deeni@gamma.app
+                    - img [ref=e590]
+                  - link "Website" [ref=e592] [cursor=pointer]:
+                    - /url: https://gamma.app/
+                    - img [ref=e593]
+              - cell "Feb 10, 2026" [ref=e595]
+              - cell [ref=e596]:
+                - button "Edit entry" [ref=e597]:
+                  - img [ref=e598]
+            - row "Stripe core payments team. (NYC, SF, Seattle, Chicago) Alexandre n/a Feb 10, 2026" [ref=e600]:
+              - cell [ref=e601]:
+                - checkbox [ref=e602] [cursor=pointer]
+              - cell "Stripe core payments team. (NYC, SF, Seattle, Chicago)" [ref=e603]:
+                - generic [ref=e606]:
+                  - generic [ref=e607]: Stripe
+                  - generic [ref=e608]: core payments team. (NYC, SF, Seattle, Chicago)
+              - cell "Alexandre" [ref=e609]
+              - cell "n/a" [ref=e610]:
+                - generic [ref=e611]: n/a
+              - cell [ref=e612]:
+                - generic [ref=e613]:
+                  - link "LinkedIn" [ref=e614] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/alexandreginet/
+                    - img [ref=e615]
+                  - link "ag@stripe.com" [ref=e617] [cursor=pointer]:
+                    - /url: mailto:ag@stripe.com
+                    - img [ref=e618]
+                  - link "Website" [ref=e620] [cursor=pointer]:
+                    - /url: https://stripe.com/
+                    - img [ref=e621]
+              - cell "Feb 10, 2026" [ref=e623]
+              - cell [ref=e624]:
+                - button "Edit entry" [ref=e625]:
+                  - img [ref=e626]
+            - row "Manifest building a legal services immigration platform. (NYC) Eric n/a Feb 10, 2026" [ref=e628]:
+              - cell [ref=e629]:
+                - checkbox [ref=e630] [cursor=pointer]
+              - cell "Manifest building a legal services immigration platform. (NYC)" [ref=e631]:
+                - generic [ref=e634]:
+                  - generic [ref=e635]: Manifest
+                  - generic [ref=e636]: building a legal services immigration platform. (NYC)
+              - cell "Eric" [ref=e637]
+              - cell "n/a" [ref=e638]:
+                - generic [ref=e639]: n/a
+              - cell [ref=e640]:
+                - generic [ref=e641]:
+                  - link "LinkedIn" [ref=e642] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/eric-oberman-5693b277/
+                    - img [ref=e643]
+                  - link "eric.oberman@parallellearning.com" [ref=e645] [cursor=pointer]:
+                    - /url: mailto:eric.oberman@parallellearning.com
+                    - img [ref=e646]
+                  - link "Website" [ref=e648] [cursor=pointer]:
+                    - /url: https://manifestlaw.com/
+                    - img [ref=e649]
+              - cell "Feb 10, 2026" [ref=e651]
+              - cell [ref=e652]:
+                - button "Edit entry" [ref=e653]:
+                  - img [ref=e654]
+            - row "Hebbia building an AI platform for the finance industry. (NYC, SF) George n/a Feb 10, 2026" [ref=e656]:
+              - cell [ref=e657]:
+                - checkbox [ref=e658] [cursor=pointer]
+              - cell "Hebbia building an AI platform for the finance industry. (NYC, SF)" [ref=e659]:
+                - generic [ref=e662]:
+                  - generic [ref=e663]: Hebbia
+                  - generic [ref=e664]: building an AI platform for the finance industry. (NYC, SF)
+              - cell "George" [ref=e665]
+              - cell "n/a" [ref=e666]:
+                - generic [ref=e667]: n/a
+              - cell [ref=e668]:
+                - generic [ref=e669]:
+                  - link "LinkedIn" [ref=e670] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/sivulka/
+                    - img [ref=e671]
+                  - link "george@hebbia.com" [ref=e673] [cursor=pointer]:
+                    - /url: mailto:george@hebbia.com
+                    - img [ref=e674]
+                  - link "Website" [ref=e676] [cursor=pointer]:
+                    - /url: https://www.hebbia.com/
+                    - img [ref=e677]
+              - cell "Feb 10, 2026" [ref=e679]
+              - cell [ref=e680]:
+                - button "Edit entry" [ref=e681]:
+                  - img [ref=e682]
+            - row "South Park Commons fund talent network and community. (SF) Finn n/a Feb 10, 2026" [ref=e684]:
+              - cell [ref=e685]:
+                - checkbox [ref=e686] [cursor=pointer]
+              - cell "South Park Commons fund talent network and community. (SF)" [ref=e687]:
+                - generic [ref=e690]:
+                  - generic [ref=e691]: South Park Commons
+                  - generic [ref=e692]: fund talent network and community. (SF)
+              - cell "Finn" [ref=e693]
+              - cell "n/a" [ref=e694]:
+                - generic [ref=e695]: n/a
+              - cell [ref=e696]:
+                - generic [ref=e697]:
+                  - link "LinkedIn" [ref=e698] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/finn-meeks/
+                    - img [ref=e699]
+                  - link "finn@southparkcommons.com" [ref=e701] [cursor=pointer]:
+                    - /url: mailto:finn@southparkcommons.com
+                    - img [ref=e702]
+                  - link "Website" [ref=e704] [cursor=pointer]:
+                    - /url: https://www.southparkcommons.com/
+                    - img [ref=e705]
+              - cell "Feb 10, 2026" [ref=e707]
+              - cell [ref=e708]:
+                - button "Edit entry" [ref=e709]:
+                  - img [ref=e710]
+            - row "Linear purpose-built project management and planning tool. (Remote) Cristina n/a Feb 10, 2026" [ref=e712]:
+              - cell [ref=e713]:
+                - checkbox [ref=e714] [cursor=pointer]
+              - cell "Linear purpose-built project management and planning tool. (Remote)" [ref=e715]:
+                - generic [ref=e718]:
+                  - generic [ref=e719]: Linear
+                  - generic [ref=e720]: purpose-built project management and planning tool. (Remote)
+              - cell "Cristina" [ref=e721]
+              - cell "n/a" [ref=e722]:
+                - generic [ref=e723]: n/a
+              - cell [ref=e724]:
+                - generic [ref=e725]:
+                  - link "LinkedIn" [ref=e726] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/cristinajcordova/
+                    - img [ref=e727]
+                  - link "cristina@linear.app" [ref=e729] [cursor=pointer]:
+                    - /url: mailto:cristina@linear.app
+                    - img [ref=e730]
+                  - link "Website" [ref=e732] [cursor=pointer]:
+                    - /url: https://linear.app/
+                    - img [ref=e733]
+              - cell "Feb 10, 2026" [ref=e735]
+              - cell [ref=e736]:
+                - button "Edit entry" [ref=e737]:
+                  - img [ref=e738]
+            - row "Valon building an AI platform for mortgage servicing. (n/a) Kyle n/a Feb 10, 2026" [ref=e740]:
+              - cell [ref=e741]:
+                - checkbox [ref=e742] [cursor=pointer]
+              - cell "Valon building an AI platform for mortgage servicing. (n/a)" [ref=e743]:
+                - generic [ref=e746]:
+                  - generic [ref=e747]: Valon
+                  - generic [ref=e748]: building an AI platform for mortgage servicing. (n/a)
+              - cell "Kyle" [ref=e749]
+              - cell "n/a" [ref=e750]:
+                - generic [ref=e751]: n/a
+              - cell [ref=e752]:
+                - generic [ref=e753]:
+                  - link "LinkedIn" [ref=e754] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/kyle-russell-32a49668/
+                    - img [ref=e755]
+                  - link "kyle.russell@valon.com" [ref=e757] [cursor=pointer]:
+                    - /url: mailto:kyle.russell@valon.com
+                    - img [ref=e758]
+                  - link "Website" [ref=e760] [cursor=pointer]:
+                    - /url: https://valon.com/
+                    - img [ref=e761]
+              - cell "Feb 10, 2026" [ref=e763]
+              - cell [ref=e764]:
+                - button "Edit entry" [ref=e765]:
+                  - img [ref=e766]
+            - row "Siena AI building an AI CX agent for the commerce industry. (NYC) Lisa n/a Feb 10, 2026" [ref=e768]:
+              - cell [ref=e769]:
+                - checkbox [ref=e770] [cursor=pointer]
+              - cell "Siena AI building an AI CX agent for the commerce industry. (NYC)" [ref=e771]:
+                - generic [ref=e774]:
+                  - generic [ref=e775]: Siena AI
+                  - generic [ref=e776]: building an AI CX agent for the commerce industry. (NYC)
+              - cell "Lisa" [ref=e777]
+              - cell "n/a" [ref=e778]:
+                - generic [ref=e779]: n/a
+              - cell [ref=e780]:
+                - generic [ref=e781]:
+                  - link "LinkedIn" [ref=e782] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/lisapopovici/
+                    - img [ref=e783]
+                  - link "lisa@siena.cx" [ref=e785] [cursor=pointer]:
+                    - /url: mailto:lisa@siena.cx
+                    - img [ref=e786]
+                  - link "Website" [ref=e788] [cursor=pointer]:
+                    - /url: https://www.siena.cx/
+                    - img [ref=e789]
+              - cell "Feb 10, 2026" [ref=e791]
+              - cell [ref=e792]:
+                - button "Edit entry" [ref=e793]:
+                  - img [ref=e794]
+            - row "Method Financial fintech company that provides API-based connectivity to consumer credit and liability accounts with embedded payment capabilities. (SF, NYC, Austin, D.C.) Jose n/a Feb 10, 2026" [ref=e796]:
+              - cell [ref=e797]:
+                - checkbox [ref=e798] [cursor=pointer]
+              - cell "Method Financial fintech company that provides API-based connectivity to consumer credit and liability accounts with embedded payment capabilities. (SF, NYC, Austin, D.C.)" [ref=e799]:
+                - generic [ref=e802]:
+                  - generic [ref=e803]: Method Financial
+                  - generic [ref=e804]: fintech company that provides API-based connectivity to consumer credit and liability accounts with embedded payment capabilities. (SF, NYC, Austin, D.C.)
+              - cell "Jose" [ref=e805]
+              - cell "n/a" [ref=e806]:
+                - generic [ref=e807]: n/a
+              - cell [ref=e808]:
+                - generic [ref=e809]:
+                  - link "LinkedIn" [ref=e810] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/josebethancourt/
+                    - img [ref=e811]
+                  - link "jose@methodfi.com" [ref=e813] [cursor=pointer]:
+                    - /url: mailto:jose@methodfi.com
+                    - img [ref=e814]
+                  - link "Website" [ref=e816] [cursor=pointer]:
+                    - /url: https://methodfi.com/
+                    - img [ref=e817]
+              - cell "Feb 10, 2026" [ref=e819]
+              - cell [ref=e820]:
+                - button "Edit entry" [ref=e821]:
+                  - img [ref=e822]
+            - row "Rockland building an AI platform for medicaid-serving organizations. (SF) Mihir n/a Feb 10, 2026" [ref=e824]:
+              - cell [ref=e825]:
+                - checkbox [ref=e826] [cursor=pointer]
+              - cell "Rockland building an AI platform for medicaid-serving organizations. (SF)" [ref=e827]:
+                - generic [ref=e830]:
+                  - generic [ref=e831]: Rockland
+                  - generic [ref=e832]: building an AI platform for medicaid-serving organizations. (SF)
+              - cell "Mihir" [ref=e833]
+              - cell "n/a" [ref=e834]:
+                - generic [ref=e835]: n/a
+              - cell [ref=e836]:
+                - generic [ref=e837]:
+                  - link "LinkedIn" [ref=e838] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/mihir-somaiya-b687a0102/
+                    - img [ref=e839]
+                  - link "mihir@rockhealth.com" [ref=e841] [cursor=pointer]:
+                    - /url: mailto:mihir@rockhealth.com
+                    - img [ref=e842]
+                  - link "Website" [ref=e844] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/company/rocklandinc/
+                    - img [ref=e845]
+              - cell "Feb 10, 2026" [ref=e847]
+              - cell [ref=e848]:
+                - button "Edit entry" [ref=e849]:
+                  - img [ref=e850]
+            - row "Treat building a new system aimed at solving disease, starting with pets. (NYC) Emmanuel n/a Feb 10, 2026" [ref=e852]:
+              - cell [ref=e853]:
+                - checkbox [ref=e854] [cursor=pointer]
+              - cell "Treat building a new system aimed at solving disease, starting with pets. (NYC)" [ref=e855]:
+                - generic [ref=e858]:
+                  - generic [ref=e859]: Treat
+                  - generic [ref=e860]: building a new system aimed at solving disease, starting with pets. (NYC)
+              - cell "Emmanuel" [ref=e861]
+              - cell "n/a" [ref=e862]:
+                - generic [ref=e863]: n/a
+              - cell [ref=e864]:
+                - generic [ref=e865]:
+                  - link "LinkedIn" [ref=e866] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/emmanuel-bijaoui/
+                    - img [ref=e867]
+                  - link "emmanuel@treattherapeutics.com" [ref=e869] [cursor=pointer]:
+                    - /url: mailto:emmanuel@treattherapeutics.com
+                    - img [ref=e870]
+                  - link "Website" [ref=e872] [cursor=pointer]:
+                    - /url: https://www.treatx.bio/
+                    - img [ref=e873]
+              - cell "Feb 10, 2026" [ref=e875]
+              - cell [ref=e876]:
+                - button "Edit entry" [ref=e877]:
+                  - img [ref=e878]
+            - row "Doordash DashPass team. (SF, NYC, Chicago, Phoenix, LA, Miami) Chasen n/a Feb 10, 2026" [ref=e880]:
+              - cell [ref=e881]:
+                - checkbox [ref=e882] [cursor=pointer]
+              - cell "Doordash DashPass team. (SF, NYC, Chicago, Phoenix, LA, Miami)" [ref=e883]:
+                - generic [ref=e886]:
+                  - generic [ref=e887]: Doordash
+                  - generic [ref=e888]: DashPass team. (SF, NYC, Chicago, Phoenix, LA, Miami)
+              - cell "Chasen" [ref=e889]
+              - cell "n/a" [ref=e890]:
+                - generic [ref=e891]: n/a
+              - cell [ref=e892]:
+                - generic [ref=e893]:
+                  - link "LinkedIn" [ref=e894] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/chasenwhite/
+                    - img [ref=e895]
+                  - link "chasen.white@doordash.com" [ref=e897] [cursor=pointer]:
+                    - /url: mailto:chasen.white@doordash.com
+                    - img [ref=e898]
+                  - link "Website" [ref=e900] [cursor=pointer]:
+                    - /url: https://www.doordash.com/
+                    - img [ref=e901]
+              - cell "Feb 10, 2026" [ref=e903]
+              - cell [ref=e904]:
+                - button "Edit entry" [ref=e905]:
+                  - img [ref=e906]
+            - row "Haven building a “CPA-in-your-pocket” platform. (NYC) Cyrus n/a Feb 10, 2026" [ref=e908]:
+              - cell [ref=e909]:
+                - checkbox [ref=e910] [cursor=pointer]
+              - cell "Haven building a “CPA-in-your-pocket” platform. (NYC)" [ref=e911]:
+                - generic [ref=e914]:
+                  - generic [ref=e915]: Haven
+                  - generic [ref=e916]: building a “CPA-in-your-pocket” platform. (NYC)
+              - cell "Cyrus" [ref=e917]
+              - cell "n/a" [ref=e918]:
+                - generic [ref=e919]: n/a
+              - cell [ref=e920]:
+                - generic [ref=e921]:
+                  - link "LinkedIn" [ref=e922] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/cy-m-s/
+                    - img [ref=e923]
+                  - link "cyrus@usehaven.com" [ref=e925] [cursor=pointer]:
+                    - /url: mailto:cyrus@usehaven.com
+                    - img [ref=e926]
+                  - link "Website" [ref=e928] [cursor=pointer]:
+                    - /url: https://www.usehaven.com/
+                    - img [ref=e929]
+              - cell "Feb 10, 2026" [ref=e931]
+              - cell [ref=e932]:
+                - button "Edit entry" [ref=e933]:
+                  - img [ref=e934]
+            - row "stealth AI Radiology company stealth AI Radiology company with VC backing. (DC) n/a n/a Feb 10, 2026" [ref=e936]:
+              - cell [ref=e937]:
+                - checkbox [ref=e938] [cursor=pointer]
+              - cell "stealth AI Radiology company stealth AI Radiology company with VC backing. (DC)" [ref=e939]:
+                - generic [ref=e942]:
+                  - generic [ref=e943]: stealth AI Radiology company
+                  - generic [ref=e944]: stealth AI Radiology company with VC backing. (DC)
+              - cell "n/a" [ref=e945]
+              - cell "n/a" [ref=e946]:
+                - generic [ref=e947]: n/a
+              - cell [ref=e948]:
+                - generic [ref=e949]:
+                  - link "LinkedIn" [ref=e950] [cursor=pointer]:
+                    - /url: n/a
+                    - img [ref=e951]
+                  - generic "No email" [ref=e953]:
+                    - img [ref=e954]
+                  - generic "No website" [ref=e956]:
+                    - img [ref=e957]
+              - cell "Feb 10, 2026" [ref=e959]
+              - cell [ref=e960]:
+                - button "Edit entry" [ref=e961]:
+                  - img [ref=e962]
+            - row "Sightline building a supply chain platform for the restaurant industry. (NYC) Derrick n/a Feb 10, 2026" [ref=e964]:
+              - cell [ref=e965]:
+                - checkbox [ref=e966] [cursor=pointer]
+              - cell "Sightline building a supply chain platform for the restaurant industry. (NYC)" [ref=e967]:
+                - generic [ref=e970]:
+                  - generic [ref=e971]: Sightline
+                  - generic [ref=e972]: building a supply chain platform for the restaurant industry. (NYC)
+              - cell "Derrick" [ref=e973]
+              - cell "n/a" [ref=e974]:
+                - generic [ref=e975]: n/a
+              - cell [ref=e976]:
+                - generic [ref=e977]:
+                  - link "LinkedIn" [ref=e978] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/derrickstaten/
+                    - img [ref=e979]
+                  - link "statenderrick@gmail.com" [ref=e981] [cursor=pointer]:
+                    - /url: mailto:statenderrick@gmail.com
+                    - img [ref=e982]
+                  - link "Website" [ref=e984] [cursor=pointer]:
+                    - /url: https://www.sightlineos.com/
+                    - img [ref=e985]
+              - cell "Feb 10, 2026" [ref=e987]
+              - cell [ref=e988]:
+                - button "Edit entry" [ref=e989]:
+                  - img [ref=e990]
+            - row "Axiom Therapeutics building a drug discovery platform. (London) Ryan n/a Feb 10, 2026" [ref=e992]:
+              - cell [ref=e993]:
+                - checkbox [ref=e994] [cursor=pointer]
+              - cell "Axiom Therapeutics building a drug discovery platform. (London)" [ref=e995]:
+                - generic [ref=e998]:
+                  - generic [ref=e999]: Axiom Therapeutics
+                  - generic [ref=e1000]: building a drug discovery platform. (London)
+              - cell "Ryan" [ref=e1001]
+              - cell "n/a" [ref=e1002]:
+                - generic [ref=e1003]: n/a
+              - cell [ref=e1004]:
+                - generic [ref=e1005]:
+                  - link "LinkedIn" [ref=e1006] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/ryangeiser/
+                    - img [ref=e1007]
+                  - link "ryangeiser@axiom-therapeutics.com" [ref=e1009] [cursor=pointer]:
+                    - /url: mailto:ryangeiser@axiom-therapeutics.com
+                    - img [ref=e1010]
+                  - link "Website" [ref=e1012] [cursor=pointer]:
+                    - /url: https://www.axiom-therapeutics.com/
+                    - img [ref=e1013]
+              - cell "Feb 10, 2026" [ref=e1015]
+              - cell [ref=e1016]:
+                - button "Edit entry" [ref=e1017]:
+                  - img [ref=e1018]
+            - row "Doctronic building an AI doctor that makes healthcare faster and more affordable. (NYC, SF, LA, Remote) Matt n/a Feb 10, 2026" [ref=e1020]:
+              - cell [ref=e1021]:
+                - checkbox [ref=e1022] [cursor=pointer]
+              - cell "Doctronic building an AI doctor that makes healthcare faster and more affordable. (NYC, SF, LA, Remote)" [ref=e1023]:
+                - generic [ref=e1026]:
+                  - generic [ref=e1027]: Doctronic
+                  - generic [ref=e1028]: building an AI doctor that makes healthcare faster and more affordable. (NYC, SF, LA, Remote)
+              - cell "Matt" [ref=e1029]
+              - cell "n/a" [ref=e1030]:
+                - generic [ref=e1031]: n/a
+              - cell [ref=e1032]:
+                - generic [ref=e1033]:
+                  - link "LinkedIn" [ref=e1034] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/mattpavelle/
+                    - img [ref=e1035]
+                  - link "matt@doctronic.ai" [ref=e1037] [cursor=pointer]:
+                    - /url: mailto:matt@doctronic.ai
+                    - img [ref=e1038]
+                  - link "Website" [ref=e1040] [cursor=pointer]:
+                    - /url: https://www.doctronic.ai/
+                    - img [ref=e1041]
+              - cell "Feb 10, 2026" [ref=e1043]
+              - cell [ref=e1044]:
+                - button "Edit entry" [ref=e1045]:
+                  - img [ref=e1046]
+            - row "Trust Fund venture capital fund. (London) Sophia n/a Feb 10, 2026" [ref=e1048]:
+              - cell [ref=e1049]:
+                - checkbox [ref=e1050] [cursor=pointer]
+              - cell "Trust Fund venture capital fund. (London)" [ref=e1051]:
+                - generic [ref=e1054]:
+                  - generic [ref=e1055]: Trust Fund
+                  - generic [ref=e1056]: venture capital fund. (London)
+              - cell "Sophia" [ref=e1057]
+              - cell "n/a" [ref=e1058]:
+                - generic [ref=e1059]: n/a
+              - cell [ref=e1060]:
+                - generic [ref=e1061]:
+                  - link "LinkedIn" [ref=e1062] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/sophiaamoruso/
+                    - img [ref=e1063]
+                  - link "sophia@trustfund.vc" [ref=e1065] [cursor=pointer]:
+                    - /url: mailto:sophia@trustfund.vc
+                    - img [ref=e1066]
+                  - link "Website" [ref=e1068] [cursor=pointer]:
+                    - /url: https://www.trustfund.vc/
+                    - img [ref=e1069]
+              - cell "Feb 10, 2026" [ref=e1071]
+              - cell [ref=e1072]:
+                - button "Edit entry" [ref=e1073]:
+                  - img [ref=e1074]
+            - row "Momentic building an automated testing platform. (SF) Wei-Wei n/a Feb 10, 2026" [ref=e1076]:
+              - cell [ref=e1077]:
+                - checkbox [ref=e1078] [cursor=pointer]
+              - cell "Momentic building an automated testing platform. (SF)" [ref=e1079]:
+                - generic [ref=e1082]:
+                  - generic [ref=e1083]: Momentic
+                  - generic [ref=e1084]: building an automated testing platform. (SF)
+              - cell "Wei-Wei" [ref=e1085]
+              - cell "n/a" [ref=e1086]:
+                - generic [ref=e1087]: n/a
+              - cell [ref=e1088]:
+                - generic [ref=e1089]:
+                  - link "LinkedIn" [ref=e1090] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/hungweiwu/
+                    - img [ref=e1091]
+                  - link "wei-wei@momentic.ai" [ref=e1093] [cursor=pointer]:
+                    - /url: mailto:wei-wei@momentic.ai
+                    - img [ref=e1094]
+                  - link "Website" [ref=e1096] [cursor=pointer]:
+                    - /url: https://momentic.ai/
+                    - img [ref=e1097]
+              - cell "Feb 10, 2026" [ref=e1099]
+              - cell [ref=e1100]:
+                - button "Edit entry" [ref=e1101]:
+                  - img [ref=e1102]
+            - row "stealth physical AI company building a stealth physical AI company that was incubated by the venture fund Greenoaks. (SF, Remote) Jon founder Feb 10, 2026" [ref=e1104]:
+              - cell [ref=e1105]:
+                - checkbox [ref=e1106] [cursor=pointer]
+              - cell "stealth physical AI company building a stealth physical AI company that was incubated by the venture fund Greenoaks. (SF, Remote)" [ref=e1107]:
+                - generic [ref=e1110]:
+                  - generic [ref=e1111]: stealth physical AI company
+                  - generic [ref=e1112]: building a stealth physical AI company that was incubated by the venture fund Greenoaks. (SF, Remote)
+              - cell "Jon" [ref=e1113]
+              - cell "founder" [ref=e1114]:
+                - generic [ref=e1115]: founder
+              - cell [ref=e1116]:
+                - generic [ref=e1117]:
+                  - link "LinkedIn" [ref=e1118] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/goldsmith1/
+                    - img [ref=e1119]
+                  - link "jon@goldsmith.is" [ref=e1121] [cursor=pointer]:
+                    - /url: mailto:jon@goldsmith.is
+                    - img [ref=e1122]
+                  - generic "No website" [ref=e1124]:
+                    - img [ref=e1125]
+              - cell "Feb 10, 2026" [ref=e1127]
+              - cell [ref=e1128]:
+                - button "Edit entry" [ref=e1129]:
+                  - img [ref=e1130]
+            - row "Overview building an AI manufacturing platform. (SF) Akshat n/a Feb 10, 2026" [ref=e1132]:
+              - cell [ref=e1133]:
+                - checkbox [ref=e1134] [cursor=pointer]
+              - cell "Overview building an AI manufacturing platform. (SF)" [ref=e1135]:
+                - generic [ref=e1138]:
+                  - generic [ref=e1139]: Overview
+                  - generic [ref=e1140]: building an AI manufacturing platform. (SF)
+              - cell "Akshat" [ref=e1141]
+              - cell "n/a" [ref=e1142]:
+                - generic [ref=e1143]: n/a
+              - cell [ref=e1144]:
+                - generic [ref=e1145]:
+                  - link "LinkedIn" [ref=e1146] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/akshatagarwala93/
+                    - img [ref=e1147]
+                  - link "aagarwal@overview.ai" [ref=e1149] [cursor=pointer]:
+                    - /url: mailto:aagarwal@overview.ai
+                    - img [ref=e1150]
+                  - link "Website" [ref=e1152] [cursor=pointer]:
+                    - /url: https://www.overview.ai/
+                    - img [ref=e1153]
+              - cell "Feb 10, 2026" [ref=e1155]
+              - cell [ref=e1156]:
+                - button "Edit entry" [ref=e1157]:
+                  - img [ref=e1158]
+            - row "Tavus building an AI that can see, hear, act, and understand in real-time. (SF, NYC) Sagar n/a Feb 10, 2026" [ref=e1160]:
+              - cell [ref=e1161]:
+                - checkbox [ref=e1162] [cursor=pointer]
+              - cell "Tavus building an AI that can see, hear, act, and understand in real-time. (SF, NYC)" [ref=e1163]:
+                - generic [ref=e1166]:
+                  - generic [ref=e1167]: Tavus
+                  - generic [ref=e1168]: building an AI that can see, hear, act, and understand in real-time. (SF, NYC)
+              - cell "Sagar" [ref=e1169]
+              - cell "n/a" [ref=e1170]:
+                - generic [ref=e1171]: n/a
+              - cell [ref=e1172]:
+                - generic [ref=e1173]:
+                  - link "LinkedIn" [ref=e1174] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/sagarmalhi/
+                    - img [ref=e1175]
+                  - link "sagar@tavus.io" [ref=e1177] [cursor=pointer]:
+                    - /url: mailto:sagar@tavus.io
+                    - img [ref=e1178]
+                  - link "Website" [ref=e1180] [cursor=pointer]:
+                    - /url: https://www.tavus.io/
+                    - img [ref=e1181]
+              - cell "Feb 10, 2026" [ref=e1183]
+              - cell [ref=e1184]:
+                - button "Edit entry" [ref=e1185]:
+                  - img [ref=e1186]
+            - row "CNaught Building an ai-native platform for carbon management. (SF) Mark Representative Feb 3, 2026" [ref=e1188]:
+              - cell [ref=e1189]:
+                - checkbox [ref=e1190] [cursor=pointer]
+              - cell "CNaught Building an ai-native platform for carbon management. (SF)" [ref=e1191]:
+                - generic [ref=e1194]:
+                  - generic [ref=e1195]: CNaught
+                  - generic [ref=e1196]: Building an ai-native platform for carbon management. (SF)
+              - cell "Mark" [ref=e1197]
+              - cell "Representative" [ref=e1198]:
+                - generic [ref=e1199]: Representative
+              - cell [ref=e1200]:
+                - generic [ref=e1201]:
+                  - link "LinkedIn" [ref=e1202] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/mchen5/
+                    - img [ref=e1203]
+                  - generic "No email" [ref=e1205]:
+                    - img [ref=e1206]
+                  - link "Website" [ref=e1208] [cursor=pointer]:
+                    - /url: https://www.cnaught.com/
+                    - img [ref=e1209]
+              - cell "Feb 3, 2026" [ref=e1211]
+              - cell [ref=e1212]:
+                - button "Edit entry" [ref=e1213]:
+                  - img [ref=e1214]
+            - row "Nelo Building a modern alternative to credit cards. (NYC, Mexico City) Jose Representative Feb 3, 2026" [ref=e1216]:
+              - cell [ref=e1217]:
+                - checkbox [ref=e1218] [cursor=pointer]
+              - cell "Nelo Building a modern alternative to credit cards. (NYC, Mexico City)" [ref=e1219]:
+                - generic [ref=e1222]:
+                  - generic [ref=e1223]: Nelo
+                  - generic [ref=e1224]: Building a modern alternative to credit cards. (NYC, Mexico City)
+              - cell "Jose" [ref=e1225]
+              - cell "Representative" [ref=e1226]:
+                - generic [ref=e1227]: Representative
+              - cell [ref=e1228]:
+                - generic [ref=e1229]:
+                  - link "LinkedIn" [ref=e1230] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/jose-valdez-24a77513/
+                    - img [ref=e1231]
+                  - generic "No email" [ref=e1233]:
+                    - img [ref=e1234]
+                  - link "Website" [ref=e1236] [cursor=pointer]:
+                    - /url: https://www.nelo.mx/es
+                    - img [ref=e1237]
+              - cell "Feb 3, 2026" [ref=e1239]
+              - cell [ref=e1240]:
+                - button "Edit entry" [ref=e1241]:
+                  - img [ref=e1242]
+            - row "Attention Building a sales intelligence platform. (NYC) Harrison Representative Feb 3, 2026" [ref=e1244]:
+              - cell [ref=e1245]:
+                - checkbox [ref=e1246] [cursor=pointer]
+              - cell "Attention Building a sales intelligence platform. (NYC)" [ref=e1247]:
+                - generic [ref=e1250]:
+                  - generic [ref=e1251]: Attention
+                  - generic [ref=e1252]: Building a sales intelligence platform. (NYC)
+              - cell "Harrison" [ref=e1253]
+              - cell "Representative" [ref=e1254]:
+                - generic [ref=e1255]: Representative
+              - cell [ref=e1256]:
+                - generic [ref=e1257]:
+                  - link "LinkedIn" [ref=e1258] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/harrisonwtracy/
+                    - img [ref=e1259]
+                  - generic "No email" [ref=e1261]:
+                    - img [ref=e1262]
+                  - link "Website" [ref=e1264] [cursor=pointer]:
+                    - /url: https://www.attention.com/
+                    - img [ref=e1265]
+              - cell "Feb 3, 2026" [ref=e1267]
+              - cell [ref=e1268]:
+                - button "Edit entry" [ref=e1269]:
+                  - img [ref=e1270]
+            - row "YCombinator President and CEO of YCombinator. (SF) Garry Tan President and CEO Feb 3, 2026" [ref=e1272]:
+              - cell [ref=e1273]:
+                - checkbox [ref=e1274] [cursor=pointer]
+              - cell "YCombinator President and CEO of YCombinator. (SF)" [ref=e1275]:
+                - generic [ref=e1278]:
+                  - generic [ref=e1279]: YCombinator
+                  - generic [ref=e1280]: President and CEO of YCombinator. (SF)
+              - cell "Garry Tan" [ref=e1281]
+              - cell "President and CEO" [ref=e1282]:
+                - generic [ref=e1283]: President and CEO
+              - cell [ref=e1284]:
+                - generic [ref=e1285]:
+                  - link "LinkedIn" [ref=e1286] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/garrytan/
+                    - img [ref=e1287]
+                  - generic "No email" [ref=e1289]:
+                    - img [ref=e1290]
+                  - generic "No website" [ref=e1292]:
+                    - img [ref=e1293]
+              - cell "Feb 3, 2026" [ref=e1295]
+              - cell [ref=e1296]:
+                - button "Edit entry" [ref=e1297]:
+                  - img [ref=e1298]
+            - row "LI Lightning Rod Labs Building custom AI agents trained to predict your company’s targets. (Remote, NYC) Ben Founder Feb 3, 2026" [ref=e1300]:
+              - cell [ref=e1301]:
+                - checkbox [ref=e1302] [cursor=pointer]
+              - cell "LI Lightning Rod Labs Building custom AI agents trained to predict your company’s targets. (Remote, NYC)" [ref=e1303]:
+                - generic [ref=e1304]:
+                  - generic [ref=e1306]: LI
+                  - generic [ref=e1307]:
+                    - generic [ref=e1308]: Lightning Rod Labs
+                    - generic [ref=e1309]: Building custom AI agents trained to predict your company’s targets. (Remote, NYC)
+              - cell "Ben" [ref=e1310]
+              - cell "Founder" [ref=e1311]:
+                - generic [ref=e1312]: Founder
+              - cell [ref=e1313]:
+                - generic [ref=e1314]:
+                  - link "LinkedIn" [ref=e1315] [cursor=pointer]:
+                    - /url: https://substack.com/redirect/7f8f7213-7dee-4be5-999c-40a75a3d8c80?j=eyJ1IjoiMmNsbW5jIn0.SkEjOUYG6MtksbFiy1zsbs9FZM1zUkScI-Exa34Uh_k
+                    - img [ref=e1316]
+                  - generic "No email" [ref=e1318]:
+                    - img [ref=e1319]
+                  - generic "No website" [ref=e1321]:
+                    - img [ref=e1322]
+              - cell "Feb 3, 2026" [ref=e1324]
+              - cell [ref=e1325]:
+                - button "Edit entry" [ref=e1326]:
+                  - img [ref=e1327]
+            - row "Audacious Ventures Hiring a talent/community person. (n/a) Samantha Representative Feb 3, 2026" [ref=e1329]:
+              - cell [ref=e1330]:
+                - checkbox [ref=e1331] [cursor=pointer]
+              - cell "Audacious Ventures Hiring a talent/community person. (n/a)" [ref=e1332]:
+                - generic [ref=e1335]:
+                  - generic [ref=e1336]: Audacious Ventures
+                  - generic [ref=e1337]: Hiring a talent/community person. (n/a)
+              - cell "Samantha" [ref=e1338]
+              - cell "Representative" [ref=e1339]:
+                - generic [ref=e1340]: Representative
+              - cell [ref=e1341]:
+                - generic [ref=e1342]:
+                  - link "LinkedIn" [ref=e1343] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/samantha-price-5b453532/
+                    - img [ref=e1344]
+                  - link "samantha@audacious.co" [ref=e1346] [cursor=pointer]:
+                    - /url: mailto:samantha@audacious.co
+                    - img [ref=e1347]
+                  - link "Website" [ref=e1349] [cursor=pointer]:
+                    - /url: https://www.audacious.co/
+                    - img [ref=e1350]
+              - cell "Feb 3, 2026" [ref=e1352]
+              - cell [ref=e1353]:
+                - button "Edit entry" [ref=e1354]:
+                  - img [ref=e1355]
+            - row "Uber Hiring for Uber’s gifting team. (SF) Wen Representative Feb 3, 2026" [ref=e1357]:
+              - cell [ref=e1358]:
+                - checkbox [ref=e1359] [cursor=pointer]
+              - cell "Uber Hiring for Uber’s gifting team. (SF)" [ref=e1360]:
+                - generic [ref=e1363]:
+                  - generic [ref=e1364]: Uber
+                  - generic [ref=e1365]: Hiring for Uber’s gifting team. (SF)
+              - cell "Wen" [ref=e1366]
+              - cell "Representative" [ref=e1367]:
+                - generic [ref=e1368]: Representative
+              - cell [ref=e1369]:
+                - generic [ref=e1370]:
+                  - link "LinkedIn" [ref=e1371] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/wen-huang-356b162a/
+                    - img [ref=e1372]
+                  - generic "No email" [ref=e1374]:
+                    - img [ref=e1375]
+                  - generic "No website" [ref=e1377]:
+                    - img [ref=e1378]
+              - cell "Feb 3, 2026" [ref=e1380]
+              - cell [ref=e1381]:
+                - button "Edit entry" [ref=e1382]:
+                  - img [ref=e1383]
+            - row "Mercury Building a modern banking platform. (SF, NYC, Remote) Ryan Representative Feb 3, 2026" [ref=e1385]:
+              - cell [ref=e1386]:
+                - checkbox [ref=e1387] [cursor=pointer]
+              - cell "Mercury Building a modern banking platform. (SF, NYC, Remote)" [ref=e1388]:
+                - generic [ref=e1391]:
+                  - generic [ref=e1392]: Mercury
+                  - generic [ref=e1393]: Building a modern banking platform. (SF, NYC, Remote)
+              - cell "Ryan" [ref=e1394]
+              - cell "Representative" [ref=e1395]:
+                - generic [ref=e1396]: Representative
+              - cell [ref=e1397]:
+                - generic [ref=e1398]:
+                  - link "LinkedIn" [ref=e1399] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/rywiggs/
+                    - img [ref=e1400]
+                  - generic "No email" [ref=e1402]:
+                    - img [ref=e1403]
+                  - link "Website" [ref=e1405] [cursor=pointer]:
+                    - /url: https://mercury.com/
+                    - img [ref=e1406]
+              - cell "Feb 3, 2026" [ref=e1408]
+              - cell [ref=e1409]:
+                - button "Edit entry" [ref=e1410]:
+                  - img [ref=e1411]
+            - row "n/a Exploring ventures at the intersection of AI platforms, marketplaces, and infrastructure. (n/a) Guillermo Former Founder Feb 3, 2026" [ref=e1413]:
+              - cell [ref=e1414]:
+                - checkbox [ref=e1415] [cursor=pointer]
+              - cell "n/a Exploring ventures at the intersection of AI platforms, marketplaces, and infrastructure. (n/a)" [ref=e1416]:
+                - generic [ref=e1419]:
+                  - generic [ref=e1420]: n/a
+                  - generic [ref=e1421]: Exploring ventures at the intersection of AI platforms, marketplaces, and infrastructure. (n/a)
+              - cell "Guillermo" [ref=e1422]
+              - cell "Former Founder" [ref=e1423]:
+                - generic [ref=e1424]: Former Founder
+              - cell [ref=e1425]:
+                - generic [ref=e1426]:
+                  - link "LinkedIn" [ref=e1427] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/guillermocampoamor/
+                    - img [ref=e1428]
+                  - link "guillermocampoamor@gmail.com" [ref=e1430] [cursor=pointer]:
+                    - /url: mailto:guillermocampoamor@gmail.com
+                    - img [ref=e1431]
+                  - generic "No website" [ref=e1433]:
+                    - img [ref=e1434]
+              - cell "Feb 3, 2026" [ref=e1436]
+              - cell [ref=e1437]:
+                - button "Edit entry" [ref=e1438]:
+                  - img [ref=e1439]
+            - row "Canaan Partners Growing technology investment team. (SF, NYC) n/a Representative Feb 3, 2026" [ref=e1441]:
+              - cell [ref=e1442]:
+                - checkbox [ref=e1443] [cursor=pointer]
+              - cell "Canaan Partners Growing technology investment team. (SF, NYC)" [ref=e1444]:
+                - generic [ref=e1447]:
+                  - generic [ref=e1448]: Canaan Partners
+                  - generic [ref=e1449]: Growing technology investment team. (SF, NYC)
+              - cell "n/a" [ref=e1450]
+              - cell "Representative" [ref=e1451]:
+                - generic [ref=e1452]: Representative
+              - cell [ref=e1453]:
+                - generic [ref=e1454]:
+                  - link "LinkedIn" [ref=e1455] [cursor=pointer]:
+                    - /url: n/a
+                    - img [ref=e1456]
+                  - generic "No email" [ref=e1458]:
+                    - img [ref=e1459]
+                  - link "Website" [ref=e1461] [cursor=pointer]:
+                    - /url: http://www.canaan.com/
+                    - img [ref=e1462]
+              - cell "Feb 3, 2026" [ref=e1464]
+              - cell [ref=e1465]:
+                - button "Edit entry" [ref=e1466]:
+                  - img [ref=e1467]
+            - row "Span Building an ai-native developer intelligence platform. (SF) Dylan Representative Feb 3, 2026" [ref=e1469]:
+              - cell [ref=e1470]:
+                - checkbox [ref=e1471] [cursor=pointer]
+              - cell "Span Building an ai-native developer intelligence platform. (SF)" [ref=e1472]:
+                - generic [ref=e1475]:
+                  - generic [ref=e1476]: Span
+                  - generic [ref=e1477]: Building an ai-native developer intelligence platform. (SF)
+              - cell "Dylan" [ref=e1478]
+              - cell "Representative" [ref=e1479]:
+                - generic [ref=e1480]: Representative
+              - cell [ref=e1481]:
+                - generic [ref=e1482]:
+                  - link "LinkedIn" [ref=e1483] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/dylan-burritt/
+                    - img [ref=e1484]
+                  - generic "No email" [ref=e1486]:
+                    - img [ref=e1487]
+                  - link "Website" [ref=e1489] [cursor=pointer]:
+                    - /url: https://www.span.app/
+                    - img [ref=e1490]
+              - cell "Feb 3, 2026" [ref=e1492]
+              - cell [ref=e1493]:
+                - button "Edit entry" [ref=e1494]:
+                  - img [ref=e1495]
+            - row "Chatbase Building an AI support platform. (NYC) Yasser Founder Feb 3, 2026" [ref=e1497]:
+              - cell [ref=e1498]:
+                - checkbox [ref=e1499] [cursor=pointer]
+              - cell "Chatbase Building an AI support platform. (NYC)" [ref=e1500]:
+                - generic [ref=e1503]:
+                  - generic [ref=e1504]: Chatbase
+                  - generic [ref=e1505]: Building an AI support platform. (NYC)
+              - cell "Yasser" [ref=e1506]
+              - cell "Founder" [ref=e1507]:
+                - generic [ref=e1508]: Founder
+              - cell [ref=e1509]:
+                - generic [ref=e1510]:
+                  - link "LinkedIn" [ref=e1511] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/yasserelsaid/
+                    - img [ref=e1512]
+                  - generic "No email" [ref=e1514]:
+                    - img [ref=e1515]
+                  - link "Website" [ref=e1517] [cursor=pointer]:
+                    - /url: https://www.chatbase.co/
+                    - img [ref=e1518]
+              - cell "Feb 3, 2026" [ref=e1520]
+              - cell [ref=e1521]:
+                - button "Edit entry" [ref=e1522]:
+                  - img [ref=e1523]
+        - generic [ref=e1525]:
+          - button "Previous" [disabled] [ref=e1526]:
+            - img [ref=e1527]
+            - text: Previous
+          - generic [ref=e1529]:
+            - generic [ref=e1530]: Page
+            - button "1" [ref=e1531]
+            - button "2" [ref=e1532]
+            - button "3" [ref=e1533]
+            - button "4" [ref=e1534]
+            - button "5" [ref=e1535]
+            - button "6" [ref=e1536]
+            - button "7" [ref=e1537]
+            - generic [ref=e1538]: of 20
+          - button "Next" [ref=e1539]:
+            - text: Next
+            - img [ref=e1540]
+  - button "Open Next.js Dev Tools" [ref=e8] [cursor=pointer]:
+    - img [ref=e9]
+  - alert [ref=e12]

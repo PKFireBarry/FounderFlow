@@ -61,16 +61,16 @@ export default function ConfirmationModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div className="modal-backdrop flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0" 
+      <div
+        className="absolute inset-0"
         onClick={onClose}
         aria-label="Close modal"
       />
-      
+
       {/* Modal */}
-      <div className="relative panel rounded-xl max-w-md w-full p-6 shadow-xl">
+      <div className="relative modal-content panel-strong p-premium-lg max-w-md w-full">
         {/* Icon */}
         {icon || defaultIcon}
         
@@ -85,16 +85,16 @@ export default function ConfirmationModal({
         </div>
         
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex gap-premium-sm">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 text-sm font-medium text-[#ccceda] bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 hover:border-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/20"
+            className="btn btn-ghost flex-1"
           >
             {cancelText}
           </button>
           <button
             onClick={handleConfirm}
-            className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/20 ${confirmButtonClass}`}
+            className="btn btn-danger flex-1"
           >
             {confirmText}
           </button>

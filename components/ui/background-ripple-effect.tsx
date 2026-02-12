@@ -146,10 +146,10 @@ export const BackgroundRippleEffect = ({
         return elapsed < maxDuration;
       });
 
-      // Throttle to 24fps instead of 60fps for performance
+      // Throttle to 20fps instead of 60fps for better performance
       setTimeout(() => {
         animationFrameRef.current = requestAnimationFrame(render);
-      }, 1000 / 24); // 24fps
+      }, 1000 / 20); // 20fps for optimal performance/smoothness balance
     };
 
     const handleResize = () => {
@@ -183,7 +183,14 @@ export const BackgroundRippleEffect = ({
     };
   }, [actualRows, actualCols, cellSize, hoverCell]);
 
+  // Throttle mouse move events for better performance
+  const lastMouseMoveRef = useRef<number>(0);
   const handleMouseMove = (e: React.MouseEvent) => {
+    const now = Date.now();
+    // Throttle to max 30 updates per second
+    if (now - lastMouseMoveRef.current < 33) return;
+    lastMouseMoveRef.current = now;
+
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
 

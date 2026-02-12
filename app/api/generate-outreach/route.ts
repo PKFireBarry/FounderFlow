@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/firebase/server';
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { checkAIGenerationLimit } from '@/lib/ratelimit-firebase';
+import { validateScrapingUrl } from '@/lib/url-validator';
+import { createErrorResponse, ApiErrors } from '@/lib/api-error-handler';
 
 interface FounderData {
   name?: string;
@@ -45,21 +48,31 @@ async function enrichPersonData(jobData: FounderData): Promise<FounderData> {
   console.log('Starting data enrichment...');
   const enrichedData = { ...jobData };
 
-  // Helper function to scrape a URL with Jina.ai
+  // Helper function to scrape a URL with Jina.ai (with SSRF protection)
   const scrapeUrl = async (url: string, maxChars: number): Promise<string | undefined> => {
+    // SSRF Protection: Validate URL before scraping
+    if (!validateScrapingUrl(url)) {
+      console.warn(`[SECURITY] Blocked scraping attempt for invalid/unsafe URL: ${url}`);
+      return undefined;
+    }
+
     try {
       const response = await fetch(`https://r.jina.ai/${url}`, {
         headers: {
           'Accept': 'text/plain'
-        }
+        },
+        // Add timeout to prevent hanging requests
+        signal: AbortSignal.timeout(10000) // 10 second timeout
       });
       if (response.ok) {
         const content = await response.text();
-        console.log(`Scraped ${url}, length: ${content.length}`);
+        console.log(`✅ Scraped ${url}, length: ${content.length}`);
         return content.substring(0, maxChars);
+      } else {
+        console.log(`⚠️ Scraping ${url} returned status: ${response.status}`);
       }
     } catch (error) {
-      console.log(`Scraping ${url} failed:`, error);
+      console.log(`❌ Scraping ${url} failed:`, error);
     }
     return undefined;
   };
@@ -324,25 +337,33 @@ function extractMessage(responseData: unknown): string | null {
 export async function POST(request: NextRequest) {
   console.log('Generate outreach API called');
 
+  // Capture userId at the top for error logging
+  let userId: string | null = null;
+
   try {
     const { jobData, outreachType, messageType, contactId, saveToDatabase = true } = await request.json();
     console.log('Request data processed');
 
-    // Enrich the person's data with web scraping (Jina.ai)
-    const enrichedJobData = await enrichPersonData(jobData);
-
     // Get user from Clerk auth
     console.log('Getting user from Clerk auth...');
-    const { userId } = await auth();
+    const authResult = await auth();
+    userId = authResult.userId;
     console.log('User ID from auth:', userId ? 'Found' : 'Not found');
 
     if (!userId) {
       console.log('ERROR: No user ID found - returning 401');
-      return NextResponse.json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      );
+      return ApiErrors.unauthorized();
     }
+
+    // Rate Limiting: AI generation is expensive (costs money via Gemini/Jina APIs)
+    const rateLimitResult = await checkAIGenerationLimit(userId);
+    if (!rateLimitResult.allowed) {
+      console.log(`⚠️ Rate limit exceeded for user: ${userId}`);
+      return rateLimitResult.response!;
+    }
+
+    // Enrich the person's data with web scraping (Jina.ai) - includes SSRF protection
+    const enrichedJobData = await enrichPersonData(jobData);
 
     // Get user profile from Firebase
     console.log('Fetching user profile from Firebase...');
@@ -492,14 +513,11 @@ export async function POST(request: NextRequest) {
       throw n8nError;
     }
   } catch (error) {
-    console.error('Error generating outreach:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    return NextResponse.json(
-      {
-        error: 'Failed to generate outreach message',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    return createErrorResponse(error, {
+      endpoint: '/api/generate-outreach',
+      userId: userId || undefined,
+      action: 'generate_outreach_message',
+      defaultMessage: 'Failed to generate outreach message. Please try again.'
+    });
   }
 }
