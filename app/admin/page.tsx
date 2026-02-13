@@ -91,6 +91,23 @@ export default function AdminDashboard() {
       features: ['Edit entries inline & add new ones', 'Export filtered data as CSV', 'Detect duplicates & junk data', 'Sort, search, and bulk delete'],
     },
     {
+      href: '/admin/trials',
+      title: 'Trial Links',
+      desc: 'Track and manage trial access tokens',
+      color: 'pink',
+      iconBg: 'bg-pink-500/15',
+      iconColor: 'text-pink-400',
+      hoverColor: 'group-hover:text-pink-300',
+      borderHover: 'hover:border-pink-500/40',
+      glowHover: 'hover:shadow-pink-500/10',
+      icon: (
+        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+        </svg>
+      ),
+      features: ['View all generated tokens', 'Check redemption status', 'Monitor expiration dates', 'Track usage sources'],
+    },
+    {
       href: '/admin/linkedin-posts',
       title: 'LinkedIn Posts',
       desc: 'Generate LinkedIn posts from startup data',
@@ -267,8 +284,8 @@ export default function AdminDashboard() {
 
               {grantProForm.message && (
                 <div className={`p-3 rounded-lg text-sm ${grantProForm.message.includes('✅')
-                    ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                    : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                  : 'bg-red-500/20 text-red-300 border border-red-500/30'
                   }`}>
                   {grantProForm.message}
                 </div>

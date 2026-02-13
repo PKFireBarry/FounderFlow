@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { SignInButton, useUser } from '@clerk/nextjs';
@@ -11,6 +11,7 @@ import { collection, getDocs, query, orderBy, limit, getCountFromServer } from '
 import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect';
 import Benefits from './components/landing/Benefits';
 import FAQ from './components/landing/FAQ';
+import { isValidActionableUrl } from '@/lib/url-validation';
 
 interface Founder {
   id: string;
@@ -44,6 +45,10 @@ export default function Home() {
   const [showBackground, setShowBackground] = useState(false);
   const [isPageReady, setIsPageReady] = useState(false);
   const counterAnimated = useRef(false);
+
+  // Animation state for hero stack
+  const [stackIndex, setStackIndex] = useState(0);
+  const [isStackPaused, setIsStackPaused] = useState(false);
 
   // Helper functions
   const getDomainFromUrl = (input?: string): string | null => {
@@ -93,7 +98,7 @@ export default function Home() {
   const isNAValue = (value: string | undefined | null): boolean => {
     if (!value || typeof value !== 'string') return true;
     const normalized = value.trim().toLowerCase();
-    return normalized === '' || normalized === 'na' || normalized === 'n/a' || normalized === 'unknown' || normalized === 'unknown company';
+    return normalized === '' || normalized === 'na' || normalized === 'n/a' || normalized === 'unknown' || normalized === 'unknown company' || normalized === 'null' || normalized === 'undefined' || normalized === 'none';
   };
 
   const getCompanyDisplayName = (company: string | undefined | null): string => {
@@ -227,6 +232,17 @@ export default function Home() {
     return () => clearTimeout(id);
   }, []);
 
+  // Auto-rotate hero stack
+  useEffect(() => {
+    if (!latestFounders.length || isStackPaused) return;
+
+    const interval = setInterval(() => {
+      setStackIndex((prev) => (prev + 1) % latestFounders.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [latestFounders.length, isStackPaused]);
+
   // Fetch carousel founders
   useEffect(() => {
     const fetchCarouselFounders = async () => {
@@ -286,9 +302,7 @@ export default function Home() {
   const LINKEDIN_STAGES = ['sent', 'responded', 'connected', 'ghosted'];
   const STAGE_DISPLAY_NAMES: Record<string, string> = { sent: 'Sent', responded: 'Responded', in_talks: 'In Talks', interviewing: 'Interviewing', connected: 'Connected', ghosted: 'Ghosted' };
 
-  const generateInitials = useCallback((name: string): string => {
-    return name.split(' ').map(w => w.charAt(0)).join('').toUpperCase().slice(0, 2);
-  }, []);
+
 
   const handleCardClick = (item: any) => { setSelectedMessage(item); setShowModal(true); };
 
@@ -392,7 +406,7 @@ export default function Home() {
 
                 {/* Subheadline */}
                 <p className="mt-6 text-lg text-neutral-400 max-w-xl mx-auto lg:mx-0" style={{ lineHeight: '1.7' }}>
-                  Access verified contact info, generate AI-powered outreach messages, and track relationships with early-stage founders—all before they blow up.
+                  Access verified contact info, generate AI-powered outreach messages, and track relationships with early-stage founders all before they blow up.
                 </p>
 
                 {/* CTA */}
@@ -400,7 +414,7 @@ export default function Home() {
                   {!isSignedIn ? (
                     <SignInButton mode="modal">
                       <button className="btn btn-primary btn-lg px-10 py-4 text-base font-bold rounded-full">
-                        Start Connecting Free
+                        Start For Free
                         <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
@@ -424,11 +438,11 @@ export default function Home() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <svg viewBox="0 0 24 24" fill="var(--wisteria)" className="h-4 w-4"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span>No credit card</span>
+                    <span>No credit card Required</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <svg viewBox="0 0 24 24" fill="var(--wisteria)" className="h-4 w-4"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                    <span>1,200+ builders</span>
+                    <span>1000+ founders</span>
                   </div>
                 </div>
               </div>
@@ -444,26 +458,56 @@ export default function Home() {
                     <div className="spinner-premium"><div className="inner"></div></div>
                   </div>
                 ) : latestFounders.length > 0 ? (
-                  <div className="hero-card-stack relative w-full max-w-sm h-[340px]">
+                  <div
+                    className="hero-card-stack relative w-full max-w-sm h-[340px]"
+                    onMouseEnter={() => setIsStackPaused(true)}
+                    onMouseLeave={() => setIsStackPaused(false)}
+                  >
                     {latestFounders.map((founder, index) => {
                       const avatarInfo = getAvatarInfo(founder.name, founder.company, founder.company_url, founder.url);
+
+                      // Calculate position based on current stack index
+                      // We want 3 positions regardless of array length to match the offsets
+                      // But effectively we map the visual slot to the data index
+                      const positionIndex = (index - stackIndex + latestFounders.length) % latestFounders.length;
+
                       const offsets = [
-                        { x: -20, y: 20, rotate: -4 },
-                        { x: 0, y: 0, rotate: 0 },
-                        { x: 20, y: 20, rotate: 4 },
+                        { x: -30, y: 20, rotate: -4 }, // Position 0: Left back
+                        { x: 0, y: 0, rotate: 0 },     // Position 1: Center front
+                        { x: 30, y: 20, rotate: 4 },   // Position 2: Right back
                       ];
-                      const { x, y, rotate } = offsets[index] || offsets[1];
+
+                      // Safety check if we have fewer than 3 items
+                      const visualPosition = positionIndex % offsets.length;
+                      const { x, y, rotate } = offsets[visualPosition] || offsets[1];
+
+                      // Determine z-index and opacity based on whether it's the center card (position 1)
+                      const isCenter = visualPosition === 1;
 
                       return (
                         <div
                           key={founder.id}
-                          className="stack-card absolute inset-0 outline bg-[#0e0f1a] rounded-2xl p-5 cursor-pointer"
+                          className="stack-card absolute inset-0 outline bg-[#0e0f1a] rounded-2xl p-5 cursor-pointer hover:scale-105 transition-all ease-in-out"
                           style={{
                             transform: `translateX(${x}px) translateY(${y}px) rotate(${rotate}deg)`,
-                            zIndex: index === 1 ? 3 : 1,
-                            opacity: index === 1 ? 1 : 0.7,
+                            zIndex: isCenter ? 30 : 10,
+                            opacity: isCenter ? 1 : 0.7,
                           }}
-                          onClick={() => { setSelectedFounder(founder); setShowFounderModal(true); }}
+                          onClick={() => {
+                            if (!isCenter) {
+                              // If clicking a side card, rotate to it
+                              const distance = (1 - visualPosition);
+                              // This is tricky because we update stackIndex, which shifts everyone.
+                              // If visualPosition is 0 (left), we want it to be 1. We need to shift everything by +1?
+                              // position = (index - stackIndex)
+                              // 1 = (index - newStackIndex)
+                              // newStackIndex = index - 1
+                              setStackIndex((index - 1 + latestFounders.length) % latestFounders.length);
+                            } else {
+                              setSelectedFounder(founder);
+                              setShowFounderModal(true);
+                            }
+                          }}
                         >
                           {/* Card header */}
                           <div className="flex items-start gap-3 mb-4">
@@ -483,21 +527,67 @@ export default function Home() {
                             </div>
                           </div>
 
-                          {/* Contact */}
+                          {/* Contact & Role */}
                           <div className="mb-3">
-                            <span className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">Contact</span>
-                            <div className="text-sm font-medium text-white truncate mt-0.5">
-                              {(!founder.name || founder.name === 'Unknown' || founder.name === 'N/A') ? 'Unknown' : founder.name}
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">Contact</span>
+                                <div className="text-sm font-medium text-white truncate mt-0.5">
+                                  {(!founder.name || isNAValue(founder.name)) ? 'Unknown' : founder.name}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <span className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider mb-0.5">Role</span>
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ border: '1px solid rgba(180,151,214,.3)', background: 'rgba(180,151,214,.12)', color: 'var(--wisteria)' }}>
+                                  {founder.role && !isNAValue(founder.role) ? founder.role : 'Founder'}
+                                </span>
+                              </div>
                             </div>
                           </div>
 
-                          {/* Role badge */}
-                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ border: '1px solid rgba(180,151,214,.3)', background: 'rgba(180,151,214,.12)', color: 'var(--wisteria)' }}>
-                            {founder.role && !['N/A', 'NA', 'n/a', 'na', 'Unknown', 'unknown'].includes(founder.role) ? founder.role : 'Founder'}
-                          </span>
+                          {/* Looking For Section */}
+                          {founder.looking_for && !isNAValue(founder.looking_for) && (
+                            <div className="mb-3">
+                              <span className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">Looking For</span>
+                              <div className="text-xs text-neutral-300 mt-1 line-clamp-2 leading-relaxed">
+                                {founder.looking_for}
+                              </div>
+                            </div>
+                          )}
 
-                          {/* Published */}
-                          <div className="text-[10px] text-neutral-500 mt-3">{formatPublishedDate(founder.published)}</div>
+                          {/* Footer with Icons & Date */}
+                          <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
+                            <div className="flex items-center gap-3">
+                              {/* LinkedIn */}
+                              {founder.linkedinurl && !isNAValue(founder.linkedinurl) && isValidActionableUrl(founder.linkedinurl) && (
+                                <div className="text-neutral-500 hover:text-[#0077b5] transition-colors" title="LinkedIn Profile Available">
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM0 8h5v16H0zM8 8h4.8v2.2h.07c.67-1.2 2.3-2.46 4.74-2.46 5.07 0 6 3.34 6 7.68V24h-5V16.4c0-1.81-.03-4.14-2.52-4.14-2.52 0-2.91 1.97-2.91 4v7.74H8z" /></svg>
+                                </div>
+                              )}
+
+                              {/* Email */}
+                              {founder.email && !isNAValue(founder.email) && (
+                                <div className="text-neutral-500 hover:text-emerald-400 transition-colors" title="Email Available">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                </div>
+                              )}
+
+                              {/* Website */}
+                              {((founder.company_url && !isNAValue(founder.company_url) && isValidActionableUrl(founder.company_url)) || (founder.url && !isNAValue(founder.url) && isValidActionableUrl(founder.url))) && (
+                                <div className="text-neutral-500 hover:text-neutral-300 transition-colors" title="Company Website Available">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" /></svg>
+                                </div>
+                              )}
+
+                              {/* Apply */}
+                              {founder.apply_url && !isNAValue(founder.apply_url) && isValidActionableUrl(founder.apply_url) && (
+                                <div className="text-neutral-500 hover:text-[var(--wisteria)] transition-colors" title="Direct Apply Link Available">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-neutral-500">{formatPublishedDate(founder.published)}</div>
+                          </div>
                         </div>
                       );
                     })}
@@ -535,10 +625,20 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-xs text-white font-medium">{(!founder.name || founder.name === 'Unknown' || founder.name === 'N/A') ? 'Unknown' : founder.name}</div>
-                        <span className="mt-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ border: '1px solid rgba(180,151,214,.3)', background: 'rgba(180,151,214,.12)', color: 'var(--wisteria)' }}>
-                          {founder.role && !['N/A', 'NA', 'n/a', 'na', 'Unknown', 'unknown'].includes(founder.role) ? founder.role : 'Founder'}
-                        </span>
+                        <div className="text-xs text-white font-medium mb-2">{(!founder.name || founder.name === 'Unknown' || founder.name === 'N/A') ? 'Unknown' : founder.name}</div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ border: '1px solid rgba(180,151,214,.3)', background: 'rgba(180,151,214,.12)', color: 'var(--wisteria)' }}>
+                            {founder.role && !['N/A', 'NA', 'n/a', 'na', 'Unknown', 'unknown'].includes(founder.role) ? founder.role : 'Founder'}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {/* Small indicators for available info */}
+                            {founder.linkedinurl && isValidActionableUrl(founder.linkedinurl) && !isNAValue(founder.linkedinurl) && <div className="w-1.5 h-1.5 rounded-full bg-[#0077b5]"></div>}
+                            {founder.email && !isNAValue(founder.email) && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                            {((founder.company_url && !isNAValue(founder.company_url) && isValidActionableUrl(founder.company_url)) || (founder.url && !isNAValue(founder.url) && isValidActionableUrl(founder.url))) && <div className="w-1.5 h-1.5 rounded-full bg-neutral-400"></div>}
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
