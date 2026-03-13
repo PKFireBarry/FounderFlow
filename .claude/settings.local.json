@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npm install posthog-js 2>&1 | tail -5)"
+    ]
+  }
+}

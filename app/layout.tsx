@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
 import StructuredData from './components/StructuredData';
 import NotificationProvider from './components/NotificationProvider';
+import PostHogProvider from './components/PostHogProvider';
+import PostHogPageView from './components/PostHogPageView';
 import "./globals.css";
 import "./globals-founder-flow.css";
 
@@ -71,18 +73,21 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark">
-        <head>
-          <StructuredData />
-        </head>
-        <body
-          className={`${inter.variable} antialiased min-h-screen`}
-        >
-          <NotificationProvider>
-            {children}
-          </NotificationProvider>
-        </body>
-      </html>
+      <PostHogProvider>
+        <html lang="en" className="dark">
+          <head>
+            <StructuredData />
+          </head>
+          <body
+            className={`${inter.variable} antialiased min-h-screen`}
+          >
+            <PostHogPageView />
+            <NotificationProvider>
+              {children}
+            </NotificationProvider>
+          </body>
+        </html>
+      </PostHogProvider>
     </ClerkProvider>
   );
 }
