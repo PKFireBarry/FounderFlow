@@ -13,6 +13,7 @@ import {
   isNA,
   chooseLinks,
   tagsFrom,
+  extractRoleKeywords,
   formatPublished,
   getEntryDateMs,
   toFounderData,
@@ -174,12 +175,14 @@ export default function EntryPage() {
   const tagIndex = useMemo<[string, number][]>(() => {
     const counts = new Map<string, number>();
     for (const it of items) {
-      const tags = tagsFrom(it.looking_for, 20);
-      for (const tag of tags) {
-        counts.set(tag, (counts.get(tag) || 0) + 1);
+      const keywords = extractRoleKeywords(it.looking_for);
+      for (const kw of keywords) {
+        counts.set(kw, (counts.get(kw) || 0) + 1);
       }
     }
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 50);
   }, [items]);
 
   const toggleTag = useCallback((tag: string) => {
@@ -231,8 +234,8 @@ export default function EntryPage() {
   // Tag filter (OR logic)
   if (selectedTags.size > 0) {
     filtered = filtered.filter((it) => {
-      const tags = tagsFrom(it.looking_for, 20);
-      return tags.some((t) => selectedTags.has(t));
+      const keywords = extractRoleKeywords(it.looking_for);
+      return keywords.some((kw) => selectedTags.has(kw));
     });
   }
 
@@ -468,11 +471,10 @@ export default function EntryPage() {
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
-                      currentPage === 1
+                    className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${currentPage === 1
                         ? "opacity-50 cursor-not-allowed text-[#ccceda]"
                         : "text-[#ccceda] hover:text-white hover:bg-white/5"
-                    }`}
+                      }`}
                   >
                     Prev
                   </button>
@@ -486,11 +488,10 @@ export default function EntryPage() {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
-                          currentPage === pageNum
+                        className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${currentPage === pageNum
                             ? "bg-[var(--amber)] text-black"
                             : "text-[#ccceda] hover:text-white hover:bg-white/5"
-                        }`}
+                          }`}
                       >
                         {pageNum}
                       </button>
@@ -499,11 +500,10 @@ export default function EntryPage() {
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
-                      currentPage === totalPages
+                    className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${currentPage === totalPages
                         ? "opacity-50 cursor-not-allowed text-[#ccceda]"
                         : "text-[#ccceda] hover:text-white hover:bg-white/5"
-                    }`}
+                      }`}
                   >
                     Next
                   </button>
