@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npm run lint 2>&1 | head -80)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npx next lint 2>&1 | head -100)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npx eslint app/opportunities/page.tsx app/components/ContactInfoGate.tsx app/components/Navigation.tsx app/components/FounderDetailModal.tsx app/page.tsx app/layout.tsx 2>&1 | head -80)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npx eslint app/opportunities/page.tsx app/components/ContactInfoGate.tsx app/components/Navigation.tsx app/components/FounderDetailModal.tsx app/layout.tsx 2>&1 | grep -E \"error|Error\" | head -30)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && git checkout ui/premium-polish -- app/design-system.css app/components/landing/Benefits.tsx app/components/landing/FAQ.tsx app/globals-founder-flow.css && echo \"Checkout successful\")",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npm run lint 2>&1 | tail -40)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npx next lint 2>&1 | tail -50)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && node_modules/.bin/next lint 2>&1 | tail -50)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npx eslint app/components/FounderDetailModal.tsx app/layout.tsx app/components/Navigation.tsx app/page.tsx --max-warnings 0 2>&1)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && git stash -- app/page.tsx app/components/FounderDetailModal.tsx && npx eslint app/components/FounderDetailModal.tsx app/page.tsx 2>&1 | grep \"error\\\\|warning\\\\|✖\" | head -20; git stash pop)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npx eslint app/components/FounderDetailModal.tsx 2>&1 | grep \"error\\\\|✖\")",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npm run build 2>&1 | tail -40)",
+      "Bash(cd ~/founderflow-demo && npm install 2>&1 | tail -5)",
+      "Bash(cd ~/founderflow-demo && npx remotion studio --help 2>&1 | head -5 && echo \"remotion installed ok\")",
+      "Bash(cd ~/founderflow-demo && npx tsc --noEmit 2>&1)",
+      "Bash(cd /home/x/founderflow-demo && npm run build 2>&1 | head -80)",
+      "Bash(pkill -f \"remotion render\" 2>/dev/null; echo \"stopped\")",
+      "Bash(test -d /home/x/founderflow-demo/public && ls -la /home/x/founderflow-demo/public || echo \"No public folder found\")",
+      "Bash(test -d /home/x/founderflow-demo/assets && ls -la /home/x/founderflow-demo/assets || echo \"No assets folder found\")",
+      "Bash(find /home/x/founderflow-demo -maxdepth 1 -type f -name \"*.ts\" -o -name \"*.js\" -o -name \"*.json\" | grep -v node_modules | xargs ls -la 2>/dev/null)",
+      "Bash(grep -r \"public\\\\|static\" /home/x/founderflow-demo/*.json 2>/dev/null)",
+      "Bash(cd /home/x/founderflow-demo && npx tsc --noEmit 2>&1)",
+      "Bash(npx tsc --noEmit 2>&1)",
+      "Bash(cd /home/x/founderflow-demo && npm run render 2>&1)"
+    ]
+  }
+}

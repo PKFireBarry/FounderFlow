@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from 'react';
+import { useUser, SignInButton } from '@clerk/nextjs';
 import ContactInfoGate from './ContactInfoGate';
+import PaywallModal from './PaywallModal';
+import { useSubscription } from '../hooks/useSubscription';
 import { isValidActionableUrl } from '../../lib/url-validation';
 
 interface FounderData {
@@ -93,6 +96,9 @@ export default function FounderDetailModal({ founderData, onClose, onSave, isSav
     return { faviconUrl, initials, displayName: name || company || 'Unknown' };
   };
 
+  const { isSignedIn } = useUser();
+  const { isPaid } = useSubscription();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const avatarInfo = getAvatarInfo(founderData.name, founderData.company, founderData.companyUrl, founderData.rolesUrl);
   const emailInfo = getEmailInfo(founderData.emailHref);
 
@@ -206,18 +212,20 @@ export default function FounderDetailModal({ founderData, onClose, onSave, isSav
                     </div>
                   </div>
 
-                  <button
-                    onClick={handleSave}
-                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold w-full sm:w-auto mt-2 sm:mt-0" style={{
-                      background: isSaved ? 'rgba(180,151,214,.3)' : 'linear-gradient(90deg,var(--wisteria),var(--lavender-web))',
-                      color: isSaved ? 'var(--wisteria)' : '#0f1018'
-                    }}
-                  >
-                    <svg className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                    {isSaved ? "Saved" : "Save to Dashboard"}
-                  </button>
+                  {isSignedIn && (
+                    <button
+                      onClick={handleSave}
+                      className="focus-ring inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold w-full sm:w-auto mt-2 sm:mt-0" style={{
+                        background: isSaved ? 'rgba(180,151,214,.3)' : 'linear-gradient(90deg,var(--wisteria),var(--lavender-web))',
+                        color: isSaved ? 'var(--wisteria)' : '#0f1018'
+                      }}
+                    >
+                      <svg className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                      {isSaved ? "Saved" : "Save to Dashboard"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -244,17 +252,19 @@ export default function FounderDetailModal({ founderData, onClose, onSave, isSav
                   <ContactInfoGate
                     feature="LinkedIn Profiles"
                     description="Upgrade to access LinkedIn profiles and generate personalized outreach messages."
-                    fallback={
-                      <div className="flex items-center gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
-                        <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                        <div>
-                          <div className="text-sm font-medium text-yellow-400">LinkedIn Profile</div>
-                          <div className="text-xs text-yellow-400/80">Upgrade to view</div>
+                    fallback={!isSignedIn ? (
+                      <SignInButton mode="modal" forceRedirectUrl="/opportunities?welcome=1">
+                        <div className="flex items-center gap-3 rounded-lg border border-[var(--wisteria)]/30 bg-[var(--wisteria)]/10 p-3 cursor-pointer hover:bg-[var(--wisteria)]/20 transition-colors">
+                          <svg className="w-5 h-5" style={{ color: 'var(--wisteria)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--wisteria)' }}>LinkedIn Profile</div>
+                            <div className="text-xs" style={{ color: 'rgba(180,151,214,0.7)' }}>Sign up free · see contact info for 7 days</div>
+                          </div>
                         </div>
-                      </div>
-                    }
+                      </SignInButton>
+                    ) : undefined}
                   >
                     <a
                       href={founderData.linkedinUrl}
@@ -292,17 +302,19 @@ export default function FounderDetailModal({ founderData, onClose, onSave, isSav
                   <ContactInfoGate
                     feature="Email Addresses"
                     description="Upgrade to access email addresses and generate personalized outreach messages."
-                    fallback={
-                      <div className="flex items-center gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
-                        <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                        <div>
-                          <div className="text-sm font-medium text-yellow-400">Email Address</div>
-                          <div className="text-xs text-yellow-400/80">Upgrade to view</div>
+                    fallback={!isSignedIn ? (
+                      <SignInButton mode="modal" forceRedirectUrl="/opportunities?welcome=1">
+                        <div className="flex items-center gap-3 rounded-lg border border-[var(--wisteria)]/30 bg-[var(--wisteria)]/10 p-3 cursor-pointer hover:bg-[var(--wisteria)]/20 transition-colors">
+                          <svg className="w-5 h-5" style={{ color: 'var(--wisteria)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: 'var(--wisteria)' }}>Email Address</div>
+                            <div className="text-xs" style={{ color: 'rgba(180,151,214,0.7)' }}>Sign up free · see contact info for 7 days</div>
+                          </div>
                         </div>
-                      </div>
-                    }
+                      </SignInButton>
+                    ) : undefined}
                   >
                     <a
                       href={emailInfo.href}
@@ -478,12 +490,36 @@ export default function FounderDetailModal({ founderData, onClose, onSave, isSav
             >
               Close
             </button>
-            <div className="text-xs text-neutral-500">
-              Tip: Upgrade to access contact info and generate outreach messages
-            </div>
+            {!isSignedIn ? (
+              <div className="flex items-center gap-2">
+                <SignInButton mode="modal" forceRedirectUrl="/opportunities?welcome=1">
+                  <button className="focus-ring rounded-lg px-3 py-1.5 text-xs font-semibold btn-primary">
+                    Sign up free to save
+                  </button>
+                </SignInButton>
+                <span className="text-xs text-neutral-500">No credit card needed</span>
+              </div>
+            ) : !isPaid ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="focus-ring rounded-lg px-3 py-1.5 text-xs font-semibold"
+                  style={{ background: 'linear-gradient(90deg,var(--wisteria),var(--lavender-web))', color: '#0f1018' }}
+                >
+                  Upgrade to Pro — $3/mo
+                </button>
+                <span className="text-xs text-neutral-500">Unlock LinkedIn, email &amp; AI outreach</span>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
+      <PaywallModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        feature="Pro Features"
+        description="Upgrade to access LinkedIn profiles, email addresses, and AI-powered outreach generation."
+      />
     </div>
   );
 }

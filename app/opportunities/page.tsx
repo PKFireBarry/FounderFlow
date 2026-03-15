@@ -3,7 +3,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { collection, getDocs, query, orderBy, addDoc, doc, deleteDoc, where } from "firebase/firestore";
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignInButton } from '@clerk/nextjs';
+import { usePostHog } from 'posthog-js/react';
 import { clientDb } from "../../lib/firebase/client";
 import Navigation from "../components/Navigation";
 import FounderDetailModal from "../components/FounderDetailModal";
@@ -11,23 +12,36 @@ import ContactInfoGate from "../components/ContactInfoGate";
 import PaywallTestControls from "../components/PaywallTestControls";
 import { isValidApplyUrl, isValidActionableUrl } from "../../lib/url-validation";
 
+interface ToastData {
+  message: string;
+  action?: { label: string; href: string };
+}
+
 // Toast notification component
-function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+function Toast({ data, onClose }: { data: ToastData; onClose: () => void }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
-    }, 2600);
+    }, 4000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
   return (
-    <div className="pointer-events-auto rounded-xl border px-3 py-2 text-sm shadow-lg"
+    <div className="pointer-events-auto rounded-xl border px-3 py-2 text-sm shadow-lg flex items-center gap-3"
       style={{
         borderColor: 'rgba(180,151,214,.3)',
         background: 'rgba(180,151,214,.12)',
         color: 'var(--wisteria)'
       }}>
-      {message}
+      <span>{data.message}</span>
+      {data.action && (
+        <a
+          href={data.action.href}
+          className="text-xs font-semibold underline underline-offset-2 hover:opacity-80 flex-shrink-0"
+        >
+          {data.action.label}
+        </a>
+      )}
     </div>
   );
 }
@@ -55,6 +69,7 @@ type EntryCardProps = {
   emailHref: string | null;
   onSave: (jobData: any) => void;
   isSaved: boolean;
+  isSignedIn: boolean;
   onCardClick: () => void;
 };
 
@@ -76,6 +91,7 @@ function EntryCard(props: EntryCardProps) {
     emailHref,
     onSave,
     isSaved,
+    isSignedIn,
     onCardClick,
   } = props;
 
@@ -254,12 +270,17 @@ function EntryCard(props: EntryCardProps) {
                 fallback={
                   <button
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-2 py-1 hover:bg-yellow-500/20 transition-colors text-xs text-yellow-400"
+                    className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs transition-colors ${
+                      !isSignedIn
+                        ? 'border-[var(--wisteria)]/30 bg-[var(--wisteria)]/10 hover:bg-[var(--wisteria)]/20'
+                        : 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20'
+                    }`}
+                    style={!isSignedIn ? { color: 'rgba(180,151,214,0.85)' } : undefined}
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
-                    LinkedIn
+                    {!isSignedIn ? 'Try free' : 'LinkedIn'}
                   </button>
                 }
               >
@@ -276,12 +297,17 @@ function EntryCard(props: EntryCardProps) {
                 fallback={
                   <button
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-2 py-1 hover:bg-yellow-500/20 transition-colors text-xs text-yellow-400"
+                    className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs transition-colors ${
+                      !isSignedIn
+                        ? 'border-[var(--wisteria)]/30 bg-[var(--wisteria)]/10 hover:bg-[var(--wisteria)]/20'
+                        : 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20'
+                    }`}
+                    style={!isSignedIn ? { color: 'rgba(180,151,214,0.85)' } : undefined}
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
-                    Email
+                    {!isSignedIn ? 'Try free' : 'Email'}
                   </button>
                 }
               >
@@ -354,7 +380,7 @@ function EntryCard(props: EntryCardProps) {
               <span className="text-neutral-600 dark:text-neutral-300">{published !== "N/A" ? published.split(' • ')[0] : 'Unknown'}</span>
             </div>
           </div>
-          <div className={`grid gap-2 ${apply_url && isValidApplyUrl(apply_url) ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <div className={`grid gap-2 ${apply_url && isValidApplyUrl(apply_url) ? (isSignedIn ? 'grid-cols-2' : 'grid-cols-1') : 'grid-cols-1'}`}>
             {/* Apply URL button - only show if available and valid */}
             {apply_url && isValidApplyUrl(apply_url) && (
               <a
@@ -371,36 +397,38 @@ function EntryCard(props: EntryCardProps) {
                 Apply
               </a>
             )}
-            {/* Save to Dashboard button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onSave({
-                  id,
-                  company,
-                  company_info: companyInfo,
-                  name,
-                  role,
-                  looking_for: lookingForTags.join(', '),
-                  company_url: companyUrl,
-                  url: rolesUrl,
-                  apply_url: apply_url,
-                  linkedinurl: linkedinUrl,
-                  email: emailHref?.replace('mailto:', ''),
-                  published
-                });
-              }}
-              className="focus-ring inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm justify-center" style={{
-                background: isSaved ? 'rgba(180,151,214,.3)' : 'linear-gradient(90deg,var(--wisteria),var(--lavender-web))',
-                color: isSaved ? 'var(--wisteria)' : '#0f1018',
-                fontWeight: '700'
-              }}
-            >
-              <svg className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              {isSaved ? "Saved" : "Save"}
-            </button>
+            {/* Save to Dashboard button — only shown to signed-in users */}
+            {isSignedIn && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSave({
+                    id,
+                    company,
+                    company_info: companyInfo,
+                    name,
+                    role,
+                    looking_for: lookingForTags.join(', '),
+                    company_url: companyUrl,
+                    url: rolesUrl,
+                    apply_url: apply_url,
+                    linkedinurl: linkedinUrl,
+                    email: emailHref?.replace('mailto:', ''),
+                    published
+                  });
+                }}
+                className="focus-ring inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm justify-center" style={{
+                  background: isSaved ? 'rgba(180,151,214,.3)' : 'linear-gradient(90deg,var(--wisteria),var(--lavender-web))',
+                  color: isSaved ? 'var(--wisteria)' : '#0f1018',
+                  fontWeight: '700'
+                }}
+              >
+                <svg className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                {isSaved ? "Saved" : "Save"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -691,12 +719,17 @@ function Avatar({ name, linkedinUrl }: { name: string | null; linkedinUrl: strin
 
 export default function EntryPage() {
   const { isSignedIn, user } = useUser();
+  const posthog = usePostHog();
   const [items, setItems] = useState<EntryDoc[]>([]);
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastData | null>(null);
   const [selectedFounder, setSelectedFounder] = useState<any | null>(null);
+  const [anonModalCount, setAnonModalCount] = useState(0);
+  const [showSoftGate, setShowSoftGate] = useState(false);
+  const [softGateDismissed, setSoftGateDismissed] = useState(false);
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
   // filters and pagination
   const [q, setQ] = useState("");
   const [skillsQ, setSkillsQ] = useState("");
@@ -723,6 +756,31 @@ export default function EntryPage() {
       setCurrentPage(1);
     }
   }, [q, skillsQ, onlyRoles, onlyLinkedIn, onlyEmail, sortBy]);
+
+  // PostHog: track page view with auth state
+  useEffect(() => {
+    if (posthog) {
+      posthog.capture('opportunities_page_viewed', {
+        auth_state: !isSignedIn ? 'anonymous' : 'free'
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load anon modal count and soft gate state from storage
+  useEffect(() => {
+    const count = parseInt(localStorage.getItem('ff_anon_views') || '0', 10);
+    setAnonModalCount(count);
+    const dismissed = sessionStorage.getItem('ff_soft_gate_dismissed');
+    if (dismissed) setSoftGateDismissed(true);
+  }, []);
+
+  // Welcome banner for post-signup redirect
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('welcome') === '1') {
+      setShowWelcomeBanner(true);
+    }
+  }, []);
 
   useEffect(() => {
     const run = async () => {
@@ -796,6 +854,7 @@ export default function EntryPage() {
           newSet.delete(jobData.id);
           return newSet;
         });
+        setToast({ message: 'Removed from dashboard.' });
       } else {
         // Save the job - filter out undefined values to avoid Firebase errors
         const cleanJobData = Object.fromEntries(
@@ -820,6 +879,7 @@ export default function EntryPage() {
         });
 
         setSavedJobIds(prev => new Set([...prev, jobData.id]));
+        setToast({ message: 'Saved to dashboard.', action: { label: 'Generate outreach →', href: '/dashboard' } });
       }
     } catch (error) {
       console.error("Error saving/unsaving job:", error);
@@ -908,7 +968,7 @@ export default function EntryPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-12 w-12 border-2 border-transparent border-t-white/60 border-r-white/60"></div>
-            <div className="text-sm text-neutral-400">Loading opportunities...</div>
+            <div className="text-sm text-neutral-400">Loading directory...</div>
           </div>
         </div>
       </div>
@@ -1008,10 +1068,26 @@ export default function EntryPage() {
       <Navigation />
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Welcome Banner (shown after signup redirect) */}
+        {showWelcomeBanner && (
+          <div className="rounded-xl border border-white/10 bg-[#141522] px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-sm text-neutral-200">
+              Welcome! Find a founder and save them to your dashboard to get started.
+            </p>
+            <button
+              onClick={() => setShowWelcomeBanner(false)}
+              className="text-neutral-400 hover:text-white text-lg leading-none flex-shrink-0"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <header className="mb-6">
           <div className="mb-3 flex items-center justify-between">
-            <h1 className="text-lg sm:text-xl font-semibold text-white">Browse Opportunities</h1>
+            <h1 className="text-lg sm:text-xl font-semibold text-white">Browse the Directory</h1>
             <div className="text-sm text-[#ccceda]">Showing {paginatedEntries.length} of {totalEntries}</div>
           </div>
 
@@ -1143,21 +1219,33 @@ export default function EntryPage() {
                       emailHref={emailHref}
                       onSave={saveJob}
                       isSaved={savedJobIds.has(it.id)}
-                      onCardClick={() => setSelectedFounder({
-                        id: it.id,
-                        company,
-                        companyInfo,
-                        name,
-                        role,
-                        lookingForTags,
-                        restCount,
-                        companyUrl,
-                        rolesUrl,
-                        apply_url,
-                        linkedinUrl,
-                        emailHref,
-                        published
-                      })}
+                      isSignedIn={!!isSignedIn}
+                      onCardClick={() => {
+                        if (!isSignedIn) {
+                          const newCount = anonModalCount + 1;
+                          setAnonModalCount(newCount);
+                          localStorage.setItem('ff_anon_views', String(newCount));
+                          if (newCount >= 3 && !softGateDismissed) {
+                            setShowSoftGate(true);
+                            posthog?.capture('soft_gate_shown', { trigger: 'modal_opens', count: newCount });
+                          }
+                        }
+                        setSelectedFounder({
+                          id: it.id,
+                          company,
+                          companyInfo,
+                          name,
+                          role,
+                          lookingForTags,
+                          restCount,
+                          companyUrl,
+                          rolesUrl,
+                          apply_url,
+                          linkedinUrl,
+                          emailHref,
+                          published
+                        });
+                      }}
                     />
                   );
                 })}
@@ -1221,7 +1309,7 @@ export default function EntryPage() {
         <div className="pointer-events-none fixed right-4 top-16 z-50 space-y-2">
           {toast && (
             <Toast
-              message={toast}
+              data={toast}
               onClose={() => setToast(null)}
             />
           )}
@@ -1237,6 +1325,39 @@ export default function EntryPage() {
           />
         )}
       </main>
+
+      {/* Soft Gate Banner — shown after 3 modal opens for anonymous users */}
+      {showSoftGate && !softGateDismissed && !isSignedIn && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10" style={{ background: '#11121b' }}>
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            <p className="text-sm text-neutral-200">
+              You&apos;ve browsed 3 founders. Sign up free to save contacts and track your outreach. Upgrade to Pro to unlock LinkedIn &amp; email.
+            </p>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <SignInButton mode="modal" forceRedirectUrl="/opportunities?welcome=1">
+                <button
+                  onClick={() => posthog?.capture('soft_gate_converted')}
+                  className="rounded-lg px-4 py-1.5 text-sm font-semibold"
+                  style={{ background: 'linear-gradient(90deg,var(--wisteria),var(--lavender-web))', color: '#0f1018' }}
+                >
+                  Sign up free
+                </button>
+              </SignInButton>
+              <button
+                onClick={() => {
+                  posthog?.capture('soft_gate_dismissed');
+                  setSoftGateDismissed(true);
+                  sessionStorage.setItem('ff_soft_gate_dismissed', '1');
+                }}
+                className="text-neutral-400 hover:text-white px-2 py-1 text-lg leading-none"
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

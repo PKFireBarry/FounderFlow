@@ -17,24 +17,33 @@ export default function Navigation() {
     <nav className="navbar">
       <div className="mx-auto max-w-7xl px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          {/* Logo/Brand */}
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 shrink-0 rounded-full ring-2 ring-white/30 overflow-hidden bg-white/10">
+          {/* Logo/Brand - Enhanced with Display Font */}
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 shrink-0 rounded-full ring-2 ring-white/30 overflow-hidden bg-white/10">
               <Image
                 src="/favicon.png"
                 alt="Founder Flow Logo"
-                width={28}
-                height={28}
+                width={40}
+                height={40}
                 className="w-full h-full object-cover"
               />
             </div>
-            <Link href="/" className="text-sm font-semibold text-white">
+            <Link href="/" className="text-base font-display font-normal text-white hover:opacity-80 transition-opacity">
               Founder Flow
             </Link>
           </div>
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-1">
+            {/* Directory is visible to all users */}
+            <Link
+              href="/opportunities"
+              className={`nav-link rounded-lg px-3 py-1.5 text-sm ${pathname === '/opportunities' ? '[aria-current="page"]' : ''
+                }`}
+              {...(pathname === '/opportunities' ? { 'aria-current': 'page' } : {})}
+            >
+              Directory
+            </Link>
             {isSignedIn && (
               <>
                 <Link
@@ -44,14 +53,6 @@ export default function Navigation() {
                   {...(pathname === '/dashboard' ? { 'aria-current': 'page' } : {})}
                 >
                   Dashboard
-                </Link>
-                <Link
-                  href="/opportunities"
-                  className={`nav-link rounded-lg px-3 py-1.5 text-sm ${pathname === '/opportunities' ? '[aria-current="page"]' : ''
-                    }`}
-                  {...(pathname === '/opportunities' ? { 'aria-current': 'page' } : {})}
-                >
-                  Opportunities
                 </Link>
                 <Link
                   href="/outreach"
@@ -106,8 +107,6 @@ export default function Navigation() {
 
                 </button>
 
-
-
                 {/* Backdrop to close dropdown */}
                 {isDropdownOpen && (
                   <div
@@ -119,7 +118,7 @@ export default function Navigation() {
             ) : (
               <div className="flex items-center gap-2 rounded-xl px-2 py-1.5 panel">
                 <SignInButton mode="modal">
-                  <button className="focus-ring rounded-lg px-2.5 py-1 text-xs font-semibold btn-primary">
+                  <button className="btn btn-primary btn-sm ripple-effect">
                     Sign In
                   </button>
                 </SignInButton>
@@ -129,42 +128,45 @@ export default function Navigation() {
         </div>
 
         {/* Mobile nav links */}
-        {isSignedIn && (
-          <div className="mt-3 grid grid-cols-2 gap-2 md:hidden">
-            <Link
-              href="/dashboard"
-              className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/dashboard' ? '[aria-current="page"]' : ''
-                }`}
-              {...(pathname === '/dashboard' ? { 'aria-current': 'page' } : {})}
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/opportunities"
-              className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/opportunities' ? '[aria-current="page"]' : ''
-                }`}
-              {...(pathname === '/opportunities' ? { 'aria-current': 'page' } : {})}
-            >
-              Opportunities
-            </Link>
-            <Link
-              href="/outreach"
-              className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/outreach' ? '[aria-current="page"]' : ''
-                }`}
-              {...(pathname === '/outreach' ? { 'aria-current': 'page' } : {})}
-            >
-              Outreach Board
-            </Link>
-            <Link
-              href="/billing"
-              className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/billing' ? '[aria-current="page"]' : ''
-                }`}
-              {...(pathname === '/billing' ? { 'aria-current': 'page' } : {})}
-            >
-              Billing
-            </Link>
-          </div>
-        )}
+        <div className="mt-3 grid grid-cols-2 gap-2 md:hidden">
+          {/* Directory visible to all */}
+          <Link
+            href="/opportunities"
+            className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/opportunities' ? '[aria-current="page"]' : ''
+              }`}
+            {...(pathname === '/opportunities' ? { 'aria-current': 'page' } : {})}
+          >
+            Browse Directory
+          </Link>
+          {isSignedIn && (
+            <>
+              <Link
+                href="/dashboard"
+                className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/dashboard' ? '[aria-current="page"]' : ''
+                  }`}
+                {...(pathname === '/dashboard' ? { 'aria-current': 'page' } : {})}
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/outreach"
+                className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/outreach' ? '[aria-current="page"]' : ''
+                  }`}
+                {...(pathname === '/outreach' ? { 'aria-current': 'page' } : {})}
+              >
+                Outreach Board
+              </Link>
+              <Link
+                href="/billing"
+                className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/billing' ? '[aria-current="page"]' : ''
+                  }`}
+                {...(pathname === '/billing' ? { 'aria-current': 'page' } : {})}
+              >
+                Billing
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   );
