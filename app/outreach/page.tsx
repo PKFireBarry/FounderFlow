@@ -187,15 +187,41 @@ export default function OutreachBoard() {
     fetchOutreachData();
   }, [isSignedIn, user?.id]);
 
-  // Auto-refresh every 30 seconds to keep data in sync
+  // Auto-refresh every 60 seconds to keep data in sync (pauses when tab is hidden)
   useEffect(() => {
     if (!isSignedIn || !user?.id) return;
 
-    const interval = setInterval(() => {
-      fetchOutreachData();
-    }, 30000);
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
-    return () => clearInterval(interval);
+    const startPolling = () => {
+      if (intervalId) return;
+      intervalId = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          fetchOutreachData();
+        }
+      }, 60000);
+    };
+
+    const stopPolling = () => {
+      if (intervalId) { clearInterval(intervalId); intervalId = null; }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchOutreachData(); // refresh on tab focus
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [isSignedIn, user?.id]);
 
   const updateStageInFirebase = async (recordId: string, newStage: string, allRecordIds: string[] = []) => {

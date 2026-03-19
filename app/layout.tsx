@@ -3,6 +3,7 @@ import { Inter, DM_Sans, DM_Serif_Display } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
 import StructuredData from './components/StructuredData';
 import NotificationProvider from './components/NotificationProvider';
+import { SubscriptionProvider } from './hooks/useSubscription';
 import PostHogProvider from './components/PostHogProvider';
 import PostHogPageView from './components/PostHogPageView';
 import "./globals.css";
@@ -96,9 +97,11 @@ export default function RootLayout({
             className={`${inter.variable} ${dmSans.variable} ${dmSerifDisplay.variable} antialiased min-h-screen`}
           >
             <PostHogPageView />
-            <NotificationProvider>
-              {children}
-            </NotificationProvider>
+            <SubscriptionProvider>
+              <NotificationProvider>
+                {children}
+              </NotificationProvider>
+            </SubscriptionProvider>
           </body>
         </html>
       </PostHogProvider>

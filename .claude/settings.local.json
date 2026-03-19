@@ -38,7 +38,8 @@
       "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npm run build 2>&1 | tail -20)",
       "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && git log --oneline ui/premium-polish --not main | head -20)",
       "Bash(npx skills find \"frontend design\" 2>&1 | head -40)",
-      "Bash(npx skills add anthropics/skills@frontend-design -g -y 2>&1)"
+      "Bash(npx skills add anthropics/skills@frontend-design -g -y 2>&1)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npm run build 2>&1)"
     ]
   }
 }

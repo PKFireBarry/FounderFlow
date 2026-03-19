@@ -418,16 +418,41 @@ export function useNotifications() {
     }
   }, [isSignedIn, user?.id, settings.enabled]); // Only depend on settings.enabled, not the whole settings object
 
-  // Refresh notifications every 5 minutes (only if enabled)
+  // Refresh notifications every 5 minutes (only when tab is visible and enabled)
   useEffect(() => {
     if (!isSignedIn || !user?.id || !settings.enabled) return;
 
-    const interval = setInterval(() => {
-      loadNotifications();
-    }, 5 * 60 * 1000); // 5 minutes
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
-    return () => clearInterval(interval);
-  }, [isSignedIn, user?.id, settings.enabled]); // Removed loadNotifications from dependencies
+    const startPolling = () => {
+      if (intervalId) return;
+      intervalId = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          loadNotifications();
+        }
+      }, 5 * 60 * 1000);
+    };
+
+    const stopPolling = () => {
+      if (intervalId) { clearInterval(intervalId); intervalId = null; }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [isSignedIn, user?.id, settings.enabled]);
 
   const debugNotifications = () => {
     console.log('🐛 Notification System Debug Info:');

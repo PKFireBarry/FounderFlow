@@ -851,7 +851,23 @@ export default function EntryPage() {
   }, []);
 
   useEffect(() => {
+    const CACHE_KEY = 'ff_cache_opportunities_entries';
+    const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
     const run = async () => {
+      // Serve from cache if fresh
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (raw) {
+          const { data, ts } = JSON.parse(raw);
+          if (Date.now() - ts < CACHE_TTL) {
+            setItems(data as EntryDoc[]);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch { /* ignore corrupt cache */ }
+
       try {
         const q = query(
           collection(clientDb, "entry"),
@@ -869,6 +885,7 @@ export default function EntryPage() {
           return ({ id: d.id, __createdAtMillis: createdMs, __updatedAtMillis: updatedMs, ...d.data() } as EntryDoc);
         });
         setItems(rows);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: rows, ts: Date.now() })); } catch { /* ignore quota errors */ }
       } catch (e: any) {
         setError(e?.message ?? "Failed to load");
       } finally {

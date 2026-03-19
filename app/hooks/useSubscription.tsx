@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from '@clerk/nextjs';
-import { useEffect, useState, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { clientDb } from '../../lib/firebase/client';
 
@@ -13,7 +13,26 @@ interface SubscriptionData {
   trialDaysRemaining: number | null;
 }
 
-export function useSubscription() {
+interface SubscriptionContextValue extends SubscriptionData {
+  loading: boolean;
+  isSignedIn: boolean | undefined;
+  refresh: () => Promise<void>;
+}
+
+const defaultValue: SubscriptionContextValue = {
+  isPaid: false,
+  plan: null,
+  expiresAt: null,
+  isTrial: false,
+  trialDaysRemaining: null,
+  loading: true,
+  isSignedIn: undefined,
+  refresh: async () => {},
+};
+
+const SubscriptionContext = createContext<SubscriptionContextValue>(defaultValue);
+
+export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user, isSignedIn } = useUser();
   const autoActivatingRef = useRef(false);
   const [subscription, setSubscription] = useState<SubscriptionData>({
@@ -118,17 +137,27 @@ export function useSubscription() {
         // Stripe refresh failed, falling back to Firestore check
       }
     } catch (error) {
-      console.error('❌ Error refreshing from Stripe:', error);
+      console.error('Error refreshing from Stripe:', error);
     }
 
     // Always check Firestore after attempting Stripe refresh
     await checkSubscription();
   };
 
-  return {
+  const value: SubscriptionContextValue = {
     ...subscription,
     loading,
     isSignedIn,
-    refresh
+    refresh,
   };
+
+  return (
+    <SubscriptionContext.Provider value={value}>
+      {children}
+    </SubscriptionContext.Provider>
+  );
+}
+
+export function useSubscription() {
+  return useContext(SubscriptionContext);
 }

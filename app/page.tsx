@@ -173,7 +173,31 @@ export default function Home() {
       } catch { setDemoItems([...demoSeed]); }
     };
 
+    const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+
+    const getCache = (key: string) => {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const { data, ts } = JSON.parse(raw);
+        if (Date.now() - ts < CACHE_TTL) return data;
+      } catch { /* ignore */ }
+      return null;
+    };
+
+    const setCache = (key: string, data: any) => {
+      try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch { /* ignore */ }
+    };
+
     const fetchLatestFounders = async () => {
+      const CACHE_KEY = 'ff_cache_latest_founders';
+      const cached = getCache(CACHE_KEY);
+      if (cached) {
+        setLatestFounders(cached);
+        setIsLoadingFounders(false);
+        return;
+      }
+
       try {
         const q = query(collection(clientDb, 'entry'), orderBy('published', 'desc'), limit(3));
         const snap = await getDocs(q);
@@ -212,6 +236,7 @@ export default function Home() {
           .slice(0, 3);
 
         setLatestFounders(founders);
+        setCache(CACHE_KEY, founders);
       } catch (error) { console.error('Failed to fetch latest founders:', error); }
       finally { setIsLoadingFounders(false); }
     };
@@ -222,10 +247,21 @@ export default function Home() {
 
   // Fetch total count
   useEffect(() => {
+    const CACHE_KEY = 'ff_cache_total_count';
+    const CACHE_TTL = 15 * 60 * 1000;
     const fetchTotalCount = async () => {
       try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (raw) {
+          const { data, ts } = JSON.parse(raw);
+          if (Date.now() - ts < CACHE_TTL) { setTotalFounderCount(data); return; }
+        }
+      } catch { /* ignore */ }
+      try {
         const snapshot = await getCountFromServer(collection(clientDb, 'entry'));
-        setTotalFounderCount(snapshot.data().count);
+        const count = snapshot.data().count;
+        setTotalFounderCount(count);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: count, ts: Date.now() })); } catch { /* ignore */ }
       } catch { setTotalFounderCount(500); }
     };
     const id = setTimeout(fetchTotalCount, 500);
@@ -245,8 +281,24 @@ export default function Home() {
 
   // Fetch carousel founders
   useEffect(() => {
+    const CACHE_KEY = 'ff_cache_carousel_founders';
+    const CACHE_TTL = 15 * 60 * 1000;
     const fetchCarouselFounders = async () => {
       setIsLoadingCarousel(true);
+
+      // Serve from cache if fresh
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (raw) {
+          const { data, ts } = JSON.parse(raw);
+          if (Date.now() - ts < CACHE_TTL) {
+            setCarouselFounders(data);
+            setIsLoadingCarousel(false);
+            return;
+          }
+        }
+      } catch { /* ignore */ }
+
       try {
         const q = query(collection(clientDb, 'entry'), orderBy('published', 'desc'), limit(30));
         const snap = await getDocs(q);
@@ -271,6 +323,7 @@ export default function Home() {
           if (validated.length >= 25) break;
         }
         setCarouselFounders(validated);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: validated, ts: Date.now() })); } catch { /* ignore */ }
       } catch (error) { console.error('Failed to fetch carousel founders:', error); }
       finally { setIsLoadingCarousel(false); }
     };
