@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import { collection, getDocs, query, orderBy, addDoc, doc, deleteDoc, where } from "firebase/firestore";
 import { useUser, SignInButton } from '@clerk/nextjs';
@@ -11,6 +11,10 @@ import FounderDetailModal from "../components/FounderDetailModal";
 import ContactInfoGate from "../components/ContactInfoGate";
 import PaywallTestControls from "../components/PaywallTestControls";
 import { isValidApplyUrl, isValidActionableUrl } from "../../lib/url-validation";
+import { extractRoleKeywords } from "@/lib/entry-helpers";
+import TagFilter from "./components/TagFilter";
+import ViewToggle, { type ViewMode } from "./components/ViewToggle";
+import EntryRow from "./components/EntryRow";
 
 interface ToastData {
   message: string;
@@ -71,6 +75,7 @@ type EntryCardProps = {
   isSaved: boolean;
   isSignedIn: boolean;
   onCardClick: () => void;
+  anonFreePreview?: boolean;
 };
 
 function EntryCard(props: EntryCardProps) {
@@ -93,6 +98,7 @@ function EntryCard(props: EntryCardProps) {
     isSaved,
     isSignedIn,
     onCardClick,
+    anonFreePreview = false,
   } = props;
 
   // Helper functions from dashboard
@@ -168,9 +174,9 @@ function EntryCard(props: EntryCardProps) {
       className="rounded-2xl bg-neutral-50 text-neutral-900 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] ring-1 ring-black/10 overflow-hidden dark:bg-[#11121b] dark:text-neutral-100 dark:ring-white/10 cursor-pointer hover:ring-white/20 transition-all"
       onClick={onCardClick}
     >
-      <div className="p-4 h-[520px] flex flex-col">
+      <div className="p-4 h-[420px] sm:h-[520px] flex flex-col">
         {/* Header with Avatar and Company Info - Fixed Height */}
-        <div className="flex items-start gap-3 h-[80px]">
+        <div className="flex items-start gap-3 h-[70px] sm:h-[80px]">
           <div className="card-initials flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden flex-shrink-0" style={{
             background: 'rgba(5,32,74,.20)',
             color: 'var(--lavender-web)',
@@ -217,7 +223,7 @@ function EntryCard(props: EntryCardProps) {
         </div>
 
         {/* Contact Name - Fixed Height */}
-        <div className="h-[40px] mt-3">
+        <div className="h-[36px] sm:h-[40px] mt-3">
           <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider">Contact</span>
           <div className="text-sm font-medium text-neutral-900 dark:text-white truncate mt-1">
             {name && name !== company ? name : (name || "Unknown")}
@@ -225,7 +231,7 @@ function EntryCard(props: EntryCardProps) {
         </div>
 
         {/* Role - Fixed Height */}
-        <div className="h-[50px] mt-3">
+        <div className="h-[44px] sm:h-[50px] mt-3">
           <span className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider">Role</span>
           <div className="mt-2 flex flex-wrap gap-1">
             {role ? (
@@ -260,13 +266,14 @@ function EntryCard(props: EntryCardProps) {
         </div>
 
         {/* Contact Info - Fixed Height */}
-        <div className="h-[60px] mt-3">
+        <div className="h-[54px] sm:h-[60px] mt-3">
           <div className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider mb-1">Contact Info</div>
           <div className="flex flex-wrap gap-1">
             {linkedinUrl && (
               <ContactInfoGate
                 feature="LinkedIn Profiles"
                 description="Upgrade to access LinkedIn profiles and generate personalized outreach messages."
+                bypassGate={anonFreePreview}
                 fallback={
                   <button
                     onClick={(e) => e.stopPropagation()}
@@ -294,6 +301,7 @@ function EntryCard(props: EntryCardProps) {
               <ContactInfoGate
                 feature="Email Addresses"
                 description="Upgrade to access email addresses and generate personalized outreach messages."
+                bypassGate={anonFreePreview}
                 fallback={
                   <button
                     onClick={(e) => e.stopPropagation()}
@@ -345,7 +353,7 @@ function EntryCard(props: EntryCardProps) {
         </div>
 
         {/* Looking For - Fixed Height */}
-        <div className="h-[50px] mt-3">
+        <div className="h-[44px] sm:h-[50px] mt-3">
           <div className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider mb-1">Looking for</div>
           <div className="flex flex-wrap gap-1 overflow-hidden">
             {tags.length > 0 ? (
@@ -727,6 +735,7 @@ export default function EntryPage() {
   const [toast, setToast] = useState<ToastData | null>(null);
   const [selectedFounder, setSelectedFounder] = useState<any | null>(null);
   const [anonModalCount, setAnonModalCount] = useState(0);
+  const [anonViewedIds, setAnonViewedIds] = useState<Set<string>>(new Set());
   const [showSoftGate, setShowSoftGate] = useState(false);
   const [softGateDismissed, setSoftGateDismissed] = useState(false);
   const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
@@ -736,11 +745,53 @@ export default function EntryPage() {
   const [onlyRoles, setOnlyRoles] = useState(false);
   const [onlyLinkedIn, setOnlyLinkedIn] = useState(false);
   const [onlyEmail, setOnlyEmail] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const toggleTag = useCallback((tag: string) => {
+    setSelectedTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  }, []);
+
+  const clearTags = useCallback(() => setSelectedTags(new Set()), []);
 
   const [sortBy, setSortBy] = useState<"date_desc" | "date_asc" | "company_az">("date_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(8);
-  const prevFiltersRef = useRef({ q: "", skillsQ: "", onlyRoles: false, onlyLinkedIn: false, onlyEmail: false, sortBy: "date_desc" as "date_desc" | "date_asc" | "company_az" });
+
+  // Auto-fit entries to viewport height
+  useEffect(() => {
+    function computeFit() {
+      const vh = window.innerHeight;
+      const vw = window.innerWidth;
+      const headerHeight = vw < 768 ? 280 : 340;
+      const paginationHeight = 60;
+      const available = vh - headerHeight - paginationHeight;
+
+      if (viewMode === "list") {
+        const rowH = 64;
+        return Math.max(4, Math.floor(available / rowH));
+      } else {
+        const cols = vw >= 1280 ? 4 : vw >= 1024 ? 3 : vw >= 640 ? 2 : 1;
+        const cardH = vw < 640 ? 220 : 260;
+        const rows = Math.max(1, Math.floor(available / cardH));
+        return Math.max(4, rows * cols);
+      }
+    }
+    // Set initial fit and reset page
+    setEntriesPerPage(computeFit());
+    setCurrentPage(1);
+    // On resize, only update entries per page — don't reset page (mobile address bar show/hide triggers resize)
+    const onResize = () => { setEntriesPerPage(computeFit()); };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [viewMode]);
+  const prevFiltersRef = useRef({ q: "", skillsQ: "", onlyRoles: false, onlyLinkedIn: false, onlyEmail: false, sortBy: "date_desc" as "date_desc" | "date_asc" | "company_az", selectedTagsSize: 0 });
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -750,12 +801,13 @@ export default function EntryPage() {
       prevFiltersRef.current.onlyRoles !== onlyRoles ||
       prevFiltersRef.current.onlyLinkedIn !== onlyLinkedIn ||
       prevFiltersRef.current.onlyEmail !== onlyEmail ||
-      prevFiltersRef.current.sortBy !== sortBy
+      prevFiltersRef.current.sortBy !== sortBy ||
+      prevFiltersRef.current.selectedTagsSize !== selectedTags.size
     ) {
-      prevFiltersRef.current = { q, skillsQ, onlyRoles, onlyLinkedIn, onlyEmail, sortBy };
+      prevFiltersRef.current = { q, skillsQ, onlyRoles, onlyLinkedIn, onlyEmail, sortBy, selectedTagsSize: selectedTags.size };
       setCurrentPage(1);
     }
-  }, [q, skillsQ, onlyRoles, onlyLinkedIn, onlyEmail, sortBy]);
+  }, [q, skillsQ, onlyRoles, onlyLinkedIn, onlyEmail, sortBy, selectedTags.size]);
 
   // PostHog: track page view with auth state
   useEffect(() => {
@@ -767,10 +819,26 @@ export default function EntryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load anon modal count and soft gate state from storage
+  // Load anon modal count and soft gate state from storage (24hr TTL)
   useEffect(() => {
-    const count = parseInt(localStorage.getItem('ff_anon_views') || '0', 10);
-    setAnonModalCount(count);
+    const raw = localStorage.getItem('ff_anon_views');
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        const age = Date.now() - (data.timestamp || 0);
+        if (age > 24 * 60 * 60 * 1000) {
+          localStorage.setItem('ff_anon_views', JSON.stringify({ count: 0, timestamp: Date.now() }));
+          setAnonModalCount(0);
+        } else {
+          setAnonModalCount(data.count || 0);
+        }
+      } catch {
+        // Legacy plain number format — migrate
+        const count = parseInt(raw, 10) || 0;
+        localStorage.setItem('ff_anon_views', JSON.stringify({ count, timestamp: Date.now() }));
+        setAnonModalCount(count);
+      }
+    }
     const dismissed = sessionStorage.getItem('ff_soft_gate_dismissed');
     if (dismissed) setSoftGateDismissed(true);
   }, []);
@@ -954,6 +1022,19 @@ export default function EntryPage() {
     return `${abs} • ${rel}`;
   }
 
+  const tagIndex = useMemo<[string, number][]>(() => {
+    const counts = new Map<string, number>();
+    for (const it of items) {
+      const keywords = extractRoleKeywords(it.looking_for);
+      for (const kw of keywords) {
+        counts.set(kw, (counts.get(kw) || 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 50);
+  }, [items]);
+
   if (loading) {
     return (
       <div className="min-h-screen" style={{
@@ -976,7 +1057,10 @@ export default function EntryPage() {
   }
   if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
 
-  const hasActiveFilters = Boolean(q.trim() || skillsQ.trim() || onlyRoles || onlyLinkedIn || onlyEmail || sortBy !== "date_desc");
+  const hasActiveFilters = Boolean(q.trim() || skillsQ.trim() || onlyRoles || onlyLinkedIn || onlyEmail || sortBy !== "date_desc" || selectedTags.size > 0);
+  // Anon users get 3 free full-detail previews. Cards already viewed stay unlocked.
+  const anonCanPreviewNew = !isSignedIn && anonModalCount < 3;
+  const anonHasViewed = (id: string) => !isSignedIn && anonViewedIds.has(id);
 
   // Start from items; if no active filters, require at least one actionable link to reduce noise
   let filtered = items.filter((it) => {
@@ -1017,7 +1101,13 @@ export default function EntryPage() {
     });
   }
 
-
+  // Filter by selected tags (OR semantics)
+  if (selectedTags.size > 0) {
+    filtered = filtered.filter((it) => {
+      const keywords = extractRoleKeywords(it.looking_for);
+      return keywords.some((kw) => selectedTags.has(kw));
+    });
+  }
 
   // Sort
   filtered = [...filtered];
@@ -1067,7 +1157,7 @@ export default function EntryPage() {
 
       <Navigation />
 
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-3 py-4 sm:px-6 sm:py-8 space-y-6">
         {/* Welcome Banner (shown after signup redirect) */}
         {showWelcomeBanner && (
           <div className="rounded-xl border border-white/10 bg-[#141522] px-4 py-3 flex items-center justify-between gap-3">
@@ -1088,89 +1178,91 @@ export default function EntryPage() {
         <header className="mb-6">
           <div className="mb-3 flex items-center justify-between">
             <h1 className="text-lg sm:text-xl font-semibold text-white">Browse the Directory</h1>
-            <div className="text-sm text-[#ccceda]">Showing {paginatedEntries.length} of {totalEntries}</div>
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-[#ccceda]">Showing {paginatedEntries.length} of {totalEntries}</div>
+              <ViewToggle value={viewMode} onChange={setViewMode} />
+            </div>
           </div>
 
-          {/* Filters Panel */}
-          <section className="rounded-2xl p-4" style={{
+          {/* Filters Panel — unified layout */}
+          <section className="rounded-2xl p-3 sm:p-4" style={{
             border: '1px solid rgba(255,255,255,.08)',
             background: 'rgba(255,255,255,.03)'
           }}>
-            <div className="grid gap-4 lg:grid-cols-12">
-              <div className="lg:col-span-6 grid gap-2">
-                <div className="text-xs uppercase tracking-wide text-[#ccceda]">Filter by content</div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <label className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-[#141522] px-3 py-1.5 text-sm text-neutral-200">
-                    <input
-                      type="checkbox"
-                      checked={onlyRoles}
-                      onChange={(e) => setOnlyRoles(e.target.checked)}
-                      className="text-[var(--amber)] focus:ring-[var(--amber)]"
-                    />
-                    Apply Link
-                  </label>
-                  <label className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-[#141522] px-3 py-1.5 text-sm text-neutral-200">
-                    <input
-                      type="checkbox"
-                      checked={onlyLinkedIn}
-                      onChange={(e) => setOnlyLinkedIn(e.target.checked)}
-                      className="text-[var(--amber)] focus:ring-[var(--amber)]"
-                    />
-                    LinkedIn
-                  </label>
-                  <label className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-[#141522] px-3 py-1.5 text-sm text-neutral-200">
-                    <input
-                      type="checkbox"
-                      checked={onlyEmail}
-                      onChange={(e) => setOnlyEmail(e.target.checked)}
-                      className="text-[var(--amber)] focus:ring-[var(--amber)]"
-                    />
-                    Email
-                  </label>
-
-                </div>
-              </div>
-              <div className="lg:col-span-3 grid gap-2">
-                <div className="text-xs uppercase tracking-wide text-[#ccceda]">Sort</div>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="w-full rounded-xl border border-white/10 bg-[#141522] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2"
+            {/* Search bar + filter toggle (always visible) */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-neutral-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  type="text"
+                  placeholder="Search founders, companies..."
+                  className="w-full rounded-lg border border-white/10 bg-[#141522] pl-9 md:pl-10 pr-3 py-2 md:py-2.5 text-sm text-white placeholder-[#a9abb6] focus:outline-none focus:ring-2"
                   style={{ '--tw-ring-color': 'var(--amber)' } as any}
-                >
-                  <option value="date_desc">Newest</option>
-                  <option value="date_asc">Oldest</option>
-                  <option value="company_az">Name A → Z</option>
-                </select>
+                />
               </div>
-              <div className="lg:col-span-3 grid gap-2">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-xs uppercase tracking-wide text-[#ccceda]">Search</div>
-                  <label className="text-xs uppercase tracking-wide text-[#ccceda]">
-                    Per page
-                    <select
-                      value={entriesPerPage}
-                      onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-                      className="ml-2 rounded-lg border border-white/10 bg-[#141522] px-2 py-1 text-xs text-white"
-                    >
-                      <option value="8">8</option>
-                      <option value="25">25</option>
-                      <option value="50">50</option>
-                    </select>
-                  </label>
-                </div>
-                <div className="relative">
-                  <input
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    type="text"
-                    placeholder="Search within cards"
-                    className="w-full rounded-xl border border-white/10 bg-[#141522] px-3.5 py-2 text-sm text-white placeholder-[#a9abb6] focus:outline-none focus:ring-2"
-                    style={{ '--tw-ring-color': 'var(--amber)' } as any}
-                  />
-                </div>
-              </div>
+              <button
+                onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+                className="relative flex items-center gap-1.5 rounded-lg border px-3 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-colors"
+                style={{
+                  borderColor: mobileFiltersOpen ? 'rgba(180,151,214,.4)' : 'rgba(255,255,255,.1)',
+                  background: mobileFiltersOpen ? 'rgba(180,151,214,.12)' : 'rgba(20,21,34,1)',
+                  color: mobileFiltersOpen ? '#fff' : '#ccceda',
+                }}
+              >
+                <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
+                {hasActiveFilters && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ background: 'var(--wisteria)' }} />
+                )}
+              </button>
             </div>
+
+            {/* Expandable filter options */}
+            {mobileFiltersOpen && (
+              <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto] md:items-start md:gap-4">
+                <div className="grid gap-2">
+                  <div className="text-[10px] md:text-xs uppercase tracking-wider text-neutral-500 font-semibold">Filter by content</div>
+                  <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
+                    <label className="inline-flex items-center gap-1.5 md:gap-2 rounded-lg border border-white/10 bg-[#141522] px-2.5 md:px-3 py-1.5 text-xs md:text-sm text-neutral-200">
+                      <input type="checkbox" checked={onlyRoles} onChange={(e) => setOnlyRoles(e.target.checked)} className="text-[var(--amber)] focus:ring-[var(--amber)]" />
+                      Apply Link
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 md:gap-2 rounded-lg border border-white/10 bg-[#141522] px-2.5 md:px-3 py-1.5 text-xs md:text-sm text-neutral-200">
+                      <input type="checkbox" checked={onlyLinkedIn} onChange={(e) => setOnlyLinkedIn(e.target.checked)} className="text-[var(--amber)] focus:ring-[var(--amber)]" />
+                      LinkedIn
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 md:gap-2 rounded-lg border border-white/10 bg-[#141522] px-2.5 md:px-3 py-1.5 text-xs md:text-sm text-neutral-200">
+                      <input type="checkbox" checked={onlyEmail} onChange={(e) => setOnlyEmail(e.target.checked)} className="text-[var(--amber)] focus:ring-[var(--amber)]" />
+                      Email
+                    </label>
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <div className="text-[10px] md:text-xs uppercase tracking-wider text-neutral-500 font-semibold">Sort</div>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="w-full md:w-48 rounded-lg border border-white/10 bg-[#141522] px-3 py-2 md:py-2.5 text-xs md:text-sm text-white focus:outline-none focus:ring-2"
+                    style={{ '--tw-ring-color': 'var(--amber)' } as any}
+                  >
+                    <option value="date_desc">Newest</option>
+                    <option value="date_asc">Oldest</option>
+                    <option value="company_az">Name A → Z</option>
+                  </select>
+                </div>
+                {tagIndex.length > 0 && (
+                  <div className="md:col-span-2">
+                    <TagFilter tagIndex={tagIndex} selectedTags={selectedTags} onToggle={toggleTag} onClear={clearTags} />
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         </header>
 
@@ -1183,79 +1275,176 @@ export default function EntryPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {paginatedEntries.map((it, idx) => {
-                  const rawDate = (it as any).published;
-                  const published = formatPublished(rawDate);
-                  const company = isNA((it as any).company) ? null : String((it as any).company);
-                  const companyInfo = isNA((it as any).company_info) ? null : String((it as any).company_info);
-                  const role = isNA((it as any).role) ? null : String((it as any).role);
-                  const name = isNA((it as any).name) ? null : String((it as any).name);
-                  const lookingForTags = tagsFrom((it as any).looking_for, 6);
-                  const restCount = Math.max(
-                    0,
-                    String((it as any).looking_for ?? "")
-                      .split(",")
-                      .map((t) => t.trim())
-                      .filter((t) => t.length > 0 && !isNA(t)).length - lookingForTags.length
-                  );
-                  const { companyUrl, rolesUrl, apply_url, linkedinUrl, emailHref, companyDomain } = chooseLinks(it);
-                  return (
-                    <EntryCard
-                      key={it.id}
-                      id={it.id}
-                      company={company}
-                      companyDomain={companyDomain}
-                      companyInfo={companyInfo}
-                      published={published}
-                      name={name}
-                      role={role}
-                      lookingForTags={lookingForTags}
-                      restCount={restCount}
-                      companyUrl={companyUrl}
-                      rolesUrl={rolesUrl}
-                      apply_url={apply_url}
-                      linkedinUrl={linkedinUrl}
-                      emailHref={emailHref}
-                      onSave={saveJob}
-                      isSaved={savedJobIds.has(it.id)}
-                      isSignedIn={!!isSignedIn}
-                      onCardClick={() => {
-                        if (!isSignedIn) {
-                          const newCount = anonModalCount + 1;
-                          setAnonModalCount(newCount);
-                          localStorage.setItem('ff_anon_views', String(newCount));
-                          if (newCount >= 3 && !softGateDismissed) {
-                            setShowSoftGate(true);
-                            posthog?.capture('soft_gate_shown', { trigger: 'modal_opens', count: newCount });
-                          }
-                        }
-                        setSelectedFounder({
-                          id: it.id,
-                          company,
-                          companyInfo,
-                          name,
-                          role,
-                          lookingForTags,
-                          restCount,
-                          companyUrl,
-                          rolesUrl,
-                          apply_url,
-                          linkedinUrl,
-                          emailHref,
-                          published
-                        });
-                      }}
-                    />
-                  );
-                })}
+              <div key={viewMode}>
+                {viewMode === "grid" ? (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {paginatedEntries.map((it, idx) => {
+                      const rawDate = (it as any).published;
+                      const published = formatPublished(rawDate);
+                      const company = isNA((it as any).company) ? null : String((it as any).company);
+                      const companyInfo = isNA((it as any).company_info) ? null : String((it as any).company_info);
+                      const role = isNA((it as any).role) ? null : String((it as any).role);
+                      const name = isNA((it as any).name) ? null : String((it as any).name);
+                      const lookingForTags = tagsFrom((it as any).looking_for, 6);
+                      const restCount = Math.max(
+                        0,
+                        String((it as any).looking_for ?? "")
+                          .split(",")
+                          .map((t) => t.trim())
+                          .filter((t) => t.length > 0 && !isNA(t)).length - lookingForTags.length
+                      );
+                      const { companyUrl, rolesUrl, apply_url, linkedinUrl, emailHref, companyDomain } = chooseLinks(it);
+                      return (
+                        <EntryCard
+                          key={it.id}
+                          id={it.id}
+                          company={company}
+                          companyDomain={companyDomain}
+                          companyInfo={companyInfo}
+                          published={published}
+                          name={name}
+                          role={role}
+                          lookingForTags={lookingForTags}
+                          restCount={restCount}
+                          companyUrl={companyUrl}
+                          rolesUrl={rolesUrl}
+                          apply_url={apply_url}
+                          linkedinUrl={linkedinUrl}
+                          emailHref={emailHref}
+                          onSave={saveJob}
+                          isSaved={savedJobIds.has(it.id)}
+                          isSignedIn={!!isSignedIn}
+                          anonFreePreview={anonCanPreviewNew || anonHasViewed(it.id)}
+                          onCardClick={() => {
+                            if (!isSignedIn && !anonViewedIds.has(it.id)) {
+                              const newCount = anonModalCount + 1;
+                              setAnonModalCount(newCount);
+                              if (newCount <= 3) {
+                                setAnonViewedIds(prev => new Set(prev).add(it.id));
+                              }
+                              const existing = JSON.parse(localStorage.getItem('ff_anon_views') || '{}');
+                              localStorage.setItem('ff_anon_views', JSON.stringify({
+                                count: newCount,
+                                timestamp: existing.timestamp || Date.now()
+                              }));
+                              if (newCount >= 3 && !softGateDismissed) {
+                                setShowSoftGate(true);
+                                posthog?.capture('soft_gate_shown', { trigger: 'modal_opens', count: newCount });
+                              }
+                            }
+                            setSelectedFounder({
+                              id: it.id,
+                              company,
+                              companyInfo,
+                              name,
+                              role,
+                              lookingForTags,
+                              restCount,
+                              companyUrl,
+                              rolesUrl,
+                              apply_url,
+                              linkedinUrl,
+                              emailHref,
+                              published
+                            });
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-xl overflow-hidden"
+                    style={{ border: "1px solid rgba(255,255,255,.06)", background: "rgba(255,255,255,.02)" }}>
+                    {/* List header row */}
+                    <div className="flex items-center gap-3 px-4 h-10 text-[10px] font-semibold text-neutral-500 uppercase tracking-wider border-b border-white/6">
+                      <div className="w-8 flex-shrink-0" />
+                      <div className="w-[160px] flex-shrink-0">Company</div>
+                      <div className="w-[140px] flex-shrink-0 hidden sm:block">Contact</div>
+                      <div className="w-[120px] flex-shrink-0 hidden md:block">Role</div>
+                      <div className="flex-1 hidden lg:block">Tags</div>
+                      <div className="flex-shrink-0">Info</div>
+                      <div className="w-[28px] flex-shrink-0" />
+                      <div className="w-[100px] text-right flex-shrink-0">Date</div>
+                    </div>
+                    {paginatedEntries.map((it, idx) => {
+                      const rawDate = (it as any).published;
+                      const published = formatPublished(rawDate);
+                      const company = isNA((it as any).company) ? null : String((it as any).company);
+                      const role = isNA((it as any).role) ? null : String((it as any).role);
+                      const name = isNA((it as any).name) ? null : String((it as any).name);
+                      const lookingForTags = tagsFrom((it as any).looking_for, 6);
+                      const { companyUrl, rolesUrl, apply_url, linkedinUrl, emailHref, companyDomain } = chooseLinks(it);
+                      const companyInfo = isNA((it as any).company_info) ? null : String((it as any).company_info);
+                      const restCount = Math.max(
+                        0,
+                        String((it as any).looking_for ?? "")
+                          .split(",")
+                          .map((t) => t.trim())
+                          .filter((t) => t.length > 0 && !isNA(t)).length - lookingForTags.length
+                      );
+                      return (
+                        <EntryRow
+                          key={it.id}
+                          id={it.id}
+                          company={company}
+                          companyDomain={companyDomain}
+                          name={name}
+                          role={role}
+                          lookingForTags={lookingForTags}
+                          linkedinUrl={linkedinUrl}
+                          emailHref={emailHref}
+                          companyUrl={companyUrl}
+                          published={published}
+                          isSaved={savedJobIds.has(it.id)}
+                          isSignedIn={!!isSignedIn}
+                          onSave={saveJob}
+                          onCardClick={() => {
+                            if (!isSignedIn && !anonViewedIds.has(it.id)) {
+                              const newCount = anonModalCount + 1;
+                              setAnonModalCount(newCount);
+                              if (newCount <= 3) {
+                                setAnonViewedIds(prev => new Set(prev).add(it.id));
+                              }
+                              const existing = JSON.parse(localStorage.getItem('ff_anon_views') || '{}');
+                              localStorage.setItem('ff_anon_views', JSON.stringify({
+                                count: newCount,
+                                timestamp: existing.timestamp || Date.now()
+                              }));
+                              if (newCount >= 3 && !softGateDismissed) {
+                                setShowSoftGate(true);
+                                posthog?.capture('soft_gate_shown', { trigger: 'modal_opens', count: newCount });
+                              }
+                            }
+                            setSelectedFounder({
+                              id: it.id,
+                              company,
+                              companyInfo,
+                              name,
+                              role,
+                              lookingForTags,
+                              restCount,
+                              companyUrl,
+                              rolesUrl,
+                              apply_url,
+                              linkedinUrl,
+                              emailHref,
+                              published
+                            });
+                          }}
+                          even={idx % 2 === 0}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <nav className="mt-6 flex items-center justify-center gap-1">
+                <nav className="sticky bottom-0 bg-[#0a0b14]/95 backdrop-blur-sm py-3 mt-6 -mx-6 px-6 flex items-center justify-center gap-1 z-10"
+                  style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
                   <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    onClick={() => { setCurrentPage(Math.max(1, currentPage - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                     disabled={currentPage === 1}
                     className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${currentPage === 1
                       ? 'opacity-50 cursor-not-allowed text-[#ccceda]'
@@ -1279,7 +1468,7 @@ export default function EntryPage() {
                     return (
                       <button
                         key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
+                        onClick={() => { setCurrentPage(pageNum); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                         className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${currentPage === pageNum
                           ? 'bg-[var(--amber)] text-black'
                           : 'text-[#ccceda] hover:text-white hover:bg-white/5'
@@ -1290,7 +1479,7 @@ export default function EntryPage() {
                     );
                   })}
                   <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    onClick={() => { setCurrentPage(Math.min(totalPages, currentPage + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                     disabled={currentPage === totalPages}
                     className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${currentPage === totalPages
                       ? 'opacity-50 cursor-not-allowed text-[#ccceda]'
@@ -1322,6 +1511,7 @@ export default function EntryPage() {
             onClose={() => setSelectedFounder(null)}
             onSave={saveJob}
             isSaved={savedJobIds.has(selectedFounder.id)}
+            anonFreePreview={anonCanPreviewNew || anonHasViewed(selectedFounder.id)}
           />
         )}
       </main>
@@ -1331,7 +1521,7 @@ export default function EntryPage() {
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10" style={{ background: '#11121b' }}>
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
             <p className="text-sm text-neutral-200">
-              You&apos;ve browsed 3 founders. Sign up free to save contacts and track your outreach. Upgrade to Pro to unlock LinkedIn &amp; email.
+              You&apos;ve used your 3 free previews. Sign up free to keep browsing and save contacts.
             </p>
             <div className="flex items-center gap-2 flex-shrink-0">
               <SignInButton mode="modal" forceRedirectUrl="/opportunities?welcome=1">

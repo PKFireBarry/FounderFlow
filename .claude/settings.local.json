@@ -24,7 +24,21 @@
       "Bash(grep -r \"public\\\\|static\" /home/x/founderflow-demo/*.json 2>/dev/null)",
       "Bash(cd /home/x/founderflow-demo && npx tsc --noEmit 2>&1)",
       "Bash(npx tsc --noEmit 2>&1)",
-      "Bash(cd /home/x/founderflow-demo && npm run render 2>&1)"
+      "Bash(cd /home/x/founderflow-demo && npm run render 2>&1)",
+      "WebSearch",
+      "Bash(systemctl --user list-units | grep n8n; systemctl list-units | grep n8n; docker ps 2>/dev/null | grep n8n; pgrep -a n8n 2>/dev/null)",
+      "Bash(sudo systemctl disable --now bore-n8n.service && sudo rm /etc/systemd/system/bore-n8n.service /etc/systemd/system/multi-user.target.wants/bore-n8n.service && sudo systemctl daemon-reload)",
+      "Bash(cd /home/x/founderflow-demo && npx remotion render FounderFlowDemo --log=error 2>&1 | tail -20)",
+      "Bash(cd /home/x/founderflow-demo && npx remotion render FounderFlowDemo --log=error 2>&1 | tail -25)",
+      "Bash(npx remotion render FounderFlowDemo --log=error 2>&1 | tail -5)",
+      "Bash(grep -r \"footer\\\\|privacy\\\\|terms\\\\|contact\\\\|policy\" /home/x/founderflow-demo/src --include=\"*.tsx\" --include=\"*.ts\" 2>/dev/null | grep -v node_modules)",
+      "Bash(git -C /home/x/founderflow-demo status 2>/dev/null | head -40)",
+      "Bash(test -d /home/x/founderflow-demo/docs && ls -la /home/x/founderflow-demo/docs/ || echo \"No docs directory\")",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npm run build 2>&1 | tail -30)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && npm run build 2>&1 | tail -20)",
+      "Bash(cd \"/mnt/FileVault/Software Projects/FounderFlow\" && git log --oneline ui/premium-polish --not main | head -20)",
+      "Bash(npx skills find \"frontend design\" 2>&1 | head -40)",
+      "Bash(npx skills add anthropics/skills@frontend-design -g -y 2>&1)"
     ]
   }
 }

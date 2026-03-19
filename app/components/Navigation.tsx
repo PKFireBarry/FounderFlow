@@ -12,14 +12,15 @@ export default function Navigation() {
   const { isSignedIn, user } = useUser();
   const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <nav className="navbar">
-      <div className="mx-auto max-w-7xl px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
+      <div className="mx-auto max-w-7xl px-3 py-2 sm:px-4 sm:py-3">
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
           {/* Logo/Brand - Enhanced with Display Font */}
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 shrink-0 rounded-full ring-2 ring-white/30 overflow-hidden bg-white/10">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-full ring-2 ring-white/30 overflow-hidden bg-white/10">
               <Image
                 src="/favicon.png"
                 alt="Founder Flow Logo"
@@ -28,7 +29,7 @@ export default function Navigation() {
                 className="w-full h-full object-cover"
               />
             </div>
-            <Link href="/" className="text-base font-display font-normal text-white hover:opacity-80 transition-opacity">
+            <Link href="/" className="text-sm sm:text-base font-display font-normal text-white hover:opacity-80 transition-opacity">
               Founder Flow
             </Link>
           </div>
@@ -74,6 +75,23 @@ export default function Navigation() {
             )}
           </div>
 
+          {/* Hamburger button - mobile only */}
+          <button
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-md hover:bg-white/10 transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+
           {/* Auth Section */}
           <div className="flex items-center gap-2">
             {isSignedIn && <NotificationBell />}
@@ -81,7 +99,7 @@ export default function Navigation() {
               <div className="relative">
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 rounded-xl px-2 py-1.5 panel hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2 rounded-xl px-1.5 py-1 sm:px-2 sm:py-1.5 panel hover:bg-white/5 transition-colors"
                 >
                   <div className="h-7 w-7 shrink-0 rounded-full ring-2" style={{ "--tw-ring-color": "rgba(225,226,239,.30)", background: "conic-gradient(from 180deg at 50% 50%, var(--oxford-blue) 0%, var(--wisteria) 30%, var(--lavender-web) 70%, var(--oxford-blue) 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,.95)", fontWeight: "800", fontSize: "10px" } as CSSProperties}>
                     <UserButton
@@ -127,46 +145,53 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Mobile nav links */}
-        <div className="mt-3 grid grid-cols-2 gap-2 md:hidden">
-          {/* Directory visible to all */}
-          <Link
-            href="/opportunities"
-            className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/opportunities' ? '[aria-current="page"]' : ''
-              }`}
-            {...(pathname === '/opportunities' ? { 'aria-current': 'page' } : {})}
-          >
-            Browse Directory
-          </Link>
-          {isSignedIn && (
-            <>
+        {/* Mobile nav links - collapsible */}
+        {mobileMenuOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40 md:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className="relative z-50 mt-2 flex flex-col gap-0.5 md:hidden">
               <Link
-                href="/dashboard"
-                className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/dashboard' ? '[aria-current="page"]' : ''
-                  }`}
-                {...(pathname === '/dashboard' ? { 'aria-current': 'page' } : {})}
+                href="/opportunities"
+                className={`nav-link rounded-lg px-3 py-2 text-sm ${pathname === '/opportunities' ? '[aria-current="page"]' : ''}`}
+                {...(pathname === '/opportunities' ? { 'aria-current': 'page' } : {})}
+                onClick={() => setMobileMenuOpen(false)}
               >
-                Dashboard
+                Browse Directory
               </Link>
-              <Link
-                href="/outreach"
-                className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/outreach' ? '[aria-current="page"]' : ''
-                  }`}
-                {...(pathname === '/outreach' ? { 'aria-current': 'page' } : {})}
-              >
-                Outreach Board
-              </Link>
-              <Link
-                href="/billing"
-                className={`nav-link rounded-lg px-3 py-2 text-sm text-center ${pathname === '/billing' ? '[aria-current="page"]' : ''
-                  }`}
-                {...(pathname === '/billing' ? { 'aria-current': 'page' } : {})}
-              >
-                Billing
-              </Link>
-            </>
-          )}
-        </div>
+              {isSignedIn && (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className={`nav-link rounded-lg px-3 py-2 text-sm ${pathname === '/dashboard' ? '[aria-current="page"]' : ''}`}
+                    {...(pathname === '/dashboard' ? { 'aria-current': 'page' } : {})}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    href="/outreach"
+                    className={`nav-link rounded-lg px-3 py-2 text-sm ${pathname === '/outreach' ? '[aria-current="page"]' : ''}`}
+                    {...(pathname === '/outreach' ? { 'aria-current': 'page' } : {})}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Outreach Board
+                  </Link>
+                  <Link
+                    href="/billing"
+                    className={`nav-link rounded-lg px-3 py-2 text-sm ${pathname === '/billing' ? '[aria-current="page"]' : ''}`}
+                    {...(pathname === '/billing' ? { 'aria-current': 'page' } : {})}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Billing
+                  </Link>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </nav>
   );

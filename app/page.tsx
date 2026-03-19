@@ -464,6 +464,19 @@ export default function Home() {
                     <div className="spinner-premium"><div className="inner"></div></div>
                   </div>
                 ) : latestFounders.length > 0 ? (
+                  <>
+                  <style jsx>{`
+                    @keyframes wiggle {
+                      0%, 100% { transform: translateX(var(--tx)) translateY(var(--ty)) rotate(var(--rot)) scale(1.05); }
+                      25% { transform: translateX(var(--tx)) translateY(var(--ty)) rotate(calc(var(--rot) - 2deg)) scale(1.05); }
+                      50% { transform: translateX(var(--tx)) translateY(var(--ty)) rotate(calc(var(--rot) + 2deg)) scale(1.05); }
+                      75% { transform: translateX(var(--tx)) translateY(var(--ty)) rotate(calc(var(--rot) - 1deg)) scale(1.05); }
+                    }
+                    .stack-card-center:hover {
+                      animation: wiggle 0.4s ease-in-out;
+                      outline-color: rgba(180, 151, 214, 0.3);
+                    }
+                  `}</style>
                   <div
                     className="hero-card-stack relative w-full max-w-sm h-[340px]"
                     onMouseEnter={() => setIsStackPaused(true)}
@@ -488,12 +501,15 @@ export default function Home() {
                       return (
                         <div
                           key={founder.id}
-                          className="stack-card absolute inset-0 outline bg-[#0e0f1a] rounded-2xl p-5 cursor-pointer hover:scale-105 transition-all ease-in-out"
+                          className={`stack-card absolute inset-0 outline bg-[#0e0f1a] rounded-2xl p-5 cursor-pointer hover:scale-105 transition-all ease-in-out ${isCenter ? 'stack-card-center' : ''}`}
                           style={{
-                            transform: `translateX(${x}px) translateY(${y}px) rotate(${rotate}deg)`,
+                            '--tx': `${x}px`,
+                            '--ty': `${y}px`,
+                            '--rot': `${rotate}deg`,
+                            transform: `translateX(var(--tx)) translateY(var(--ty)) rotate(var(--rot))`,
                             zIndex: isCenter ? 30 : 10,
                             opacity: isCenter ? 1 : 0.7,
-                          }}
+                          } as React.CSSProperties}
                           onClick={() => {
                             if (!isCenter) {
                               setStackIndex((index - 1 + latestFounders.length) % latestFounders.length);
@@ -586,6 +602,7 @@ export default function Home() {
                       );
                     })}
                   </div>
+                  </>
                 ) : null}
               </div>
             </div>
@@ -861,7 +878,7 @@ export default function Home() {
         </main>
 
         {/* Footer */}
-        <footer className="mx-auto max-w-7xl px-4 pb-10">
+        <footer className="mx-auto max-w-7xl px-4 pb-10 pointer-events-auto">
           <div className="rounded-2xl p-4 glass-card">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-[12px] text-neutral-400">
               <div className="flex items-center gap-2">
@@ -871,9 +888,9 @@ export default function Home() {
                 <span>&copy; {new Date().getFullYear()} Founder Flow</span>
               </div>
               <div className="flex items-center gap-3">
-                <a href="#" className="hover:text-neutral-200 transition-colors">Terms</a>
-                <a href="#" className="hover:text-neutral-200 transition-colors">Privacy</a>
-                <a href="mailto:support@founderflow.space" className="hover:text-neutral-200 transition-colors">Contact</a>
+                <a href="/terms" className="hover:text-neutral-200 transition-colors">Terms</a>
+                <a href="/privacy" className="hover:text-neutral-200 transition-colors">Privacy</a>
+                <a href="mailto:info@founderflow.space" className="hover:text-neutral-200 transition-colors">Contact</a>
               </div>
             </div>
           </div>

@@ -10,13 +10,15 @@ interface ContactInfoGateProps {
   fallback?: React.ReactNode;
   feature?: string;
   description?: string;
+  bypassGate?: boolean;
 }
 
 export default function ContactInfoGate({
   children,
   fallback,
   feature = "Contact Information",
-  description = "Upgrade to see LinkedIn profiles, email addresses, and generate personalized outreach messages."
+  description = "Upgrade to see LinkedIn profiles, email addresses, and generate personalized outreach messages.",
+  bypassGate = false
 }: ContactInfoGateProps) {
   const { isSignedIn } = useUser();
   const { isPaid, loading } = useSubscription();
@@ -35,6 +37,7 @@ export default function ContactInfoGate({
   }
 
   if (!isSignedIn) {
+    if (bypassGate) return <>{children}</>;
     return <>{fallback || (
       <SignInButton mode="modal" forceRedirectUrl="/opportunities">
         <button className="inline-flex items-center gap-1 rounded border border-[var(--wisteria)]/30 bg-[var(--wisteria)]/10 px-1.5 py-0.5 hover:bg-[var(--wisteria)]/20 transition-colors text-[10px]" style={{ color: 'rgba(180,151,214,0.85)' }}>

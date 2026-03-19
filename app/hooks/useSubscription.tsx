@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from '@clerk/nextjs';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { clientDb } from '../../lib/firebase/client';
 
@@ -15,6 +15,7 @@ interface SubscriptionData {
 
 export function useSubscription() {
   const { user, isSignedIn } = useUser();
+  const autoActivatingRef = useRef(false);
   const [subscription, setSubscription] = useState<SubscriptionData>({
     isPaid: false,
     plan: null,
@@ -56,7 +57,36 @@ export function useSubscription() {
           trialDaysRemaining,
         });
       } else {
-        // No subscription document = free user
+        // No subscription document — auto-activate 7-day trial
+        if (!autoActivatingRef.current) {
+          autoActivatingRef.current = true;
+          try {
+            const resp = await fetch('/api/trial/auto-activate', { method: 'POST' });
+            if (resp.ok) {
+              // Re-read the newly created document
+              const freshDoc = await getDoc(userDocRef);
+              if (freshDoc.exists()) {
+                const data = freshDoc.data();
+                const expiresAt = data.expiresAt?.toDate() || null;
+                const isActive = data.status === 'active' || data.status === 'trialing';
+                const isNotExpired = expiresAt ? expiresAt > new Date() : false;
+                const isPaid = isActive && (isNotExpired || data.status === 'active');
+                const isTrial = data.status === 'trialing' && isNotExpired;
+                const trialDaysRemaining = isTrial && expiresAt
+                  ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+                  : null;
+
+                setSubscription({ isPaid, plan: data.plan || null, expiresAt, isTrial, trialDaysRemaining });
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('Error auto-activating trial:', err);
+          } finally {
+            autoActivatingRef.current = false;
+          }
+        }
+        // Fallback: no subscription
         setSubscription({ isPaid: false, plan: null, expiresAt: null, isTrial: false, trialDaysRemaining: null });
       }
     } catch (error) {
