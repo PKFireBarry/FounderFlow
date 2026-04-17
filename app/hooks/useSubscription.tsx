@@ -54,6 +54,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    setLoading(true);
     try {
       const userDocRef = doc(clientDb, 'user_subscriptions', user.id);
       const userDoc = await getDoc(userDocRef);
