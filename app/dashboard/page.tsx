@@ -16,6 +16,7 @@ import NotificationSettings from '../components/NotificationSettings';
 import { useSubscription } from '../hooks/useSubscription';
 import PaywallModal from '../components/PaywallModal';
 import { isValidActionableUrl } from '../../lib/url-validation';
+import SavedContactCard from '../components/SavedContactCard';
 
 interface SavedJob {
   id: string;
