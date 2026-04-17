@@ -3,10 +3,11 @@ export type Placement = 'top' | 'bottom' | 'left' | 'right' | 'center';
 export interface TourStep {
   id: string;
   route: string | null;
-  selector: string | null; // data-tour attribute value; null = centered modal (no spotlight)
+  selector: string | null;
   title: string;
   body: string;
   placement: Placement;
+  action?: 'click'; // programmatically click the target element after spotlight appears
 }
 
 export const TOUR_STEPS: TourStep[] = [
@@ -63,15 +64,16 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/dashboard',
     selector: 'tour-generate-ai',
     title: "Generate AI Outreach",
-    body: "Click Generate Outreach on any contact to draft a personalized email or LinkedIn DM. The AI pulls from their profile and your background.",
+    body: "This button drafts a personalized email or LinkedIn DM using AI. It pulls from the founder's profile and your background — try it now.",
     placement: 'top',
+    action: 'click',
   },
   {
     id: 'resume-upload',
-    route: '/dashboard',
-    selector: 'tour-resume-upload',
-    title: "Upload Your Resume",
-    body: "The Context Settings tab lets you upload a resume and set goals. The AI uses this so every message sounds like you, not a template.",
+    route: '/dashboard?tab=context',
+    selector: 'tour-context-section',
+    title: "Add Your Context",
+    body: "Upload a resume and set your goals here. The AI reads this before generating every message so it sounds like you, not a template.",
     placement: 'bottom',
   },
   {
@@ -94,7 +96,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'done',
     route: null,
     selector: null,
-    title: "You're all set",
+    title: "You're all set!",
     body: "That covers everything. Your 7-day Pro trial is running — manage it anytime from Billing in the nav.",
     placement: 'center',
   },

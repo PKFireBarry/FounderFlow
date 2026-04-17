@@ -43,7 +43,9 @@
       "Bash(git checkout *)",
       "Bash(npm run *)",
       "Bash(npx next *)",
-      "Bash(node_modules/.bin/next lint *)"
+      "Bash(node_modules/.bin/next lint *)",
+      "Bash(npm ls *)",
+      "Bash(npm install *)"
     ]
   }
 }

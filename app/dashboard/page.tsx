@@ -2,6 +2,7 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { collection, query, where, getDocs, Timestamp, deleteDoc, doc } from 'firebase/firestore';
 import Link from 'next/link';
 import { clientDb } from '../../lib/firebase/client';
@@ -44,6 +45,7 @@ interface UserProfile {
 
 export default function Dashboard() {
   const { isSignedIn, user } = useUser();
+  const searchParams = useSearchParams();
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'contacts' | 'context' | 'archive'>('contacts');
@@ -117,6 +119,14 @@ export default function Dashboard() {
 
     loadSavedJobs();
   }, [isSignedIn, user?.id]);
+
+  // Onboarding: switch to context tab if URL param says so
+  useEffect(() => {
+    if (searchParams.get('tab') === 'context' && isPaid) {
+      setActiveTab('context');
+    }
+  }, [searchParams, isPaid]);
+
 
   const confirmDeleteJob = () => {
     if (jobToDelete) {
@@ -960,7 +970,7 @@ export default function Dashboard() {
 
       {/* Context Settings Tab */}
       {activeTab === 'context' && (
-        <section id="tab-context" role="tabpanel" aria-labelledby="tab-context-btn" className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
+        <section id="tab-context" role="tabpanel" aria-labelledby="tab-context-btn" data-tour="tour-context-section" className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
           <div className="mb-4">
             <h1 className="text-lg sm:text-xl font-semibold text-white">Outreach Context Settings</h1>
             <p className="text-sm text-[#ccceda]">Configure your personal details, AI context, and notification preferences.</p>
