@@ -46,7 +46,8 @@
       "Bash(node_modules/.bin/next lint *)",
       "Bash(npm ls *)",
       "Bash(npm install *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

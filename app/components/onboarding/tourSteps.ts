@@ -7,7 +7,10 @@ export interface TourStep {
   title: string;
   body: string;
   placement: Placement;
-  action?: 'click'; // programmatically click the target element ~700ms after spotlight appears
+  /** Tour renders MockContactCard overlay on this step */
+  showMockCard?: boolean;
+  /** Tour renders DemoOutreachModal overlay on this step */
+  showDemoModal?: boolean;
 }
 
 export const TOUR_STEPS: TourStep[] = [
@@ -16,7 +19,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'welcome',
     route: null,
     selector: null,
-    title: "Welcome to Founder Flow",
+    title: 'Welcome to Founder Flow',
     body: "You've got 7 days of Pro access free. This 60-second tour shows you everything. Hit Skip any time.",
     placement: 'center',
   },
@@ -26,15 +29,15 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'filters',
     route: '/opportunities',
     selector: 'tour-filters',
-    title: "Search & Filter",
-    body: "Search by name or company. Use Filters to narrow by contact type — Email, LinkedIn, or Apply link.",
+    title: 'Search & Filter',
+    body: 'Search by name or company. Use Filters to narrow by contact type — Email, LinkedIn, or Apply link.',
     placement: 'bottom',
   },
   {
     id: 'entry-card',
     route: '/opportunities',
     selector: 'tour-entry-card',
-    title: "Browse Real Founders",
+    title: 'Browse Real Founders',
     body: "Every card is a real early-stage founder. Click to see their full profile, links, and what they're looking for.",
     placement: 'bottom',
   },
@@ -42,8 +45,8 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'save-button',
     route: '/opportunities',
     selector: 'tour-save-button',
-    title: "Save Founders You Like",
-    body: "Hit Save on any card to add that founder to your Dashboard so you can message them later.",
+    title: 'Save Founders You Like',
+    body: 'Hit Save on any card to add that founder to your Dashboard so you can message them later.',
     placement: 'left',
   },
 
@@ -52,8 +55,8 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'nav-dashboard',
     route: '/opportunities',
     selector: 'tour-nav-dashboard',
-    title: "Go to Dashboard",
-    body: "All your saved founders live in the Dashboard. Let's head there now.",
+    title: 'Go to Dashboard',
+    body: 'All your saved founders live in the Dashboard. Let\'s head there now.',
     placement: 'bottom',
   },
 
@@ -62,37 +65,51 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'saved-contacts',
     route: '/dashboard',
     selector: 'tour-saved-contacts',
-    title: "Your Saved Contacts",
-    body: "Every founder you save appears here. Sort, search, and track where each conversation stands.",
+    title: 'Your Saved Contacts',
+    body: 'Every founder you save appears here. Sort, search, and track where each conversation stands.',
     placement: 'bottom',
   },
 
-  // ── AI Outreach Generation ────────────────────────────────────────────────
+  // ── AI Outreach — demo contact card ──────────────────────────────────────
   {
-    id: 'generate-ai',
+    id: 'mock-card',
     route: '/dashboard',
-    selector: 'tour-generate-ai',
-    title: "AI Outreach Generator",
-    body: "Click Generate Outreach on any saved contact to open the AI writing tool. We'll open it now so you can see what it looks like.",
-    placement: 'top',
-    action: 'click', // opens the IntegratedOutreachModal on the first saved contact
+    selector: 'tour-mock-card',
+    title: 'Generate Outreach',
+    body: 'Each saved founder card has a Generate Outreach button. Click it to open the AI writing tool — we\'ll show you on this demo contact.',
+    placement: 'right',
+    showMockCard: true,
   },
+
+  // ── AI Outreach — modal setup ─────────────────────────────────────────────
   {
-    id: 'outreach-modal',
+    id: 'outreach-modal-setup',
     route: '/dashboard',
-    selector: 'tour-outreach-modal',
-    title: "Craft Your Message",
-    body: "Choose Email or LinkedIn, pick your outreach goal, then click Generate. The AI drafts a personalized message using the founder's profile and your background. Copy it and send.",
+    selector: 'tour-modal-setup',
+    title: 'Pick Your Channel & Goal',
+    body: 'Choose Email or LinkedIn. Then set the outreach goal: Job Application, Partnership, or Networking. The AI tailors the message to match.',
+    placement: 'right',
+    showDemoModal: true,
+  },
+
+  // ── AI Outreach — generated result ───────────────────────────────────────
+  {
+    id: 'outreach-modal-result',
+    route: '/dashboard',
+    selector: 'tour-modal-result',
+    title: 'AI-Generated Message',
+    body: "The AI writes a personalized message using the founder's profile and your resume. Edit it, copy it, or save it straight to your outreach board.",
     placement: 'left',
+    showDemoModal: true,
   },
 
   // ── Context Settings (resume upload) ─────────────────────────────────────
   {
     id: 'resume-upload',
-    route: '/dashboard?tab=context',
+    route: '/dashboard',
     selector: 'tour-context-section',
-    title: "Add Your Context First",
-    body: "Before generating outreach, upload your resume here. The AI reads it to make every message sound like you wrote it — not a generic template.",
+    title: 'Add Your Context',
+    body: 'Upload your resume here before generating outreach. The AI reads it so every message sounds like you wrote it — not a generic template.',
     placement: 'bottom',
   },
 
@@ -101,7 +118,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'nav-outreach',
     route: '/dashboard',
     selector: 'tour-nav-outreach',
-    title: "Outreach Board",
+    title: 'Outreach Board',
     body: "Once you've sent a message, track it here. Let's take a look.",
     placement: 'bottom',
   },
@@ -111,16 +128,16 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'kanban-tabs',
     route: '/outreach',
     selector: 'tour-kanban-tabs',
-    title: "Email vs LinkedIn",
-    body: "Switch between your Email and LinkedIn pipelines. Each has its own stages so you can track response rates separately.",
+    title: 'Email vs LinkedIn',
+    body: 'Switch between your Email and LinkedIn pipelines. Each has its own stages so you can track response rates separately.',
     placement: 'bottom',
   },
   {
     id: 'kanban-cols',
     route: '/outreach',
     selector: 'tour-kanban-cols',
-    title: "Drag to Track Progress",
-    body: "Drag cards left or right as conversations progress — Sent → Responded → In Talks, and so on. Click any card to add notes.",
+    title: 'Drag to Track Progress',
+    body: 'Drag cards left or right as conversations progress — Sent → Responded → In Talks, and so on. Click any card to add notes.',
     placement: 'top',
   },
 

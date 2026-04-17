@@ -118,14 +118,20 @@ export default function Dashboard() {
     loadSavedJobs();
   }, [isSignedIn, user?.id]);
 
-  // Onboarding: switch to context tab if URL param says so
+  // Onboarding: switch to context tab via URL param or custom event
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get('tab') === 'context' && isPaid) {
-      setActiveTab('context');
-    }
-  }, [isPaid]);
+    if (params.get('tab') === 'context') setActiveTab('context');
+
+    const handler = (e: Event) => {
+      const tab = (e as CustomEvent<{ tab: string }>).detail?.tab;
+      if (tab === 'context') setActiveTab('context');
+      if (tab === 'contacts') setActiveTab('contacts');
+    };
+    window.addEventListener('onboarding:switch-tab', handler);
+    return () => window.removeEventListener('onboarding:switch-tab', handler);
+  }, []);
 
 
   const confirmDeleteJob = () => {

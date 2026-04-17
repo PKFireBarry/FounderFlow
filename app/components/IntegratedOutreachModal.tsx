@@ -21,13 +21,15 @@ interface IntegratedOutreachModalProps {
   jobData: JobData;
   userProfile: unknown;
   onClose: () => void;
+  /** When set, the modal pre-populates with this message (used by the onboarding tour demo). */
+  demoMessage?: string;
 }
 
-export default function IntegratedOutreachModal({ jobData, onClose }: IntegratedOutreachModalProps) {
+export default function IntegratedOutreachModal({ jobData, onClose, demoMessage }: IntegratedOutreachModalProps) {
   const [outreachType, setOutreachType] = useState<'job' | 'collaboration' | 'friendship'>('job');
   const [messageType, setMessageType] = useState<'email' | 'linkedin'>('email');
-  const [generatedMessage, setGeneratedMessage] = useState('');
-  const [editedMessage, setEditedMessage] = useState('');
+  const [generatedMessage, setGeneratedMessage] = useState(demoMessage ?? '');
+  const [editedMessage, setEditedMessage] = useState(demoMessage ?? '');
   const [isEditing, setIsEditing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -311,6 +313,8 @@ export default function IntegratedOutreachModal({ jobData, onClose }: Integrated
             )}
           </section>
 
+          {/* Outreach type + channel — wrapped for tour spotlight */}
+          <div data-tour="tour-modal-setup" className="grid gap-5">
           {/* Outreach type radios (panel style) */}
           <section className="grid gap-2">
             <label className="text-sm font-medium">Outreach type</label>
@@ -354,6 +358,8 @@ export default function IntegratedOutreachModal({ jobData, onClose }: Integrated
             </div>
           </section>
 
+          </div>{/* end tour-modal-setup */}
+
           {/* Error (shown even when no preview) */}
           {error && (
             <div className="p-3 bg-folly/10 border border-folly/40 rounded-lg">
@@ -368,7 +374,7 @@ export default function IntegratedOutreachModal({ jobData, onClose }: Integrated
 
           {/* Message preview (only after message is generated) */}
           {generatedMessage && (
-            <section className="grid gap-3">
+            <section data-tour="tour-modal-result" className="grid gap-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-semibold">
                   {isEditing ? 'Edit Message' : 'Message Preview'}

@@ -41,10 +41,6 @@ export default function OnboardingProvider({ children }: { children: React.React
   useEffect(() => {
     const createdAt = user?.createdAt ? new Date(user.createdAt).getTime() : 0;
     const isNewUser = createdAt > 0 && Date.now() - createdAt < NEW_USER_WINDOW_MS;
-    console.log('[onboarding]', {
-      loading, isSignedIn, userId: user?.id, createdAtRaw: user?.createdAt,
-      createdAt, isNewUser, onboardingStatus, isEligiblePath, decided, mode, pathname,
-    });
 
     if (loading || !isSignedIn || !user?.id || !isEligiblePath) return;
     if (decided) return;
