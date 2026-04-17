@@ -443,6 +443,7 @@ export default function Dashboard() {
             role="tab"
             aria-selected={activeTab === 'context'}
             aria-controls="tab-context"
+            data-tour="tour-resume-upload"
             className={`tab-btn focus-ring rounded-lg px-3 py-1.5 ${activeTab === 'context' ? 'bg-[var(--lavender-web)] text-[#0f1018]' : 'text-neutral-200'
               } ${!isPaid ? 'relative' : ''}`}
             onClick={() => {
@@ -491,7 +492,7 @@ export default function Dashboard() {
 
       {/* Contacts Tab */}
       {activeTab === 'contacts' && (
-        <section id="tab-contacts" role="tabpanel" aria-labelledby="tab-contacts-btn" className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
+        <section id="tab-contacts" role="tabpanel" aria-labelledby="tab-contacts-btn" data-tour="tour-saved-contacts" className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
           {/* Page title and meta */}
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-lg sm:text-xl font-semibold text-white">Saved Founder Contacts</h1>
@@ -869,6 +870,7 @@ export default function Dashboard() {
                           )}
                           {/* Generate Outreach button */}
                           <button
+                            data-tour="tour-generate-ai"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (isPaid) {

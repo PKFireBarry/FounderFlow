@@ -750,7 +750,7 @@ export default function OutreachBoard() {
 
           {/* Tabs */}
           <div className="mx-auto max-w-6xl px-4 pt-4 sm:pt-6">
-            <div role="tablist" aria-label="Outreach channels" className="inline-flex rounded-xl border border-white/10 panel p-1 text-sm">
+            <div role="tablist" data-tour="tour-kanban-board" aria-label="Outreach channels" className="inline-flex rounded-xl border border-white/10 panel p-1 text-sm">
               <button
                 id="tab-email-btn"
                 role="tab"

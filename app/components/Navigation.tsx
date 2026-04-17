@@ -49,6 +49,7 @@ export default function Navigation() {
               <>
                 <Link
                   href="/dashboard"
+                  data-tour="tour-nav-dashboard"
                   className={`nav-link rounded-lg px-3 py-1.5 text-sm ${pathname === '/dashboard' ? '[aria-current="page"]' : ''
                     }`}
                   {...(pathname === '/dashboard' ? { 'aria-current': 'page' } : {})}
@@ -57,6 +58,7 @@ export default function Navigation() {
                 </Link>
                 <Link
                   href="/outreach"
+                  data-tour="tour-nav-outreach"
                   className={`nav-link rounded-lg px-3 py-1.5 text-sm ${pathname === '/outreach' ? '[aria-current="page"]' : ''
                     }`}
                   {...(pathname === '/outreach' ? { 'aria-current': 'page' } : {})}
