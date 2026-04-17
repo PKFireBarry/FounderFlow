@@ -7,8 +7,11 @@ import { useUser } from '@clerk/nextjs';
 import OnboardingTour from './OnboardingTour';
 import LegacyInviteBanner from './LegacyInviteBanner';
 
-// Only show on authenticated app pages, never on landing or billing
 const TOUR_ELIGIBLE_PATHS = ['/opportunities', '/dashboard', '/outreach', '/billing'];
+
+// How recent a sign-up must be to auto-trigger the tour (even if onboardingStatus hasn't
+// propagated from Firestore yet — race condition safety net).
+const NEW_USER_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 type Mode = 'tour' | 'banner' | 'none';
 
@@ -29,40 +32,51 @@ export default function OnboardingProvider({ children }: { children: React.React
   const { onboardingStatus, loading } = useSubscription();
   const pathname = usePathname();
   const [mode, setMode] = useState<Mode>('none');
-  const [resolved, setResolved] = useState(false);
+  // `decided` locks in the decision so we don't re-evaluate after the user
+  // has already started or explicitly dismissed the tour / banner.
+  const [decided, setDecided] = useState(false);
 
   const isEligiblePath = TOUR_ELIGIBLE_PATHS.some(p => pathname.startsWith(p));
 
   useEffect(() => {
     if (loading || !isSignedIn || !user?.id || !isEligiblePath) return;
+    if (decided) return;
 
-    if (resolved) return; // already decided this session
+    const createdAt = user.createdAt ? new Date(user.createdAt).getTime() : 0;
+    const isNewUser = Date.now() - createdAt < NEW_USER_WINDOW_MS;
 
-    if (onboardingStatus === 'pending') {
+    if (onboardingStatus === 'pending' || (onboardingStatus === null && isNewUser)) {
+      // Brand-new user — auto-launch the tour.
+      // The `isNewUser` branch catches the race where auto-activate writes
+      // onboardingStatus:'pending' AFTER the first subscription read completes.
       setMode('tour');
-      setResolved(true);
-    } else if (onboardingStatus === null) {
-      // Existing user — show subtle invite banner
+      setDecided(true);
+    } else if (onboardingStatus === null && !isNewUser) {
+      // Existing user who never saw onboarding — show the soft invite banner.
+      // Don't set decided yet — if onboardingStatus later becomes 'pending'
+      // (shouldn't happen for old users, but just in case), we can upgrade.
       setMode('banner');
-      setResolved(true);
     } else {
-      // completed / skipped / dismissed — nothing
+      // completed / skipped / dismissed — nothing to show.
       setMode('none');
-      setResolved(true);
+      setDecided(true);
     }
-  }, [loading, isSignedIn, user?.id, onboardingStatus, isEligiblePath, resolved]);
+  }, [loading, isSignedIn, user?.id, user?.createdAt, onboardingStatus, isEligiblePath, decided]);
 
   const handleTourFinish = useCallback(async (status: 'completed' | 'skipped') => {
     setMode('none');
+    setDecided(true);
     await persistStatus(status);
   }, []);
 
   const handleBannerStart = useCallback(() => {
     setMode('tour');
+    setDecided(true);
   }, []);
 
   const handleBannerDismiss = useCallback(async () => {
     setMode('none');
+    setDecided(true);
     await persistStatus('dismissed');
   }, []);
 
