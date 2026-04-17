@@ -6,13 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TOUR_STEPS, type TourStep } from './tourSteps';
 
 interface Rect { top: number; left: number; width: number; height: number; }
+interface Props { onFinish: (status: 'completed' | 'skipped') => void; }
 
-interface Props {
-  onFinish: (status: 'completed' | 'skipped') => void;
-}
-
-const PAD = 2;
+// Exact fit — no extra padding so the ring never bleeds into adjacent elements
+const PAD = 0;
 const CARD_W = 300;
+
+const CONFETTI_COLORS = ['#b497d6', '#e1e2ef', '#6a5acd', '#ffffff', '#9b8ec4', '#d4b8f0'];
 
 function getRect(selector: string): Rect | null {
   const el = document.querySelector(`[data-tour="${selector}"]`);
@@ -26,25 +26,47 @@ function getRect(selector: string): Rect | null {
   };
 }
 
+// Pure framer-motion confetti — no external package
 function ConfettiBurst() {
-  useEffect(() => {
-    let active = true;
-    import('canvas-confetti').then(mod => {
-      if (!active) return;
-      const confetti = mod.default;
-      confetti({
-        particleCount: 120,
-        spread: 70,
-        origin: { x: 0.5, y: 0.5 },
-        colors: ['#b497d6', '#e1e2ef', '#6a5acd', '#ffffff', '#9b8ec4'],
-        startVelocity: 40,
-        gravity: 0.9,
-        ticks: 200,
-      });
-    });
-    return () => { active = false; };
-  }, []);
-  return null;
+  const particles = useRef(
+    Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      x: (Math.random() - 0.5) * 700,
+      y: -(Math.random() * 500 + 100),
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      size: Math.random() * 8 + 4,
+      rotate: Math.random() * 720 - 360,
+      delay: Math.random() * 0.15,
+    }))
+  );
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: '45%',
+        left: '50%',
+        zIndex: 10010,
+        pointerEvents: 'none',
+      }}
+    >
+      {particles.current.map(p => (
+        <motion.div
+          key={p.id}
+          initial={{ x: 0, y: 0, opacity: 1, rotate: 0, scale: 1 }}
+          animate={{ x: p.x, y: p.y, opacity: 0, rotate: p.rotate, scale: 0.3 }}
+          transition={{ duration: 1.4, ease: 'easeOut', delay: p.delay }}
+          style={{
+            position: 'absolute',
+            width: p.size,
+            height: p.size * (Math.random() > 0.5 ? 1 : 0.4),
+            backgroundColor: p.color,
+            borderRadius: p.size > 8 ? '50%' : 2,
+          }}
+        />
+      ))}
+    </div>
+  );
 }
 
 function SpotlightRing({ rect }: { rect: Rect }) {
@@ -52,16 +74,17 @@ function SpotlightRing({ rect }: { rect: Rect }) {
     <motion.div
       initial={false}
       animate={{
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
+        top: rect.top - 2,
+        left: rect.left - 2,
+        width: rect.width + 4,
+        height: rect.height + 4,
       }}
-      transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+      transition={{ type: 'spring', stiffness: 350, damping: 32 }}
       style={{
         position: 'fixed',
         borderRadius: 8,
-        boxShadow: '0 0 0 3px #b497d6, 0 0 0 6px rgba(180,151,214,0.25)',
+        // Single solid ring — no outer glow spread that bleeds into adjacent elements
+        boxShadow: '0 0 0 2px #b497d6',
         pointerEvents: 'none',
         zIndex: 10001,
       }}
@@ -79,80 +102,81 @@ function SideCard({
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
 
   return (
-    <motion.div
-      style={{
-        position: 'fixed',
-        right: 24,
-        top: Math.max(80, vh / 2 - 120),
-        width: CARD_W,
-        zIndex: 10002,
-      }}
-      initial={{ opacity: 0, x: 30 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 30 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      className="rounded-2xl border border-white/10 bg-[#0f1018] shadow-2xl p-5 flex flex-col gap-3"
-    >
+    <>
       {showConfetti && <ConfettiBurst />}
-
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-          Step {index + 1} of {total}
-        </span>
-        <button
-          onClick={onSkip}
-          className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
-        >
-          Skip tour
-        </button>
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step.id}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.18 }}
-        >
-          <h3 className="text-sm font-semibold text-white mb-1">{step.title}</h3>
-          <p className="text-xs text-neutral-300 leading-relaxed">{step.body}</p>
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Progress dots */}
-      <div className="flex items-center gap-1 py-1">
-        {Array.from({ length: total }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-full transition-all"
-            style={{
-              width: i === index ? 14 : 6,
-              height: 6,
-              background: i === index ? '#b497d6' : 'rgba(255,255,255,0.15)',
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between gap-2">
-        {index > 0 ? (
+      <motion.div
+        style={{
+          position: 'fixed',
+          right: 24,
+          top: Math.max(80, vh / 2 - 140),
+          width: CARD_W,
+          zIndex: 10002,
+        }}
+        initial={{ opacity: 0, x: 30 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 30 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+        className="rounded-2xl border border-white/10 bg-[#0f1018] shadow-2xl p-5 flex flex-col gap-3"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+            Step {index + 1} of {total}
+          </span>
           <button
-            onClick={onBack}
-            className="text-xs text-neutral-400 hover:text-white transition-colors"
+            onClick={onSkip}
+            className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
           >
-            ← Back
+            Skip tour
           </button>
-        ) : <span />}
-        <button
-          onClick={onNext}
-          className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
-          style={{ background: 'linear-gradient(90deg,#b497d6,#e1e2ef)', color: '#0f1018' }}
-        >
-          {isLast ? 'Finish' : 'Next →'}
-        </button>
-      </div>
-    </motion.div>
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+          >
+            <h3 className="text-sm font-semibold text-white mb-1">{step.title}</h3>
+            <p className="text-xs text-neutral-300 leading-relaxed">{step.body}</p>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Progress dots */}
+        <div className="flex items-center gap-1 flex-wrap py-0.5">
+          {Array.from({ length: total }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-full transition-all duration-300"
+              style={{
+                width: i === index ? 14 : 5,
+                height: 5,
+                background: i === index ? '#b497d6' : 'rgba(255,255,255,0.15)',
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          {index > 0 ? (
+            <button
+              onClick={onBack}
+              className="text-xs text-neutral-400 hover:text-white transition-colors"
+            >
+              ← Back
+            </button>
+          ) : <span />}
+          <button
+            onClick={onNext}
+            className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold"
+            style={{ background: 'linear-gradient(90deg,#b497d6,#e1e2ef)', color: '#0f1018' }}
+          >
+            {isLast ? 'Finish' : 'Next →'}
+          </button>
+        </div>
+      </motion.div>
+    </>
   );
 }
 
@@ -160,8 +184,8 @@ export default function OnboardingTour({ onFinish }: Props) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
-  const mountedRef = useRef(true);
   const [showConfetti, setShowConfetti] = useState(false);
+  const mountedRef = useRef(true);
 
   const step = TOUR_STEPS[stepIndex];
   const total = TOUR_STEPS.length;
@@ -169,8 +193,7 @@ export default function OnboardingTour({ onFinish }: Props) {
 
   const measure = useCallback(() => {
     if (!step.selector) { setRect(null); return; }
-    const r = getRect(step.selector);
-    setRect(r);
+    setRect(getRect(step.selector));
   }, [step.selector]);
 
   useEffect(() => {
@@ -183,13 +206,11 @@ export default function OnboardingTour({ onFinish }: Props) {
     const t = setTimeout(() => {
       if (!mountedRef.current) return;
       measure();
-      // If this step has a click action, fire it after a short delay so
-      // the user sees the ring first
       if (step.action === 'click' && step.selector) {
         setTimeout(() => {
           const el = document.querySelector<HTMLElement>(`[data-tour="${step.selector}"]`);
-          if (el) el.click();
-        }, 600);
+          el?.click();
+        }, 700);
       }
     }, 350);
     return () => clearTimeout(t);
@@ -210,7 +231,7 @@ export default function OnboardingTour({ onFinish }: Props) {
     const current = TOUR_STEPS[stepIndex];
     if (target.route && target.route !== current.route) {
       router.push(target.route);
-      await new Promise(r => setTimeout(r, 700));
+      await new Promise(r => setTimeout(r, 750));
     }
     if (mountedRef.current) setStepIndex(index);
   }, [stepIndex, router]);
@@ -218,8 +239,7 @@ export default function OnboardingTour({ onFinish }: Props) {
   const handleNext = useCallback(async () => {
     if (isLast) {
       setShowConfetti(true);
-      // brief pause so confetti fires before unmounting
-      setTimeout(() => onFinish('completed'), 1200);
+      setTimeout(() => onFinish('completed'), 1500);
       return;
     }
     await goToStep(stepIndex + 1);
@@ -230,27 +250,23 @@ export default function OnboardingTour({ onFinish }: Props) {
     await goToStep(stepIndex - 1);
   }, [stepIndex, goToStep]);
 
-  const handleSkip = useCallback(() => {
-    onFinish('skipped');
-  }, [onFinish]);
-
   return (
     <>
-      {/* Light non-blocking tint */}
+      {/* Light non-blocking tint — users can see the full page behind it */}
       <div
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.18)',
+          background: 'rgba(0,0,0,0.2)',
           pointerEvents: 'none',
           zIndex: 10000,
         }}
       />
 
-      {/* Animated spotlight ring */}
+      {/* Spring-animated spotlight ring — moves smoothly between elements */}
       {rect && <SpotlightRing rect={rect} />}
 
-      {/* Fixed sidebar card */}
+      {/* Fixed right-side card — never overlaps highlighted elements */}
       <AnimatePresence>
         <SideCard
           key="tour-card"
@@ -259,7 +275,7 @@ export default function OnboardingTour({ onFinish }: Props) {
           total={total}
           onNext={handleNext}
           onBack={handleBack}
-          onSkip={handleSkip}
+          onSkip={() => onFinish('skipped')}
           isLast={isLast}
           showConfetti={showConfetti}
         />

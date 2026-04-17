@@ -148,6 +148,7 @@ export default function IntegratedOutreachModal({ jobData, onClose }: Integrated
           onClick={onClose}
         >
         <div
+          data-tour="tour-outreach-modal"
           className="bg-white text-neutral-900 dark:bg-[#11121b] dark:text-neutral-100 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden border border-white/10"
           onClick={(e) => e.stopPropagation()}
         >

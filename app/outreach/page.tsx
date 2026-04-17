@@ -452,7 +452,7 @@ export default function OutreachBoard() {
 
     return (
       <div className="kanban-container">
-        <div className={`kanban-board ${stages.length === 5 ? 'columns-5' : 'columns-4'}`}>
+        <div data-tour="tour-kanban-cols" className={`kanban-board ${stages.length === 5 ? 'columns-5' : 'columns-4'}`}>
           {stages.map(stage => (
             <div key={stage} className="kanban-col rounded-2xl" data-stage={stage} data-channel={channel}>
               {/* Column Header */}
@@ -750,7 +750,7 @@ export default function OutreachBoard() {
 
           {/* Tabs */}
           <div className="mx-auto max-w-6xl px-4 pt-4 sm:pt-6">
-            <div role="tablist" data-tour="tour-kanban-board" aria-label="Outreach channels" className="inline-flex rounded-xl border border-white/10 panel p-1 text-sm">
+            <div role="tablist" data-tour="tour-kanban-tabs" aria-label="Outreach channels" className="inline-flex rounded-xl border border-white/10 panel p-1 text-sm">
               <button
                 id="tab-email-btn"
                 role="tab"

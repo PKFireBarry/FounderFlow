@@ -2,7 +2,6 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { collection, query, where, getDocs, Timestamp, deleteDoc, doc } from 'firebase/firestore';
 import Link from 'next/link';
 import { clientDb } from '../../lib/firebase/client';
@@ -45,7 +44,6 @@ interface UserProfile {
 
 export default function Dashboard() {
   const { isSignedIn, user } = useUser();
-  const searchParams = useSearchParams();
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'contacts' | 'context' | 'archive'>('contacts');
@@ -122,10 +120,12 @@ export default function Dashboard() {
 
   // Onboarding: switch to context tab if URL param says so
   useEffect(() => {
-    if (searchParams.get('tab') === 'context' && isPaid) {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab') === 'context' && isPaid) {
       setActiveTab('context');
     }
-  }, [searchParams, isPaid]);
+  }, [isPaid]);
 
 
   const confirmDeleteJob = () => {
