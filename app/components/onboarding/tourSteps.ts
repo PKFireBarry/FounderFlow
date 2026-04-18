@@ -28,9 +28,9 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'filters',
     route: '/opportunities',
-    selector: 'tour-filters',
+    selector: 'tour-filter-toggle',
     title: 'Search & Filter',
-    body: 'Search by name or company. Use Filters to narrow by contact type — Email, LinkedIn, or Apply link.',
+    body: "Search by name or company. The Filters panel (opening now) lets you narrow by contact type — Email, LinkedIn, Apply link — or filter by role tags like 'engineer', 'designer', or 'AI'.",
     placement: 'bottom',
   },
   {

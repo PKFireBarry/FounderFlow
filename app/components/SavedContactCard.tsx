@@ -1,6 +1,5 @@
 "use client";
 
-import { Timestamp } from 'firebase/firestore';
 import ContactInfoGate from './ContactInfoGate';
 import { isValidActionableUrl } from '../../lib/url-validation';
 

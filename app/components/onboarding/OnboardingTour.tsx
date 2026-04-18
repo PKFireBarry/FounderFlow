@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TOUR_STEPS, type TourStep } from './tourSteps';
-import MockContactCard from './MockContactCard';
+import SavedContactCard from '../SavedContactCard';
 import IntegratedOutreachModal from '../IntegratedOutreachModal';
 import { DEMO_CONTACT, DEMO_EMAIL_BODY } from './demoData';
 
@@ -291,6 +291,13 @@ export default function OnboardingTour({ onFinish }: Props) {
     return () => { mountedRef.current = false; };
   }, []);
 
+  const updatePos = useCallback((r: Rect) => {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cardW = vw >= 1024 ? CARD_W_DESKTOP : CARD_W_TABLET;
+    setCardPos(computeCardPos(r, step.placement, vw, vh, cardW));
+  }, [step.placement]);
+
   const measure = useCallback(() => {
     if (!step.selector) {
       setRect(null);
@@ -300,21 +307,25 @@ export default function OnboardingTour({ onFinish }: Props) {
     const el = document.querySelector(`[data-tour="${step.selector}"]`);
     if (el) {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      setTimeout(() => {
-        if (!mountedRef.current) return;
-        const r = getRect(step.selector!);
-        setRect(r);
-        if (r) {
-          const vw = window.innerWidth;
-          const vh = window.innerHeight;
-          const cardW = vw >= 1024 ? CARD_W_DESKTOP : CARD_W_TABLET;
-          setCardPos(computeCardPos(r, step.placement, vw, vh, cardW));
-        }
-      }, 200);
-    } else {
-      setRect(null);
     }
-  }, [step.selector, step.placement]);
+
+    setTimeout(() => {
+      if (!mountedRef.current) return;
+      const r = getRect(step.selector!);
+      if (r) {
+        setRect(r);
+        updatePos(r);
+      } else {
+        // Element not in DOM yet (e.g. tab not switched) — retry once
+        setTimeout(() => {
+          if (!mountedRef.current) return;
+          const r2 = getRect(step.selector!);
+          setRect(r2);
+          if (r2) updatePos(r2);
+        }, 500);
+      }
+    }, 350);
+  }, [step.selector, updatePos]);
 
   // Re-measure when placement changes for center steps
   useEffect(() => {
@@ -368,10 +379,16 @@ export default function OnboardingTour({ onFinish }: Props) {
       await new Promise(r => setTimeout(r, 800));
     }
 
-    // Special: switch to context tab when heading to resume-upload step
+    // Open filters panel when heading to filters step
+    if (target.id === 'filters') {
+      window.dispatchEvent(new CustomEvent('onboarding:open-filters'));
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    // Switch to context tab when heading to resume-upload step
     if (target.id === 'resume-upload') {
       window.dispatchEvent(new CustomEvent('onboarding:switch-tab', { detail: { tab: 'context' } }));
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 600));
     }
 
     if (mountedRef.current) setStepIndex(index);
@@ -412,7 +429,7 @@ export default function OnboardingTour({ onFinish }: Props) {
       {/* Spring-animated spotlight ring */}
       {rect && <SpotlightRing rect={rect} />}
 
-      {/* Mock contact card overlay (steps with showMockCard) */}
+      {/* Demo contact card overlay — uses the real SavedContactCard with injected demo data */}
       {step.showMockCard && (
         <div
           style={{
@@ -422,9 +439,25 @@ export default function OnboardingTour({ onFinish }: Props) {
             transform: 'translate(-50%, -50%)',
             zIndex: 10003,
             pointerEvents: 'auto',
+            width: 260,
           }}
         >
-          <MockContactCard onGenerateClick={handleMockGenerate} />
+          <SavedContactCard
+            data-tour="tour-mock-card"
+            company={DEMO_CONTACT.company}
+            name={DEMO_CONTACT.name}
+            role={DEMO_CONTACT.role}
+            company_info={DEMO_CONTACT.company_info}
+            looking_for={DEMO_CONTACT.looking_for}
+            email={DEMO_CONTACT.email}
+            linkedinurl={DEMO_CONTACT.linkedinurl}
+            isPaid={true}
+            isDemo={true}
+            lastOutreach="never"
+            generateButtonTourAttr="tour-mock-generate"
+            onCardClick={handleMockGenerate}
+            onGenerateOutreach={handleMockGenerate}
+          />
         </div>
       )}
 
@@ -440,96 +473,22 @@ export default function OnboardingTour({ onFinish }: Props) {
         </div>
       )}
 
-      {/* Tour card — dynamic placement on desktop, bottom sheet on mobile */}
-      <AnimatePresence>
-        {!showDemoModal && (
-          <TourCard
-            key="tour-card"
-            step={step}
-            index={stepIndex}
-            total={total}
-            cardPos={cardPos}
-            isMobile={isMobile}
-            onNext={handleNext}
-            onBack={handleBack}
-            onSkip={() => onFinish('skipped')}
-            isLast={isLast}
-            showConfetti={showConfetti}
-          />
-        )}
-        {showDemoModal && (
-          /* On modal steps, show a compact floating nav bar instead */
-          <motion.div
-            key="tour-modal-nav"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            style={{
-              position: 'fixed',
-              bottom: isMobile ? 16 : 24,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 10005,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              background: '#0f1018',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 16,
-              padding: '12px 20px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <span style={{ color: '#b497d6', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Step {stepIndex + 1}/{total}
-            </span>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={step.id}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.15 }}
-                style={{ color: '#e0e0e0', fontSize: 13 }}
-              >
-                {step.title}
-              </motion.div>
-            </AnimatePresence>
-            <div style={{ display: 'flex', gap: 8, marginLeft: 8 }}>
-              {stepIndex > 0 && (
-                <button
-                  onClick={handleBack}
-                  style={{ fontSize: 12, color: '#888', cursor: 'pointer', background: 'none', border: 'none' }}
-                >
-                  ← Back
-                </button>
-              )}
-              <button
-                onClick={handleNext}
-                style={{
-                  background: 'linear-gradient(90deg,#b497d6,#e1e2ef)',
-                  color: '#0f1018',
-                  border: 'none',
-                  borderRadius: 10,
-                  padding: '6px 14px',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                {isLast ? 'Finish' : 'Next →'}
-              </button>
-              <button
-                onClick={() => onFinish('skipped')}
-                style={{ fontSize: 12, color: '#555', cursor: 'pointer', background: 'none', border: 'none' }}
-              >
-                Skip
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Tour card — always visible; anchors left of modal on modal steps */}
+      <TourCard
+        key="tour-card"
+        step={step}
+        index={stepIndex}
+        total={total}
+        cardPos={showDemoModal
+          ? { top: typeof window !== 'undefined' ? window.innerHeight / 2 - CARD_EST_H / 2 : 300, left: 24 }
+          : cardPos}
+        isMobile={isMobile}
+        onNext={handleNext}
+        onBack={handleBack}
+        onSkip={() => onFinish('skipped')}
+        isLast={isLast}
+        showConfetti={showConfetti}
+      />
     </>
   );
 }

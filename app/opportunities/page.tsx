@@ -752,6 +752,12 @@ export default function EntryPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  useEffect(() => {
+    const handler = () => setMobileFiltersOpen(true);
+    window.addEventListener('onboarding:open-filters', handler);
+    return () => window.removeEventListener('onboarding:open-filters', handler);
+  }, []);
+
   const toggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) => {
       const next = new Set(prev);
@@ -1203,6 +1209,7 @@ export default function EntryPage() {
                 />
               </div>
               <button
+                data-tour="tour-filter-toggle"
                 onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
                 className="relative flex items-center gap-1.5 rounded-lg border px-3 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-colors"
                 style={{
