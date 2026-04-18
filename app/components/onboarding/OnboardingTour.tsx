@@ -373,21 +373,17 @@ export default function OnboardingTour({ onFinish }: Props) {
     const target = TOUR_STEPS[index];
     const current = TOUR_STEPS[stepIndex];
 
-    // Hide demo card when leaving the mock-card step
-    if (current.showMockCard && !target.showMockCard) {
-      window.dispatchEvent(new CustomEvent('onboarding:hide-demo-card'));
+    // Auto-save the highlighted entry when leaving the save-button step
+    if (current.id === 'save-button') {
+      const saveBtn = document.querySelector<HTMLElement>('[data-tour="tour-save-button"]');
+      saveBtn?.click();
+      await new Promise(r => setTimeout(r, 900));
     }
 
     // Navigate if route changes
     if (target.route && target.route !== current.route) {
       router.push(target.route);
       await new Promise(r => setTimeout(r, 800));
-    }
-
-    // Show demo card in the grid when entering the mock-card step
-    if (target.showMockCard) {
-      window.dispatchEvent(new CustomEvent('onboarding:show-demo-card'));
-      await new Promise(r => setTimeout(r, 200));
     }
 
     // Open filters panel when heading to filters step
@@ -407,7 +403,6 @@ export default function OnboardingTour({ onFinish }: Props) {
 
   const handleNext = useCallback(async () => {
     if (isLast) {
-      window.dispatchEvent(new CustomEvent('onboarding:hide-demo-card'));
       setShowConfetti(true);
       setTimeout(() => onFinish('completed'), 1600);
       return;
@@ -420,18 +415,6 @@ export default function OnboardingTour({ onFinish }: Props) {
     await goToStep(stepIndex - 1);
   }, [stepIndex, goToStep]);
 
-  // Listen for the demo card's Generate button click (dispatched by the dashboard)
-  useEffect(() => {
-    const handler = () => goToStep(stepIndex + 1);
-    window.addEventListener('onboarding:demo-generate-click', handler);
-    return () => window.removeEventListener('onboarding:demo-generate-click', handler);
-  }, [stepIndex, goToStep]);
-
-  // Also hide demo card on tour skip/finish
-  const handleSkip = useCallback(() => {
-    window.dispatchEvent(new CustomEvent('onboarding:hide-demo-card'));
-    onFinish('skipped');
-  }, [onFinish]);
 
   return (
     <>
@@ -473,7 +456,7 @@ export default function OnboardingTour({ onFinish }: Props) {
         isMobile={isMobile}
         onNext={handleNext}
         onBack={handleBack}
-        onSkip={handleSkip}
+        onSkip={() => onFinish('skipped')}
         isLast={isLast}
         showConfetti={showConfetti}
         zIndex={showDemoModal ? 10005 : 10002}

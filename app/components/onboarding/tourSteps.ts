@@ -7,8 +7,6 @@ export interface TourStep {
   title: string;
   body: string;
   placement: Placement;
-  /** Tour renders MockContactCard overlay on this step */
-  showMockCard?: boolean;
   /** Tour renders DemoOutreachModal overlay on this step */
   showDemoModal?: boolean;
 }
@@ -70,15 +68,14 @@ export const TOUR_STEPS: TourStep[] = [
     placement: 'bottom',
   },
 
-  // ── AI Outreach — demo contact card ──────────────────────────────────────
+  // ── AI Outreach — generate button ────────────────────────────────────────
   {
-    id: 'mock-card',
+    id: 'generate-ai',
     route: '/dashboard',
-    selector: 'tour-mock-card',
+    selector: 'tour-generate-ai',
     title: 'Generate Outreach',
-    body: 'Each saved founder card has a Generate Outreach button. Click it to open the AI writing tool — we\'ll show you on this demo contact.',
-    placement: 'right',
-    showMockCard: true,
+    body: "Every saved contact card has a Generate Outreach button. Click it to open the AI writer — we'll demo it now.",
+    placement: 'top',
   },
 
   // ── AI Outreach — modal setup ─────────────────────────────────────────────
