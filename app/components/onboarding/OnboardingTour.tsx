@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TOUR_STEPS, type TourStep } from './tourSteps';
-import SavedContactCard from '../SavedContactCard';
 import IntegratedOutreachModal from '../IntegratedOutreachModal';
 import { DEMO_CONTACT, DEMO_EMAIL_BODY } from './demoData';
 
@@ -374,10 +373,21 @@ export default function OnboardingTour({ onFinish }: Props) {
     const target = TOUR_STEPS[index];
     const current = TOUR_STEPS[stepIndex];
 
+    // Hide demo card when leaving the mock-card step
+    if (current.showMockCard && !target.showMockCard) {
+      window.dispatchEvent(new CustomEvent('onboarding:hide-demo-card'));
+    }
+
     // Navigate if route changes
     if (target.route && target.route !== current.route) {
       router.push(target.route);
       await new Promise(r => setTimeout(r, 800));
+    }
+
+    // Show demo card in the grid when entering the mock-card step
+    if (target.showMockCard) {
+      window.dispatchEvent(new CustomEvent('onboarding:show-demo-card'));
+      await new Promise(r => setTimeout(r, 200));
     }
 
     // Open filters panel when heading to filters step
@@ -397,6 +407,7 @@ export default function OnboardingTour({ onFinish }: Props) {
 
   const handleNext = useCallback(async () => {
     if (isLast) {
+      window.dispatchEvent(new CustomEvent('onboarding:hide-demo-card'));
       setShowConfetti(true);
       setTimeout(() => onFinish('completed'), 1600);
       return;
@@ -409,10 +420,18 @@ export default function OnboardingTour({ onFinish }: Props) {
     await goToStep(stepIndex - 1);
   }, [stepIndex, goToStep]);
 
-  // When mock card Generate button is clicked, advance to modal step
-  const handleMockGenerate = useCallback(() => {
-    goToStep(stepIndex + 1);
+  // Listen for the demo card's Generate button click (dispatched by the dashboard)
+  useEffect(() => {
+    const handler = () => goToStep(stepIndex + 1);
+    window.addEventListener('onboarding:demo-generate-click', handler);
+    return () => window.removeEventListener('onboarding:demo-generate-click', handler);
   }, [stepIndex, goToStep]);
+
+  // Also hide demo card on tour skip/finish
+  const handleSkip = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('onboarding:hide-demo-card'));
+    onFinish('skipped');
+  }, [onFinish]);
 
   return (
     <>
@@ -431,38 +450,6 @@ export default function OnboardingTour({ onFinish }: Props) {
 
       {/* Spring-animated spotlight ring */}
       {rect && <SpotlightRing rect={rect} />}
-
-      {/* Demo contact card overlay — uses the real SavedContactCard with injected demo data */}
-      {step.showMockCard && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10003,
-            pointerEvents: 'auto',
-            width: 260,
-          }}
-        >
-          <SavedContactCard
-            data-tour="tour-mock-card"
-            company={DEMO_CONTACT.company}
-            name={DEMO_CONTACT.name}
-            role={DEMO_CONTACT.role}
-            company_info={DEMO_CONTACT.company_info}
-            looking_for={DEMO_CONTACT.looking_for}
-            email={DEMO_CONTACT.email}
-            linkedinurl={DEMO_CONTACT.linkedinurl}
-            isPaid={true}
-            isDemo={true}
-            lastOutreach="never"
-            generateButtonTourAttr="tour-mock-generate"
-            onCardClick={handleMockGenerate}
-            onGenerateOutreach={handleMockGenerate}
-          />
-        </div>
-      )}
 
       {/* Demo outreach modal — no wrapper stacking context so the tour card (z-10005) stays above z-50 backdrop */}
       {showDemoModal && (
@@ -486,7 +473,7 @@ export default function OnboardingTour({ onFinish }: Props) {
         isMobile={isMobile}
         onNext={handleNext}
         onBack={handleBack}
-        onSkip={() => onFinish('skipped')}
+        onSkip={handleSkip}
         isLast={isLast}
         showConfetti={showConfetti}
         zIndex={showDemoModal ? 10005 : 10002}

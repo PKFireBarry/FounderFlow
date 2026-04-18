@@ -17,6 +17,7 @@ import { useSubscription } from '../hooks/useSubscription';
 import PaywallModal from '../components/PaywallModal';
 import { isValidActionableUrl } from '../../lib/url-validation';
 import SavedContactCard from '../components/SavedContactCard';
+import { DEMO_CONTACT } from '../components/onboarding/demoData';
 
 interface SavedJob {
   id: string;
@@ -59,6 +60,7 @@ export default function Dashboard() {
   const { ToastContainer } = useToast();
   const [, setUserProfile] = useState<UserProfile | null>(null);
   const { isPaid } = useSubscription();
+  const [showTourDemoCard, setShowTourDemoCard] = useState(false);
 
   // Memoize the profile update callback to prevent unnecessary re-renders
   const handleProfileUpdate = useCallback((profile: UserProfile) => {
@@ -131,7 +133,17 @@ export default function Dashboard() {
       if (tab === 'contacts') setActiveTab('contacts');
     };
     window.addEventListener('onboarding:switch-tab', handler);
-    return () => window.removeEventListener('onboarding:switch-tab', handler);
+
+    const showDemo = () => setShowTourDemoCard(true);
+    const hideDemo = () => setShowTourDemoCard(false);
+    window.addEventListener('onboarding:show-demo-card', showDemo);
+    window.addEventListener('onboarding:hide-demo-card', hideDemo);
+
+    return () => {
+      window.removeEventListener('onboarding:switch-tab', handler);
+      window.removeEventListener('onboarding:show-demo-card', showDemo);
+      window.removeEventListener('onboarding:hide-demo-card', hideDemo);
+    };
   }, []);
 
 
@@ -599,7 +611,27 @@ export default function Dashboard() {
                 )}
               </div>
             ) : (
-              paginatedJobs.map((job) => {
+              <>
+                {/* Tour demo card — injected as first grid item during onboarding step 7 */}
+                {showTourDemoCard && (
+                  <SavedContactCard
+                    data-tour="tour-mock-card"
+                    company={DEMO_CONTACT.company}
+                    name={DEMO_CONTACT.name}
+                    role={DEMO_CONTACT.role}
+                    company_info={DEMO_CONTACT.company_info}
+                    looking_for={DEMO_CONTACT.looking_for}
+                    email={DEMO_CONTACT.email}
+                    linkedinurl={DEMO_CONTACT.linkedinurl}
+                    isPaid={true}
+                    isDemo={true}
+                    lastOutreach="never"
+                    generateButtonTourAttr="tour-mock-generate"
+                    onCardClick={() => window.dispatchEvent(new CustomEvent('onboarding:demo-generate-click'))}
+                    onGenerateOutreach={() => window.dispatchEvent(new CustomEvent('onboarding:demo-generate-click'))}
+                  />
+                )}
+                {paginatedJobs.map((job) => {
                 const tags = getTags(job);
                 const outreachInfo = getLatestOutreachInfo(job.name || '', job.company || '');
                 const avatarInfo = getAvatarInfo(job.name, job.company, job.company_url, job.url);
@@ -918,7 +950,8 @@ export default function Dashboard() {
                     </div>
                   </article>
                 );
-              })
+              })}
+              </>
             )}
           </div>
 
