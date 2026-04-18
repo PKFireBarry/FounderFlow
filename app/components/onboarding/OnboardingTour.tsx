@@ -16,7 +16,7 @@ const CARD_W_TABLET = 320;
 const CARD_EST_H = 240; // estimated card height for collision avoidance
 const GAP = 14;
 const MARGIN = 12;
-const MOBILE_BP = 640;
+const MOBILE_BP = 768;
 
 const CONFETTI_COLORS = ['#b497d6', '#e1e2ef', '#6a5acd', '#ffffff', '#9b8ec4', '#d4b8f0'];
 
@@ -96,9 +96,9 @@ function computeCardPos(
   return { top, left };
 }
 
-function ConfettiBurst() {
+function ConfettiBurst({ count = 60 }: { count?: number }) {
   const particles = useRef(
-    Array.from({ length: 60 }, (_, i) => ({
+    Array.from({ length: count }, (_, i) => ({
       id: i,
       x: (Math.random() - 0.5) * 800,
       y: -(Math.random() * 600 + 100),
@@ -166,10 +166,12 @@ function TourCard({
 
   const mobileStyle = {
     position: 'fixed' as const,
-    bottom: 16,
-    left: 16,
-    right: 16,
+    top: 12,
+    left: 12,
+    right: 12,
     width: 'auto',
+    maxHeight: '40vh',
+    overflowY: 'auto' as const,
     zIndex,
   };
 
@@ -183,16 +185,16 @@ function TourCard({
 
   return (
     <>
-      {showConfetti && <ConfettiBurst />}
+      {showConfetti && <ConfettiBurst count={isMobile ? 30 : 60} />}
       <motion.div
         key="tour-card"
-        initial={isMobile ? { opacity: 0, y: 40 } : { opacity: 0, scale: 0.95 }}
+        initial={isMobile ? { opacity: 0, y: -20 } : { opacity: 0, scale: 0.95 }}
         animate={
           isMobile
             ? { opacity: 1, y: 0 }
             : { opacity: 1, scale: 1, top: cardPos.top, left: cardPos.left }
         }
-        exit={isMobile ? { opacity: 0, y: 40 } : { opacity: 0, scale: 0.95 }}
+        exit={isMobile ? { opacity: 0, y: -20 } : { opacity: 0, scale: 0.95 }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
         className="rounded-2xl flex flex-col gap-4"
         style={{
@@ -384,6 +386,12 @@ export default function OnboardingTour({ onFinish }: Props) {
     if (target.route && target.route !== current.route) {
       router.push(target.route);
       await new Promise(r => setTimeout(r, 800));
+    }
+
+    // Auto-open mobile hamburger menu before nav-targeting steps
+    if (target.selector && target.selector.startsWith('tour-nav-') && window.innerWidth < MOBILE_BP) {
+      window.dispatchEvent(new CustomEvent('onboarding:open-mobile-nav'));
+      await new Promise(r => setTimeout(r, 250));
     }
 
     // Open filters panel when heading to filters step

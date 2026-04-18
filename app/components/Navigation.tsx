@@ -3,7 +3,7 @@
 import { UserButton, useUser, SignInButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import type { CSSProperties } from 'react';
 import NotificationBell from './NotificationBell';
@@ -13,6 +13,12 @@ export default function Navigation() {
   const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setMobileMenuOpen(true);
+    window.addEventListener('onboarding:open-mobile-nav', handler);
+    return () => window.removeEventListener('onboarding:open-mobile-nav', handler);
+  }, []);
 
   return (
     <nav className="navbar">
@@ -167,6 +173,7 @@ export default function Navigation() {
                 <>
                   <Link
                     href="/dashboard"
+                    data-tour="tour-nav-dashboard"
                     className={`nav-link rounded-lg px-3 py-2 text-sm ${pathname === '/dashboard' ? '[aria-current="page"]' : ''}`}
                     {...(pathname === '/dashboard' ? { 'aria-current': 'page' } : {})}
                     onClick={() => setMobileMenuOpen(false)}
@@ -175,6 +182,7 @@ export default function Navigation() {
                   </Link>
                   <Link
                     href="/outreach"
+                    data-tour="tour-nav-outreach"
                     className={`nav-link rounded-lg px-3 py-2 text-sm ${pathname === '/outreach' ? '[aria-current="page"]' : ''}`}
                     {...(pathname === '/outreach' ? { 'aria-current': 'page' } : {})}
                     onClick={() => setMobileMenuOpen(false)}
