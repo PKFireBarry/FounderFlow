@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TOUR_STEPS, type TourStep } from './tourSteps';
@@ -13,10 +13,13 @@ interface Props { onFinish: (status: 'completed' | 'skipped') => void; }
 const PAD = 0;
 const CARD_W_DESKTOP = 380;
 const CARD_W_TABLET = 320;
-const CARD_EST_H = 240; // estimated card height for collision avoidance
+const CARD_EST_H = 240;
 const GAP = 14;
 const MARGIN = 12;
 const MOBILE_BP = 768;
+const MOBILE_NAV_H = 64;
+
+const MOBILE_SKIP_IDS = new Set(['nav-outreach', 'kanban-tabs', 'kanban-cols']);
 
 const CONFETTI_COLORS = ['#b497d6', '#e1e2ef', '#6a5acd', '#ffffff', '#9b8ec4', '#d4b8f0'];
 
@@ -75,11 +78,9 @@ function computeCardPos(
       break;
   }
 
-  // Clamp to viewport
   top = Math.max(MARGIN, Math.min(vh - CARD_EST_H - MARGIN, top));
   left = Math.max(MARGIN, Math.min(vw - cardW - MARGIN, left));
 
-  // If card would overlap the spotlight rect on chosen side, flip to opposite
   if (placement === 'right' && left < rect.left + rect.width + GAP - 10) {
     left = Math.max(MARGIN, rect.left - cardW - GAP);
   }
@@ -147,13 +148,14 @@ function SpotlightRing({ rect }: { rect: Rect }) {
 }
 
 function TourCard({
-  step, index, total, cardPos, isMobile, onNext, onBack, onSkip, isLast, showConfetti, zIndex = 10002,
+  step, index, total, cardPos, isMobile, mobileSide, onNext, onBack, onSkip, isLast, showConfetti, zIndex = 10002,
 }: {
   step: TourStep;
   index: number;
   total: number;
   cardPos: CardPos;
   isMobile: boolean;
+  mobileSide: 'top' | 'bottom';
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
@@ -164,16 +166,9 @@ function TourCard({
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const cardW = vw >= 1024 ? CARD_W_DESKTOP : CARD_W_TABLET;
 
-  const mobileStyle = {
-    position: 'fixed' as const,
-    top: 12,
-    left: 12,
-    right: 12,
-    width: 'auto',
-    maxHeight: '40vh',
-    overflowY: 'auto' as const,
-    zIndex,
-  };
+  const mobileStyle = mobileSide === 'bottom'
+    ? { position: 'fixed' as const, bottom: 12, left: 12, right: 12, width: 'auto', maxHeight: '38vh', overflowY: 'auto' as const, zIndex }
+    : { position: 'fixed' as const, top: MOBILE_NAV_H + 8, left: 12, right: 12, width: 'auto', maxHeight: '38vh', overflowY: 'auto' as const, zIndex };
 
   const desktopStyle = {
     position: 'fixed' as const,
@@ -183,18 +178,20 @@ function TourCard({
     zIndex,
   };
 
+  const mobileInitialY = mobileSide === 'top' ? -20 : 20;
+
   return (
     <>
       {showConfetti && <ConfettiBurst count={isMobile ? 30 : 60} />}
       <motion.div
         key="tour-card"
-        initial={isMobile ? { opacity: 0, y: -20 } : { opacity: 0, scale: 0.95 }}
+        initial={isMobile ? { opacity: 0, y: mobileInitialY } : { opacity: 0, scale: 0.95 }}
         animate={
           isMobile
             ? { opacity: 1, y: 0 }
             : { opacity: 1, scale: 1, top: cardPos.top, left: cardPos.left }
         }
-        exit={isMobile ? { opacity: 0, y: -20 } : { opacity: 0, scale: 0.95 }}
+        exit={isMobile ? { opacity: 0, y: mobileInitialY } : { opacity: 0, scale: 0.95 }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
         className="rounded-2xl flex flex-col gap-4"
         style={{
@@ -284,9 +281,19 @@ export default function OnboardingTour({ onFinish }: Props) {
   const [showDemoModal, setShowDemoModal] = useState(false);
   const mountedRef = useRef(true);
 
-  const step = TOUR_STEPS[stepIndex];
-  const total = TOUR_STEPS.length;
+  const effectiveSteps = useMemo(
+    () => isMobile ? TOUR_STEPS.filter(s => !MOBILE_SKIP_IDS.has(s.id)) : TOUR_STEPS,
+    [isMobile]
+  );
+
+  const step = effectiveSteps[stepIndex];
+  const total = effectiveSteps.length;
   const isLast = stepIndex === total - 1;
+
+  // Position card on the opposite side of the viewport from the target element
+  const mobileSide: 'top' | 'bottom' = rect && rect.top < (typeof window !== 'undefined' ? window.innerHeight / 2 : 400)
+    ? 'bottom'
+    : 'top';
 
   useEffect(() => {
     mountedRef.current = true;
@@ -306,6 +313,12 @@ export default function OnboardingTour({ onFinish }: Props) {
       return;
     }
 
+    // Don't ring the saved-contacts section on mobile — it fills the whole viewport
+    if (isMobile && step.id === 'saved-contacts') {
+      setRect(null);
+      return;
+    }
+
     const el = document.querySelector(`[data-tour="${step.selector}"]`);
     if (el) {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -318,7 +331,6 @@ export default function OnboardingTour({ onFinish }: Props) {
         setRect(r);
         updatePos(r);
       } else {
-        // Element not in DOM yet (e.g. tab not switched) — retry once
         setTimeout(() => {
           if (!mountedRef.current) return;
           const r2 = getRect(step.selector!);
@@ -327,9 +339,8 @@ export default function OnboardingTour({ onFinish }: Props) {
         }, 500);
       }
     }, 350);
-  }, [step.selector, updatePos]);
+  }, [step.selector, step.id, isMobile, updatePos]);
 
-  // Re-measure when placement changes for center steps
   useEffect(() => {
     if (!step.selector) {
       const vw = window.innerWidth;
@@ -366,48 +377,42 @@ export default function OnboardingTour({ onFinish }: Props) {
     };
   }, [measure, rect, step.placement]);
 
-  // Open/close demo modal when steps require it
   useEffect(() => {
     setShowDemoModal(!!step.showDemoModal);
   }, [step.showDemoModal]);
 
   const goToStep = useCallback(async (index: number) => {
-    const target = TOUR_STEPS[index];
-    const current = TOUR_STEPS[stepIndex];
+    const target = effectiveSteps[index];
+    const current = effectiveSteps[stepIndex];
 
-    // Auto-save the highlighted entry when leaving the save-button step
     if (current.id === 'save-button') {
       const saveBtn = document.querySelector<HTMLElement>('[data-tour="tour-save-button"]');
       saveBtn?.click();
       await new Promise(r => setTimeout(r, 900));
     }
 
-    // Navigate if route changes
     if (target.route && target.route !== current.route) {
       router.push(target.route);
       await new Promise(r => setTimeout(r, 800));
     }
 
-    // Auto-open mobile hamburger menu before nav-targeting steps
     if (target.selector && target.selector.startsWith('tour-nav-') && window.innerWidth < MOBILE_BP) {
       window.dispatchEvent(new CustomEvent('onboarding:open-mobile-nav'));
       await new Promise(r => setTimeout(r, 250));
     }
 
-    // Open filters panel when heading to filters step
     if (target.id === 'filters') {
       window.dispatchEvent(new CustomEvent('onboarding:open-filters'));
       await new Promise(r => setTimeout(r, 300));
     }
 
-    // Switch to context tab when heading to resume-upload step
     if (target.id === 'resume-upload') {
       window.dispatchEvent(new CustomEvent('onboarding:switch-tab', { detail: { tab: 'context' } }));
       await new Promise(r => setTimeout(r, 600));
     }
 
     if (mountedRef.current) setStepIndex(index);
-  }, [stepIndex, router]);
+  }, [stepIndex, effectiveSteps, router]);
 
   const handleNext = useCallback(async () => {
     if (isLast) {
@@ -423,10 +428,8 @@ export default function OnboardingTour({ onFinish }: Props) {
     await goToStep(stepIndex - 1);
   }, [stepIndex, goToStep]);
 
-
   return (
     <>
-      {/* Light tint — hidden when demo modal is open (modal has its own bg-black/90 overlay) */}
       {!showDemoModal && (
         <div
           style={{
@@ -439,10 +442,8 @@ export default function OnboardingTour({ onFinish }: Props) {
         />
       )}
 
-      {/* Spring-animated spotlight ring */}
       {rect && <SpotlightRing rect={rect} />}
 
-      {/* Demo outreach modal — no wrapper stacking context so the tour card (z-10005) stays above z-50 backdrop */}
       {showDemoModal && (
         <IntegratedOutreachModal
           jobData={DEMO_CONTACT}
@@ -452,7 +453,6 @@ export default function OnboardingTour({ onFinish }: Props) {
         />
       )}
 
-      {/* Tour card — z-10005 keeps it above the modal's own z-50 backdrop when demo modal is open */}
       <TourCard
         key="tour-card"
         step={step}
@@ -462,6 +462,7 @@ export default function OnboardingTour({ onFinish }: Props) {
           ? { top: typeof window !== 'undefined' ? window.innerHeight / 2 - CARD_EST_H / 2 : 300, left: 24 }
           : cardPos}
         isMobile={isMobile}
+        mobileSide={mobileSide}
         onNext={handleNext}
         onBack={handleBack}
         onSkip={() => onFinish('skipped')}
