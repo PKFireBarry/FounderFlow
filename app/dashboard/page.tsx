@@ -977,13 +977,13 @@ export default function Dashboard() {
 
       {/* Context Settings Tab */}
       {activeTab === 'context' && (
-        <section id="tab-context" role="tabpanel" aria-labelledby="tab-context-btn" data-tour="tour-context-section" className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
+        <section id="tab-context" role="tabpanel" aria-labelledby="tab-context-btn" className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
           <div className="mb-4">
             <h1 className="text-lg sm:text-xl font-semibold text-white">Outreach Context Settings</h1>
             <p className="text-sm text-[#ccceda]">Configure your personal details, AI context, and notification preferences.</p>
           </div>
           <div className="grid gap-8">
-            <div className="rounded-xl border border-white/10 bg-[#141522] p-6">
+            <div data-tour="tour-context-section" className="rounded-xl border border-white/10 bg-[#141522] p-6">
               <ProfileEditor onProfileUpdate={handleProfileUpdate} />
             </div>
             <div className="rounded-xl border border-white/10 bg-[#141522] p-6">

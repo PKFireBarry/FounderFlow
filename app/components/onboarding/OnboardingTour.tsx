@@ -148,7 +148,7 @@ function SpotlightRing({ rect }: { rect: Rect }) {
 }
 
 function TourCard({
-  step, index, total, cardPos, isMobile, onNext, onBack, onSkip, isLast, showConfetti,
+  step, index, total, cardPos, isMobile, onNext, onBack, onSkip, isLast, showConfetti, zIndex = 10002,
 }: {
   step: TourStep;
   index: number;
@@ -160,6 +160,7 @@ function TourCard({
   onSkip: () => void;
   isLast: boolean;
   showConfetti: boolean;
+  zIndex?: number;
 }) {
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const cardW = vw >= 1024 ? CARD_W_DESKTOP : CARD_W_TABLET;
@@ -170,7 +171,7 @@ function TourCard({
     left: 16,
     right: 16,
     width: 'auto',
-    zIndex: 10002,
+    zIndex,
   };
 
   const desktopStyle = {
@@ -178,7 +179,7 @@ function TourCard({
     top: cardPos.top,
     left: cardPos.left,
     width: cardW,
-    zIndex: 10002,
+    zIndex,
   };
 
   return (
@@ -415,16 +416,18 @@ export default function OnboardingTour({ onFinish }: Props) {
 
   return (
     <>
-      {/* Light tint — allows users to see the page */}
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.22)',
-          pointerEvents: 'none',
-          zIndex: 10000,
-        }}
-      />
+      {/* Light tint — hidden when demo modal is open (modal has its own bg-black/90 overlay) */}
+      {!showDemoModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.22)',
+            pointerEvents: 'none',
+            zIndex: 10000,
+          }}
+        />
+      )}
 
       {/* Spring-animated spotlight ring */}
       {rect && <SpotlightRing rect={rect} />}
@@ -461,19 +464,17 @@ export default function OnboardingTour({ onFinish }: Props) {
         </div>
       )}
 
-      {/* Demo outreach modal (steps with showDemoModal) */}
+      {/* Demo outreach modal — no wrapper stacking context so the tour card (z-10005) stays above z-50 backdrop */}
       {showDemoModal && (
-        <div style={{ zIndex: 10003, position: 'relative' }}>
-          <IntegratedOutreachModal
-            jobData={DEMO_CONTACT}
-            userProfile={null}
-            onClose={() => goToStep(stepIndex + 1)}
-            demoMessage={DEMO_EMAIL_BODY}
-          />
-        </div>
+        <IntegratedOutreachModal
+          jobData={DEMO_CONTACT}
+          userProfile={null}
+          onClose={() => goToStep(stepIndex + 1)}
+          demoMessage={DEMO_EMAIL_BODY}
+        />
       )}
 
-      {/* Tour card — always visible; anchors left of modal on modal steps */}
+      {/* Tour card — z-10005 keeps it above the modal's own z-50 backdrop when demo modal is open */}
       <TourCard
         key="tour-card"
         step={step}
@@ -488,6 +489,7 @@ export default function OnboardingTour({ onFinish }: Props) {
         onSkip={() => onFinish('skipped')}
         isLast={isLast}
         showConfetti={showConfetti}
+        zIndex={showDemoModal ? 10005 : 10002}
       />
     </>
   );
