@@ -47,9 +47,8 @@ const EMPTY_FORM = {
   apply_url: '', url: '', looking_for: '', published: '',
 };
 
-const isEmpty = (v: string) => !v || v === 'N/A' || v.trim() === '';
-const isInvalid = (v: unknown) =>
-  !v || (typeof v === 'string' && ['n/a', 'na', 'unknown', ''].includes(v.toLowerCase().trim()));
+const isEmpty = (v: unknown) => { const s = String(v ?? '').trim(); return !s || s === 'N/A' || s === 'n/a'; };
+const isInvalid = (v: unknown) => { const s = String(v ?? '').toLowerCase().trim(); return !s || ['n/a', 'na', 'unknown'].includes(s); };
 
 function missingCriticalCount(e: EntryItem): number {
   let n = 0;
@@ -138,7 +137,7 @@ export default function DataManagementPage() {
   const duplicateIds = useMemo(() => {
     const combos: Record<string, string[]> = {};
     entries.forEach(e => {
-      const key = `${(e.name || '').toLowerCase().trim()}|||${(e.company || '').toLowerCase().trim()}`;
+      const key = `${String(e.name || '').toLowerCase().trim()}|||${String(e.company || '').toLowerCase().trim()}`;
       if (key !== '|||') {
         combos[key] = combos[key] || [];
         combos[key].push(e.id);
@@ -177,11 +176,11 @@ export default function DataManagementPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(e =>
-        e.name?.toLowerCase().includes(q) ||
-        e.company?.toLowerCase().includes(q) ||
-        e.role?.toLowerCase().includes(q) ||
-        e.company_info?.toLowerCase().includes(q) ||
-        e.email?.toLowerCase().includes(q)
+        String(e.name ?? '').toLowerCase().includes(q) ||
+        String(e.company ?? '').toLowerCase().includes(q) ||
+        String(e.role ?? '').toLowerCase().includes(q) ||
+        String(e.company_info ?? '').toLowerCase().includes(q) ||
+        String(e.email ?? '').toLowerCase().includes(q)
       );
     }
 
@@ -207,8 +206,8 @@ export default function DataManagementPage() {
       case 'duplicates':
         filtered = filtered.filter(e => duplicateIds.has(e.id));
         filtered.sort((a, b) => {
-          const ka = `${(a.name || '').toLowerCase()}|||${(a.company || '').toLowerCase()}`;
-          const kb = `${(b.name || '').toLowerCase()}|||${(b.company || '').toLowerCase()}`;
+          const ka = `${String(a.name || '').toLowerCase()}|||${String(a.company || '').toLowerCase()}`;
+          const kb = `${String(b.name || '').toLowerCase()}|||${String(b.company || '').toLowerCase()}`;
           return ka.localeCompare(kb);
         });
         return filtered;
@@ -220,8 +219,8 @@ export default function DataManagementPage() {
         const vb = b.published && b.published !== 'Unknown' ? b.published : '0000-00-00';
         return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
       }
-      const av = (a[sortField] || '').toLowerCase();
-      const bv = (b[sortField] || '').toLowerCase();
+      const av = String(a[sortField] || '').toLowerCase();
+      const bv = String(b[sortField] || '').toLowerCase();
       const cmp = av.localeCompare(bv);
       return sortDir === 'asc' ? cmp : -cmp;
     });
@@ -621,13 +620,13 @@ export default function DataManagementPage() {
                     const isSelected = selectedIds.has(entry.id);
                     const domain = getDomain(entry.company_url || entry.url);
                     const hasLinkedIn = !isEmpty(entry.linkedinurl);
-                    const hasEmail = !isEmpty(entry.email) && entry.email.includes('@');
-                    const hasWebsite = !isEmpty(entry.company_url) && isValidActionableUrl(entry.company_url, { context: 'company_url' });
+                    const hasEmail = !isEmpty(entry.email) && String(entry.email).includes('@');
+                    const hasWebsite = !isEmpty(entry.company_url) && isValidActionableUrl(String(entry.company_url), { context: 'company_url' });
                     const critMissing = missingCriticalCount(entry);
 
                     const isDupeGroupStart = filterType === 'duplicates' && idx > 0 && (
-                      `${(entry.name || '').toLowerCase()}|||${(entry.company || '').toLowerCase()}` !==
-                      `${(filteredEntries[idx - 1].name || '').toLowerCase()}|||${(filteredEntries[idx - 1].company || '').toLowerCase()}`
+                      `${String(entry.name || '').toLowerCase()}|||${String(entry.company || '').toLowerCase()}` !==
+                      `${String(filteredEntries[idx - 1].name || '').toLowerCase()}|||${String(filteredEntries[idx - 1].company || '').toLowerCase()}`
                     );
 
                     return (
@@ -657,7 +656,7 @@ export default function DataManagementPage() {
                                     onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                                   />
                                 ) : (
-                                  <span className="text-neutral-500 text-[9px] font-bold">{(entry.company || '?').slice(0, 2).toUpperCase()}</span>
+                                  <span className="text-neutral-500 text-[9px] font-bold">{String(entry.company || '?').slice(0, 2).toUpperCase()}</span>
                                 )}
                               </div>
                               <span className={`font-medium text-sm ${isInvalid(entry.name) ? 'text-red-400 italic text-xs' : 'text-white'}`}>
@@ -672,7 +671,7 @@ export default function DataManagementPage() {
                           </td>
                           <td className="px-3 py-2.5 hidden md:table-cell">
                             <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold border max-w-[140px] truncate ${isInvalid(entry.role) ? 'bg-red-500/10 text-red-300 border-red-500/20' : 'bg-purple-500/15 text-purple-300 border-purple-500/20'}`}>
-                              {(entry.role || 'Founder').split(',')[0].trim()}
+                              {String(entry.role || 'Founder').split(',')[0].trim()}
                             </span>
                           </td>
                           <td className="px-3 py-2.5 hidden lg:table-cell">
@@ -692,7 +691,7 @@ export default function DataManagementPage() {
                                 <span className="w-5 h-5 rounded bg-red-500/10 flex items-center justify-center" title="No email"><span className="text-red-400 text-[8px]">@</span></span>
                               )}
                               {hasWebsite ? (
-                                <a href={entry.company_url.startsWith('http') ? entry.company_url : `https://${entry.company_url}`} target="_blank" rel="noopener noreferrer" className="w-5 h-5 rounded bg-neutral-500/20 flex items-center justify-center hover:bg-neutral-500/30 transition-colors" title="Website">
+                                <a href={String(entry.company_url).startsWith('http') ? entry.company_url : `https://${entry.company_url}`} target="_blank" rel="noopener noreferrer" className="w-5 h-5 rounded bg-neutral-500/20 flex items-center justify-center hover:bg-neutral-500/30 transition-colors" title="Website">
                                   <svg className="h-2.5 w-2.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" /></svg>
                                 </a>
                               ) : (
@@ -725,11 +724,11 @@ export default function DataManagementPage() {
                             <td colSpan={8} className="px-6 py-5">
                               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3 mb-4 text-xs">
                                 {[
-                                  { label: 'Email', value: entry.email, href: entry.email && entry.email.includes('@') ? `mailto:${entry.email}` : undefined },
+                                  { label: 'Email', value: entry.email, href: entry.email && String(entry.email).includes('@') ? `mailto:${entry.email}` : undefined },
                                   { label: 'LinkedIn', value: entry.linkedinurl, href: entry.linkedinurl || undefined },
-                                  { label: 'Company URL', value: entry.company_url, href: entry.company_url ? (entry.company_url.startsWith('http') ? entry.company_url : `https://${entry.company_url}`) : undefined },
-                                  { label: 'Apply URL', value: entry.apply_url, href: entry.apply_url ? (entry.apply_url.startsWith('http') ? entry.apply_url : `https://${entry.apply_url}`) : undefined },
-                                  { label: 'Roles Page URL', value: entry.url, href: entry.url ? (entry.url.startsWith('http') ? entry.url : `https://${entry.url}`) : undefined },
+                                  { label: 'Company URL', value: entry.company_url, href: entry.company_url ? (String(entry.company_url).startsWith('http') ? entry.company_url : `https://${entry.company_url}`) : undefined },
+                                  { label: 'Apply URL', value: entry.apply_url, href: entry.apply_url ? (String(entry.apply_url).startsWith('http') ? entry.apply_url : `https://${entry.apply_url}`) : undefined },
+                                  { label: 'Roles Page URL', value: entry.url, href: entry.url ? (String(entry.url).startsWith('http') ? entry.url : `https://${entry.url}`) : undefined },
                                   { label: 'Published', value: formatDate(entry.published) },
                                   { label: 'Entry ID', value: entry.id },
                                 ].map(({ label, value, href }) => (
