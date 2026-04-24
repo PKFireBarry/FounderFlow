@@ -8,7 +8,6 @@ import {
   setDoc,
   Timestamp,
   query,
-  limit as firestoreLimit,
   orderBy
 } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase/server';
@@ -29,6 +28,7 @@ interface EntryItem {
   apply_url: string;
   url: string;
   looking_for: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -107,18 +107,13 @@ export async function GET(req: NextRequest) {
   try {
     const adminCheck = await checkAdminAccess();
     if (!adminCheck.authorized) {
-      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.status });
+      return NextResponse.json({ success: false, error: adminCheck.error }, { status: adminCheck.status });
     }
 
     console.log(`📊 Admin ${adminCheck.userEmail} fetching entries for data management`);
 
-    // Get entries from the database - limit to reasonable number for UI
     const entryCollection = collection(db, 'entry');
-    const entryQuery = query(
-      entryCollection,
-      orderBy('published', 'desc'),
-      firestoreLimit(1000) // Limit for performance
-    );
+    const entryQuery = query(entryCollection, orderBy('published', 'desc'));
     const snapshot = await getDocs(entryQuery);
 
     const entries: EntryItem[] = snapshot.docs.map(doc => {
@@ -128,22 +123,14 @@ export async function GET(req: NextRequest) {
       let publishedStr = '';
       if (data.published) {
         if (data.published.toDate && typeof data.published.toDate === 'function') {
-          // It's a Firebase Timestamp
           try {
-            publishedStr = data.published.toDate().toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            });
+            publishedStr = data.published.toDate().toISOString().split('T')[0];
           } catch (e) {
-            console.warn('Failed to convert Timestamp to date:', e);
             publishedStr = 'Unknown';
           }
         } else if (typeof data.published === 'string') {
-          // It's already a string
           publishedStr = data.published;
         } else {
-          // Try to convert to string
           publishedStr = String(data.published);
         }
       } else {
@@ -190,7 +177,7 @@ export async function PUT(req: NextRequest) {
   try {
     const adminCheck = await checkAdminAccess();
     if (!adminCheck.authorized) {
-      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.status });
+      return NextResponse.json({ success: false, error: adminCheck.error }, { status: adminCheck.status });
     }
 
     const { entryId, updates } = await req.json().catch(() => ({}));
@@ -203,9 +190,8 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'No updates provided' }, { status: 400 });
     }
 
-    // Sanitize: only allow known fields
-    const allowedFields = ['name', 'company', 'role', 'company_info', 'email', 'linkedinurl', 'company_url', 'apply_url', 'url', 'looking_for'];
-    const sanitized: Record<string, any> = {};
+    const allowedFields = ['name', 'company', 'role', 'company_info', 'email', 'linkedinurl', 'company_url', 'apply_url', 'url', 'looking_for', 'published'];
+    const sanitized: Record<string, string> = {};
     for (const key of Object.keys(updates)) {
       if (allowedFields.includes(key)) {
         sanitized[key] = typeof updates[key] === 'string' ? updates[key].trim() : updates[key];
@@ -241,7 +227,7 @@ export async function POST(req: NextRequest) {
   try {
     const adminCheck = await checkAdminAccess();
     if (!adminCheck.authorized) {
-      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.status });
+      return NextResponse.json({ success: false, error: adminCheck.error }, { status: adminCheck.status });
     }
 
     const body = await req.json().catch(() => ({}));
@@ -250,7 +236,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'At least a name or company is required' }, { status: 400 });
     }
 
-    const newEntry: Record<string, any> = {
+    const newEntry: Record<string, string | ReturnType<typeof Timestamp.now>> = {
       name: body.name?.trim() || '',
       company: body.company?.trim() || '',
       role: body.role?.trim() || '',
@@ -261,7 +247,7 @@ export async function POST(req: NextRequest) {
       apply_url: body.apply_url?.trim() || '',
       url: body.url?.trim() || '',
       looking_for: body.looking_for?.trim() || '',
-      published: Timestamp.now(),
+      published: body.published?.trim() || Timestamp.now(),
     };
 
     // Generate a unique ID
@@ -292,7 +278,7 @@ export async function DELETE(req: NextRequest) {
   try {
     const adminCheck = await checkAdminAccess();
     if (!adminCheck.authorized) {
-      return NextResponse.json({ error: adminCheck.error }, { status: adminCheck.status });
+      return NextResponse.json({ success: false, error: adminCheck.error }, { status: adminCheck.status });
     }
 
     const { entryIds } = await req.json().catch(() => ({}));
