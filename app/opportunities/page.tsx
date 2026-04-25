@@ -10,8 +10,10 @@ import Navigation from "../components/Navigation";
 import FounderDetailModal from "../components/FounderDetailModal";
 import ContactInfoGate from "../components/ContactInfoGate";
 import PaywallTestControls from "../components/PaywallTestControls";
+import Link from "next/link";
 import { isValidApplyUrl, isValidActionableUrl } from "../../lib/url-validation";
 import { extractRoleKeywords } from "@/lib/entry-helpers";
+import { deriveCompanySlug } from "../../lib/company-slug";
 import TagFilter from "./components/TagFilter";
 import ViewToggle, { type ViewMode } from "./components/ViewToggle";
 import EntryRow from "./components/EntryRow";
@@ -75,6 +77,7 @@ type EntryCardProps = {
   isSaved: boolean;
   isSignedIn: boolean;
   onCardClick: () => void;
+  onSaveState?: () => void;
   anonFreePreview?: boolean;
 };
 
@@ -98,6 +101,7 @@ function EntryCard(props: EntryCardProps) {
     isSaved,
     isSignedIn,
     onCardClick,
+    onSaveState,
     anonFreePreview = false,
   } = props;
 
@@ -204,7 +208,21 @@ function EntryCard(props: EntryCardProps) {
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-semibold text-white mb-1 truncate">{company ?? "Stealth Company"}</h3>
+            <h3 className="text-lg font-semibold text-white mb-1 truncate">
+              {(() => {
+                const slug = deriveCompanySlug({ company: company ?? undefined, company_url: companyUrl ?? undefined });
+                return slug ? (
+                  <Link
+                    href={`/companies/${slug}`}
+                    onClick={e => { e.stopPropagation(); onSaveState?.(); }}
+                    className="group/companylink inline-flex items-baseline gap-1 border-b border-dashed border-white/20 hover:text-[var(--wisteria)] hover:border-[var(--wisteria)]/60 transition-colors"
+                  >
+                    {company ?? "Stealth Company"}
+                    <span aria-hidden="true" className="text-[0.7em] opacity-50 group-hover/companylink:opacity-100 transition-opacity">↗</span>
+                  </Link>
+                ) : (company ?? "Stealth Company");
+              })()}
+            </h3>
             <div className="text-xs text-neutral-300 mb-1 h-8 overflow-hidden">
               <div className="line-clamp-2">
                 {companyInfo && companyInfo.length > 0
@@ -785,13 +803,14 @@ export default function EntryPage() {
     }
     // Set initial fit and reset page
     setEntriesPerPage(computeFit());
-    setCurrentPage(1);
+    if (!restoredRef.current) setCurrentPage(1);
     // On resize, only update entries per page — don't reset page (mobile address bar show/hide triggers resize)
     const onResize = () => { setEntriesPerPage(computeFit()); };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [viewMode]);
   const prevFiltersRef = useRef({ q: "", skillsQ: "", onlyRoles: false, onlyLinkedIn: false, onlyEmail: false, sortBy: "date_desc" as "date_desc" | "date_asc" | "company_az", selectedTagsSize: 0 });
+  const restoredRef = useRef(false);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -817,6 +836,48 @@ export default function EntryPage() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveOppsState = useCallback(() => {
+    try {
+      sessionStorage.setItem('ff_opps_state', JSON.stringify({
+        q, onlyRoles, onlyLinkedIn, onlyEmail,
+        selectedTags: [...selectedTags],
+        viewMode, sortBy, currentPage,
+        scrollY: window.scrollY,
+      }));
+    } catch { /* ignore */ }
+  }, [q, onlyRoles, onlyLinkedIn, onlyEmail, selectedTags, viewMode, sortBy, currentPage]);
+
+  // Restore filter state + scroll position when navigating back from a company page
+  useEffect(() => {
+    const saved = sessionStorage.getItem('ff_opps_state');
+    if (saved) {
+      try {
+        const s = JSON.parse(saved);
+        restoredRef.current = true;
+        prevFiltersRef.current = {
+          q: s.q ?? "",
+          skillsQ: "",
+          onlyRoles: !!s.onlyRoles,
+          onlyLinkedIn: !!s.onlyLinkedIn,
+          onlyEmail: !!s.onlyEmail,
+          sortBy: s.sortBy ?? "date_desc",
+          selectedTagsSize: s.selectedTags?.length ?? 0,
+        };
+        if (s.q !== undefined) setQ(s.q);
+        if (s.onlyRoles !== undefined) setOnlyRoles(s.onlyRoles);
+        if (s.onlyLinkedIn !== undefined) setOnlyLinkedIn(s.onlyLinkedIn);
+        if (s.onlyEmail !== undefined) setOnlyEmail(s.onlyEmail);
+        if (s.selectedTags) setSelectedTags(new Set(s.selectedTags));
+        if (s.viewMode) setViewMode(s.viewMode);
+        if (s.sortBy) setSortBy(s.sortBy);
+        if (s.currentPage) setCurrentPage(s.currentPage);
+        if (s.scrollY) setTimeout(() => window.scrollTo({ top: s.scrollY, behavior: 'instant' }), 80);
+      } catch { /* ignore corrupt state */ }
+      sessionStorage.removeItem('ff_opps_state');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Load anon modal count and soft gate state from storage (24hr TTL)
@@ -1332,6 +1393,7 @@ export default function EntryPage() {
                           isSaved={savedJobIds.has(it.id)}
                           isSignedIn={!!isSignedIn}
                           anonFreePreview={anonCanPreviewNew || anonHasViewed(it.id)}
+                          onSaveState={saveOppsState}
                           onCardClick={() => {
                             if (!isSignedIn && !anonViewedIds.has(it.id)) {
                               const newCount = anonModalCount + 1;
@@ -1529,6 +1591,7 @@ export default function EntryPage() {
             onSave={saveJob}
             isSaved={savedJobIds.has(selectedFounder.id)}
             anonFreePreview={anonCanPreviewNew || anonHasViewed(selectedFounder.id)}
+            onSaveState={saveOppsState}
           />
         )}
       </main>

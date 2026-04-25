@@ -5,7 +5,9 @@ import { useUser, SignInButton } from '@clerk/nextjs';
 import ContactInfoGate from './ContactInfoGate';
 import PaywallModal from './PaywallModal';
 import { useSubscription } from '../hooks/useSubscription';
+import Link from 'next/link';
 import { isValidActionableUrl } from '../../lib/url-validation';
+import { deriveCompanySlug } from '../../lib/company-slug';
 
 interface FounderData {
   id: string;
@@ -30,9 +32,10 @@ interface FounderDetailModalProps {
   isSaved: boolean;
   isHomePage?: boolean;
   anonFreePreview?: boolean;
+  onSaveState?: () => void;
 }
 
-export default function FounderDetailModal({ founderData, onClose, onSave, isSaved, isHomePage = false, anonFreePreview = false }: FounderDetailModalProps) {
+export default function FounderDetailModal({ founderData, onClose, onSave, isSaved, isHomePage = false, anonFreePreview = false, onSaveState }: FounderDetailModalProps) {
   const getDomainFromUrl = (input?: string | null): string | null => {
     if (!input) return null;
     let str = input.trim();
@@ -162,6 +165,18 @@ export default function FounderDetailModal({ founderData, onClose, onSave, isSav
             {founderData.name && founderData.name !== founderData.company && (
               <p className="text-xs text-neutral-400 truncate">{founderData.name}</p>
             )}
+            {(() => {
+              const slug = deriveCompanySlug({ company: founderData.company ?? undefined, company_url: founderData.companyUrl ?? undefined });
+              return slug ? (
+                <Link
+                  href={`/companies/${slug}`}
+                  className="text-[10px] text-white/30 hover:text-white/60 transition-colors"
+                  onClick={(e) => { e.stopPropagation(); onSaveState?.(); }}
+                >
+                  View all roles at {companyName} →
+                </Link>
+              ) : null;
+            })()}
           </div>
           {isSignedIn && (
             <button

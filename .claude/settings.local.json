@@ -43,7 +43,12 @@
       "Bash(npm run *)",
       "Bash(npx next *)",
       "Bash(npx eslint *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(node_modules/.bin/next lint *)",
+      "Bash(node_modules/.bin/eslint app/companies lib/company-slug.ts lib/companies.ts)",
+      "Bash(node_modules/.bin/eslint app/companies lib/company-slug.ts lib/companies.ts app/api/companies)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(node_modules/.bin/eslint app/companies lib/companies.ts)"
     ]
   }
 }
