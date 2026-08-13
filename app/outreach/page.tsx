@@ -725,8 +725,8 @@ export default function OutreachBoard() {
           </div>
         </div>
 
-        {/* Desktop content */}
-        <div className="hidden lg:block">
+        {/* Desktop content — xl+ only, matching the "Desktop Only" gate above (no 1024–1279 overlap) */}
+        <div className="hidden xl:block">
           {/* Page header */}
           <header className="mx-auto max-w-6xl px-4 pt-5 sm:pt-7">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

@@ -18,21 +18,26 @@ const GAP = 14;
 const MARGIN = 12;
 const MOBILE_BP = 768;
 const MOBILE_NAV_H = 64;
+// The Outreach Board renders a "Desktop Only" gate below this width (see app/outreach/page.tsx),
+// so its tour steps are meaningless until here — skip them below the board's own breakpoint,
+// not just below the mobile card-layout breakpoint.
+const BOARD_MIN_BP = 1280;
 
-const MOBILE_SKIP_IDS = new Set(['nav-outreach', 'kanban-tabs', 'kanban-cols']);
+// Steps that spotlight the Outreach Board, which only exists at >= BOARD_MIN_BP.
+const BOARD_STEP_IDS = new Set(['nav-outreach', 'kanban-tabs', 'kanban-cols']);
 
 const CONFETTI_COLORS = ['#b497d6', '#e1e2ef', '#6a5acd', '#ffffff', '#9b8ec4', '#d4b8f0'];
 
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+function useMaxWidth(maxPx: number) {
+  const [matches, setMatches] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`);
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    const mq = window.matchMedia(`(max-width: ${maxPx}px)`);
+    setMatches(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
-  }, []);
-  return isMobile;
+  }, [maxPx]);
+  return matches;
 }
 
 function getRect(selector: string): Rect | null {
@@ -43,6 +48,11 @@ function getRect(selector: string): Rect | null {
 }
 
 interface CardPos { top: number; left: number; }
+
+function getViewportWidth() {
+  if (typeof document === 'undefined') return 1200;
+  return document.documentElement.clientWidth || window.innerWidth;
+}
 
 function computeCardPos(
   rect: Rect | null,
@@ -273,7 +283,8 @@ function TourCard({
 
 export default function OnboardingTour({ onFinish }: Props) {
   const router = useRouter();
-  const isMobile = useIsMobile();
+  const isMobile = useMaxWidth(MOBILE_BP - 1);
+  const boardUnavailable = useMaxWidth(BOARD_MIN_BP - 1);
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const [cardPos, setCardPos] = useState<CardPos>({ top: 0, left: 0 });
@@ -282,8 +293,8 @@ export default function OnboardingTour({ onFinish }: Props) {
   const mountedRef = useRef(true);
 
   const effectiveSteps = useMemo(
-    () => isMobile ? TOUR_STEPS.filter(s => !MOBILE_SKIP_IDS.has(s.id)) : TOUR_STEPS,
-    [isMobile]
+    () => boardUnavailable ? TOUR_STEPS.filter(s => !BOARD_STEP_IDS.has(s.id)) : TOUR_STEPS,
+    [boardUnavailable]
   );
 
   const step = effectiveSteps[stepIndex];
@@ -301,7 +312,7 @@ export default function OnboardingTour({ onFinish }: Props) {
   }, []);
 
   const updatePos = useCallback((r: Rect) => {
-    const vw = window.innerWidth;
+    const vw = getViewportWidth();
     const vh = window.innerHeight;
     const cardW = vw >= 1024 ? CARD_W_DESKTOP : CARD_W_TABLET;
     setCardPos(computeCardPos(r, step.placement, vw, vh, cardW));
@@ -343,7 +354,7 @@ export default function OnboardingTour({ onFinish }: Props) {
 
   useEffect(() => {
     if (!step.selector) {
-      const vw = window.innerWidth;
+      const vw = getViewportWidth();
       const vh = window.innerHeight;
       const cardW = vw >= 1024 ? CARD_W_DESKTOP : CARD_W_TABLET;
       setCardPos(computeCardPos(null, 'center', vw, vh, cardW));
@@ -363,7 +374,7 @@ export default function OnboardingTour({ onFinish }: Props) {
     const handler = () => {
       measure();
       if (rect) {
-        const vw = window.innerWidth;
+        const vw = getViewportWidth();
         const vh = window.innerHeight;
         const cardW = vw >= 1024 ? CARD_W_DESKTOP : CARD_W_TABLET;
         setCardPos(computeCardPos(rect, step.placement, vw, vh, cardW));

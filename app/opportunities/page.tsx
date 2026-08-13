@@ -1447,7 +1447,7 @@ export default function EntryPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <nav className="sticky bottom-0 bg-[#0a0b14]/95 backdrop-blur-sm py-3 mt-6 -mx-6 px-6 flex items-center justify-center gap-1 z-10"
+                <nav className="sticky bottom-0 bg-[#0a0b14]/95 backdrop-blur-sm py-3 mt-6 -mx-3 px-3 sm:-mx-6 sm:px-6 flex items-center justify-center gap-1 z-10"
                   style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
                   <button
                     onClick={() => { setCurrentPage(Math.max(1, currentPage - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}

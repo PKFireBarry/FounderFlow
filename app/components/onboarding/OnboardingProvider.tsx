@@ -42,6 +42,15 @@ export default function OnboardingProvider({ children }: { children: React.React
     const createdAt = user?.createdAt ? new Date(user.createdAt).getTime() : 0;
     const isNewUser = createdAt > 0 && Date.now() - createdAt < NEW_USER_WINDOW_MS;
 
+    // Manual trigger for QA: append ?forceTour=1 to any eligible page to replay the tour.
+    const forceTour = typeof window !== 'undefined'
+      && new URLSearchParams(window.location.search).get('forceTour') === '1';
+    if (forceTour && !decided) {
+      setMode('tour');
+      setDecided(true);
+      return;
+    }
+
     if (loading || !isSignedIn || !user?.id || !isEligiblePath) return;
     if (decided) return;
 

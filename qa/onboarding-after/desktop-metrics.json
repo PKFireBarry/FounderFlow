@@ -1,0 +1,478 @@
+[
+  {
+    "step": 1,
+    "id": "welcome",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-01-welcome.png",
+    "metric": {
+      "card": {
+        "bottom": 573.390625,
+        "h": 243.390625,
+        "right": 910,
+        "w": 380,
+        "x": 530,
+        "y": 330
+      },
+      "overflow": {
+        "body": 1425,
+        "client": 1425,
+        "doc": 1425
+      },
+      "target": null,
+      "text": "STEP 1 / 14\nSkip tour\nWelcome to Founder Flow\n\n7 days of Pro, completely free. Take the 60-second tour and see exactly how founders land replies. Let's go.\n\nNext →",
+      "viewport": {
+        "clientWidth": 1425,
+        "h": 900,
+        "scrollY": 0,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 2,
+    "id": "filters",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-02-filters.png",
+    "metric": {
+      "card": {
+        "bottom": 492.390625,
+        "h": 264.390625,
+        "right": 1413,
+        "w": 380,
+        "x": 1033,
+        "y": 228
+      },
+      "overflow": {
+        "body": 1425,
+        "client": 1425,
+        "doc": 1425
+      },
+      "target": {
+        "bottom": 214,
+        "h": 42,
+        "right": 1311.5,
+        "w": 89.328125,
+        "x": 1222.171875,
+        "y": 172
+      },
+      "text": "STEP 2 / 14\nSkip tour\nFind Your People, Fast\n\nSearch any name or company. Pop open Filters (doing that now) to zero in by contact type: Email, LinkedIn, or Apply link. You can also filter by role tags like 'engineer', 'designer', or 'AI'.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1425,
+        "h": 900,
+        "scrollY": 0,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 3,
+    "id": "entry-card",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-03-entry-card.png",
+    "metric": {
+      "card": {
+        "bottom": 255.390625,
+        "h": 243.390625,
+        "right": 434.5,
+        "w": 380,
+        "x": 54.5,
+        "y": 12
+      },
+      "overflow": {
+        "body": 1425,
+        "client": 1425,
+        "doc": 1425
+      },
+      "target": {
+        "bottom": 762.5,
+        "h": 520,
+        "right": 392.5,
+        "w": 296,
+        "x": 96.5,
+        "y": 242.5
+      },
+      "text": "STEP 3 / 14\nSkip tour\nReal Founders. Real Fast.\n\nEvery card is a real early-stage founder, no fluff. Click through for their full profile, links, and exactly what they're hunting for.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1425,
+        "h": 900,
+        "scrollY": 155,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 4,
+    "id": "save-button",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-04-save-button.png",
+    "metric": {
+      "card": {
+        "bottom": 850.890625,
+        "h": 243.390625,
+        "right": 770.5,
+        "w": 380,
+        "x": 390.5,
+        "y": 607.5
+      },
+      "overflow": {
+        "body": 1425,
+        "client": 1425,
+        "doc": 1425
+      },
+      "target": {
+        "bottom": 746.5,
+        "h": 38,
+        "right": 376.5,
+        "w": 128,
+        "x": 248.5,
+        "y": 708.5
+      },
+      "text": "STEP 4 / 14\nSkip tour\nSave the Ones That Click\n\nSee a founder worth chasing? Hit Save. They land on your Dashboard, ready to message whenever you are.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1425,
+        "h": 900,
+        "scrollY": 155,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 5,
+    "id": "nav-dashboard",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-05-nav-dashboard.png",
+    "metric": {
+      "card": {
+        "bottom": 292.390625,
+        "h": 222.390625,
+        "right": 803.234375,
+        "w": 380,
+        "x": 423.234375,
+        "y": 70
+      },
+      "overflow": {
+        "body": 1425,
+        "client": 1425,
+        "doc": 1425
+      },
+      "target": {
+        "bottom": 56,
+        "h": 38,
+        "right": 664.75,
+        "w": 103.015625,
+        "x": 561.734375,
+        "y": 18
+      },
+      "text": "STEP 5 / 14\nSkip tour\nStraight to Your Dashboard\n\nEvery founder you save lives here. Let's jump over and take a look.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1425,
+        "h": 900,
+        "scrollY": 0,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 6,
+    "id": "saved-contacts",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-06-saved-contacts.png",
+    "metric": {
+      "card": {
+        "bottom": 255.390625,
+        "h": 243.390625,
+        "right": 910,
+        "w": 380,
+        "x": 530,
+        "y": 12
+      },
+      "overflow": {
+        "body": 1440,
+        "client": 1440,
+        "doc": 1440
+      },
+      "target": {
+        "bottom": 823,
+        "h": 682,
+        "right": 1360,
+        "w": 1280,
+        "x": 80,
+        "y": 141
+      },
+      "text": "STEP 6 / 14\nSkip tour\nYour Hit List\n\nEvery saved founder shows up right here. Sort, search, and see where each conversation stands at a glance.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1440,
+        "h": 900,
+        "scrollY": 0,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 7,
+    "id": "generate-ai",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-07-generate-ai.png",
+    "metric": {
+      "card": {
+        "bottom": 683.390625,
+        "h": 222.390625,
+        "right": 505,
+        "w": 380,
+        "x": 125,
+        "y": 461
+      },
+      "overflow": {
+        "body": 1440,
+        "client": 1440,
+        "doc": 1440
+      },
+      "target": {
+        "bottom": 775,
+        "h": 60,
+        "right": 380,
+        "w": 130,
+        "x": 250,
+        "y": 715
+      },
+      "text": "STEP 7 / 14\nSkip tour\nLet the AI Write It\n\nEvery contact has a Generate Outreach button. One click opens the AI writer. Let's fire it up.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1440,
+        "h": 900,
+        "scrollY": 0,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 8,
+    "id": "outreach-modal-setup",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-08-outreach-modal-setup.png",
+    "metric": {
+      "card": {
+        "bottom": 573.390625,
+        "h": 243.390625,
+        "right": 404,
+        "w": 380,
+        "x": 24,
+        "y": 330
+      },
+      "overflow": {
+        "body": 1440,
+        "client": 1440,
+        "doc": 1440
+      },
+      "target": {
+        "bottom": 555.4375,
+        "h": 148,
+        "right": 1068,
+        "w": 711,
+        "x": 357,
+        "y": 407.4375
+      },
+      "text": "STEP 8 / 14\nSkip tour\nSet the Play\n\nPick your channel, Email or LinkedIn, then your goal: Job Application, Partnership, or Networking. The AI shapes every word to match.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1440,
+        "h": 900,
+        "scrollY": 0,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 9,
+    "id": "outreach-modal-result",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-09-outreach-modal-result.png",
+    "metric": {
+      "card": {
+        "bottom": 594.390625,
+        "h": 264.390625,
+        "right": 404,
+        "w": 380,
+        "x": 24,
+        "y": 330
+      },
+      "overflow": {
+        "body": 1440,
+        "client": 1440,
+        "doc": 1440
+      },
+      "target": {
+        "bottom": 772.4375,
+        "h": 454,
+        "right": 1068,
+        "w": 711,
+        "x": 357,
+        "y": 318.4375
+      },
+      "text": "STEP 9 / 14\nSkip tour\nYour Message, Written for You\n\nThe AI blends the founder's profile with your resume into a message that actually sounds human. Tweak it, copy it, or drop it straight onto your board.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1440,
+        "h": 900,
+        "scrollY": 0,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 10,
+    "id": "resume-upload",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-10-resume-upload.png",
+    "metric": {
+      "card": {
+        "bottom": 255.390625,
+        "h": 243.390625,
+        "right": 902.5,
+        "w": 380,
+        "x": 522.5,
+        "y": 12
+      },
+      "overflow": {
+        "body": 1425,
+        "client": 1425,
+        "doc": 1425
+      },
+      "target": {
+        "bottom": 867,
+        "h": 835,
+        "right": 1336.5,
+        "w": 1248,
+        "x": 88.5,
+        "y": 32
+      },
+      "text": "STEP 10 / 14\nSkip tour\nFeed It Your Story\n\nDrop your resume here before you generate. The AI reads it so every message sounds like you wrote it, not some template a robot spat out.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1425,
+        "h": 900,
+        "scrollY": 202,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 11,
+    "id": "nav-outreach",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-11-nav-outreach.png",
+    "metric": {
+      "card": {
+        "bottom": 292.390625,
+        "h": 222.390625,
+        "right": 926.265625,
+        "w": 380,
+        "x": 546.265625,
+        "y": 70
+      },
+      "overflow": {
+        "body": 1425,
+        "client": 1425,
+        "doc": 1425
+      },
+      "target": {
+        "bottom": 56,
+        "h": 38,
+        "right": 803.84375,
+        "w": 135.15625,
+        "x": 668.6875,
+        "y": 18
+      },
+      "text": "STEP 11 / 14\nSkip tour\nTrack Every Send\n\nSent a message? This is where you watch it move. Let's check it out.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1425,
+        "h": 900,
+        "scrollY": 0,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 12,
+    "id": "kanban-tabs",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-12-kanban-tabs.png",
+    "metric": {
+      "card": {
+        "bottom": 471.390625,
+        "h": 243.390625,
+        "right": 459.359375,
+        "w": 380,
+        "x": 79.359375,
+        "y": 228
+      },
+      "overflow": {
+        "body": 1425,
+        "client": 1425,
+        "doc": 1425
+      },
+      "target": {
+        "bottom": 214,
+        "h": 42,
+        "right": 386.234375,
+        "w": 233.734375,
+        "x": 152.5,
+        "y": 172
+      },
+      "text": "STEP 12 / 14\nSkip tour\nEmail vs LinkedIn\n\nFlip between your Email and LinkedIn pipelines. Separate stages, separate response rates, so you always know what's working.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1425,
+        "h": 900,
+        "scrollY": 0,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 13,
+    "id": "kanban-cols",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-13-kanban-cols.png",
+    "metric": {
+      "card": {
+        "bottom": 255.390625,
+        "h": 243.390625,
+        "right": 902.5,
+        "w": 380,
+        "x": 522.5,
+        "y": 12
+      },
+      "overflow": {
+        "body": 1425,
+        "client": 1425,
+        "doc": 1425
+      },
+      "target": {
+        "bottom": 832,
+        "h": 574,
+        "right": 1394.5,
+        "w": 1364,
+        "x": 30.5,
+        "y": 258
+      },
+      "text": "STEP 13 / 14\nSkip tour\nDrag. Track. Win.\n\nSlide cards as things heat up: Sent → Responded → In Talks, and beyond. Click any card to drop in notes.\n\n← Back\nNext →",
+      "viewport": {
+        "clientWidth": 1425,
+        "h": 900,
+        "scrollY": 61,
+        "w": 1440
+      }
+    }
+  },
+  {
+    "step": 14,
+    "id": "done",
+    "file": "/tmp/founderflow-onboarding-qa-after/desktop-step-14-done.png",
+    "metric": {
+      "card": {
+        "bottom": 573.390625,
+        "h": 243.390625,
+        "right": 902.5,
+        "w": 380,
+        "x": 522.5,
+        "y": 330
+      },
+      "overflow": {
+        "body": 1425,
+        "client": 1425,
+        "doc": 1425
+      },
+      "target": null,
+      "text": "STEP 14 / 14\nSkip tour\nYou're Ready to Roll\n\nThat's the whole thing. Your 7-day Pro trial is live. Manage or upgrade anytime from Billing up top, then go land some replies.\n\n← Back\nFinish",
+      "viewport": {
+        "clientWidth": 1425,
+        "h": 900,
+        "scrollY": 61,
+        "w": 1440
+      }
+    }
+  }
+]
