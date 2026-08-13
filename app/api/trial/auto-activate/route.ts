@@ -43,6 +43,7 @@ export async function POST() {
             grantedBy: 'auto_signup',
             grantedAt: now,
             trialToken: null,
+            onboardingStatus: 'pending',
         };
 
         await setDoc(subRef, subscriptionData);

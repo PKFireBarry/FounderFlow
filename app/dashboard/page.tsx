@@ -16,6 +16,7 @@ import NotificationSettings from '../components/NotificationSettings';
 import { useSubscription } from '../hooks/useSubscription';
 import PaywallModal from '../components/PaywallModal';
 import { isValidActionableUrl } from '../../lib/url-validation';
+import SavedContactCard from '../components/SavedContactCard';
 
 interface SavedJob {
   id: string;
@@ -117,6 +118,23 @@ export default function Dashboard() {
 
     loadSavedJobs();
   }, [isSignedIn, user?.id]);
+
+  // Onboarding: switch to context tab via URL param or custom event
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab') === 'context') setActiveTab('context');
+
+    const handler = (e: Event) => {
+      const tab = (e as CustomEvent<{ tab: string }>).detail?.tab;
+      if (tab === 'context') setActiveTab('context');
+      if (tab === 'contacts') setActiveTab('contacts');
+    };
+    window.addEventListener('onboarding:switch-tab', handler);
+
+    return () => window.removeEventListener('onboarding:switch-tab', handler);
+  }, []);
+
 
   const confirmDeleteJob = () => {
     if (jobToDelete) {
@@ -443,6 +461,7 @@ export default function Dashboard() {
             role="tab"
             aria-selected={activeTab === 'context'}
             aria-controls="tab-context"
+            data-tour="tour-resume-upload"
             className={`tab-btn focus-ring rounded-lg px-3 py-1.5 ${activeTab === 'context' ? 'bg-[var(--lavender-web)] text-[#0f1018]' : 'text-neutral-200'
               } ${!isPaid ? 'relative' : ''}`}
             onClick={() => {
@@ -491,7 +510,7 @@ export default function Dashboard() {
 
       {/* Contacts Tab */}
       {activeTab === 'contacts' && (
-        <section id="tab-contacts" role="tabpanel" aria-labelledby="tab-contacts-btn" className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
+        <section id="tab-contacts" role="tabpanel" aria-labelledby="tab-contacts-btn" data-tour="tour-saved-contacts" className="mx-auto max-w-7xl px-4 py-6 sm:py-8">
           {/* Page title and meta */}
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-lg sm:text-xl font-semibold text-white">Saved Founder Contacts</h1>
@@ -869,6 +888,7 @@ export default function Dashboard() {
                           )}
                           {/* Generate Outreach button */}
                           <button
+                            data-tour="tour-generate-ai"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (isPaid) {
@@ -964,7 +984,7 @@ export default function Dashboard() {
             <p className="text-sm text-[#ccceda]">Configure your personal details, AI context, and notification preferences.</p>
           </div>
           <div className="grid gap-8">
-            <div className="rounded-xl border border-white/10 bg-[#141522] p-6">
+            <div data-tour="tour-context-section" className="rounded-xl border border-white/10 bg-[#141522] p-6">
               <ProfileEditor onProfileUpdate={handleProfileUpdate} />
             </div>
             <div className="rounded-xl border border-white/10 bg-[#141522] p-6">

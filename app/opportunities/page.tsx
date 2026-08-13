@@ -79,6 +79,7 @@ type EntryCardProps = {
   onCardClick: () => void;
   onSaveState?: () => void;
   anonFreePreview?: boolean;
+  dataTour?: string;
 };
 
 function EntryCard(props: EntryCardProps) {
@@ -103,6 +104,7 @@ function EntryCard(props: EntryCardProps) {
     onCardClick,
     onSaveState,
     anonFreePreview = false,
+    dataTour,
   } = props;
 
   // Helper functions from dashboard
@@ -177,6 +179,7 @@ function EntryCard(props: EntryCardProps) {
     <article
       className="rounded-2xl bg-neutral-50 text-neutral-900 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] ring-1 ring-black/10 overflow-hidden dark:bg-[#11121b] dark:text-neutral-100 dark:ring-white/10 cursor-pointer hover:ring-white/20 transition-all"
       onClick={onCardClick}
+      {...(dataTour ? { 'data-tour': dataTour } : {})}
     >
       <div className="p-4 h-[420px] sm:h-[520px] flex flex-col">
         {/* Header with Avatar and Company Info - Fixed Height */}
@@ -426,6 +429,7 @@ function EntryCard(props: EntryCardProps) {
             {/* Save to Dashboard button — only shown to signed-in users */}
             {isSignedIn && (
               <button
+                data-tour="tour-save-button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onSave({
@@ -756,7 +760,6 @@ export default function EntryPage() {
   const [anonViewedIds, setAnonViewedIds] = useState<Set<string>>(new Set());
   const [showSoftGate, setShowSoftGate] = useState(false);
   const [softGateDismissed, setSoftGateDismissed] = useState(false);
-  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
   // filters and pagination
   const [q, setQ] = useState("");
   const [skillsQ, setSkillsQ] = useState("");
@@ -766,6 +769,12 @@ export default function EntryPage() {
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setMobileFiltersOpen(true);
+    window.addEventListener('onboarding:open-filters', handler);
+    return () => window.removeEventListener('onboarding:open-filters', handler);
+  }, []);
 
   const toggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) => {
@@ -904,12 +913,6 @@ export default function EntryPage() {
     if (dismissed) setSoftGateDismissed(true);
   }, []);
 
-  // Welcome banner for post-signup redirect
-  useEffect(() => {
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('welcome') === '1') {
-      setShowWelcomeBanner(true);
-    }
-  }, []);
 
   useEffect(() => {
     const CACHE_KEY = 'ff_cache_opportunities_entries';
@@ -1236,22 +1239,6 @@ export default function EntryPage() {
       <Navigation />
 
       <main className="max-w-7xl mx-auto px-3 py-4 sm:px-6 sm:py-8 space-y-6">
-        {/* Welcome Banner (shown after signup redirect) */}
-        {showWelcomeBanner && (
-          <div className="rounded-xl border border-white/10 bg-[#141522] px-4 py-3 flex items-center justify-between gap-3">
-            <p className="text-sm text-neutral-200">
-              Welcome! Find a founder and save them to your dashboard to get started.
-            </p>
-            <button
-              onClick={() => setShowWelcomeBanner(false)}
-              className="text-neutral-400 hover:text-white text-lg leading-none flex-shrink-0"
-              aria-label="Dismiss"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
         {/* Header */}
         <header className="mb-6">
           <div className="mb-3 flex items-center justify-between">
@@ -1263,7 +1250,7 @@ export default function EntryPage() {
           </div>
 
           {/* Filters Panel — unified layout */}
-          <section className="rounded-2xl p-3 sm:p-4" style={{
+          <section data-tour="tour-filters" className="rounded-2xl p-3 sm:p-4" style={{
             border: '1px solid rgba(255,255,255,.08)',
             background: 'rgba(255,255,255,.03)'
           }}>
@@ -1283,6 +1270,7 @@ export default function EntryPage() {
                 />
               </div>
               <button
+                data-tour="tour-filter-toggle"
                 onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
                 className="relative flex items-center gap-1.5 rounded-lg border px-3 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-colors"
                 style={{
@@ -1394,6 +1382,7 @@ export default function EntryPage() {
                           isSignedIn={!!isSignedIn}
                           anonFreePreview={anonCanPreviewNew || anonHasViewed(it.id)}
                           onSaveState={saveOppsState}
+                          dataTour={idx === 0 ? 'tour-entry-card' : undefined}
                           onCardClick={() => {
                             if (!isSignedIn && !anonViewedIds.has(it.id)) {
                               const newCount = anonModalCount + 1;
@@ -1520,7 +1509,7 @@ export default function EntryPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <nav className="sticky bottom-0 bg-[#0a0b14]/95 backdrop-blur-sm py-3 mt-6 -mx-6 px-6 flex items-center justify-center gap-1 z-10"
+                <nav className="sticky bottom-0 bg-[#0a0b14]/95 backdrop-blur-sm py-3 mt-6 -mx-3 px-3 sm:-mx-6 sm:px-6 flex items-center justify-center gap-1 z-10"
                   style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
                   <button
                     onClick={() => { setCurrentPage(Math.max(1, currentPage - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}

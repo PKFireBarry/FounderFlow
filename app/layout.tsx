@@ -4,6 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import StructuredData from './components/StructuredData';
 import NotificationProvider from './components/NotificationProvider';
 import { SubscriptionProvider } from './hooks/useSubscription';
+import OnboardingProvider from './components/onboarding/OnboardingProvider';
 import PostHogProvider from './components/PostHogProvider';
 import PostHogPageView from './components/PostHogPageView';
 import "./globals.css";
@@ -98,9 +99,11 @@ export default function RootLayout({
           >
             <PostHogPageView />
             <SubscriptionProvider>
-              <NotificationProvider>
-                {children}
-              </NotificationProvider>
+              <OnboardingProvider>
+                <NotificationProvider>
+                  {children}
+                </NotificationProvider>
+              </OnboardingProvider>
             </SubscriptionProvider>
           </body>
         </html>

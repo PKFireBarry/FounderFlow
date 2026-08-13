@@ -11,6 +11,7 @@ interface SubscriptionData {
   expiresAt: Date | null;
   isTrial: boolean;
   trialDaysRemaining: number | null;
+  onboardingStatus: 'pending' | 'completed' | 'skipped' | 'dismissed' | null;
 }
 
 interface SubscriptionContextValue extends SubscriptionData {
@@ -25,6 +26,7 @@ const defaultValue: SubscriptionContextValue = {
   expiresAt: null,
   isTrial: false,
   trialDaysRemaining: null,
+  onboardingStatus: null,
   loading: true,
   isSignedIn: undefined,
   refresh: async () => {},
@@ -41,16 +43,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     expiresAt: null,
     isTrial: false,
     trialDaysRemaining: null,
+    onboardingStatus: null,
   });
   const [loading, setLoading] = useState(true);
 
   const checkSubscription = async () => {
     if (!isSignedIn || !user?.id) {
-      setSubscription({ isPaid: false, plan: null, expiresAt: null, isTrial: false, trialDaysRemaining: null });
+      setSubscription({ isPaid: false, plan: null, expiresAt: null, isTrial: false, trialDaysRemaining: null, onboardingStatus: null });
       setLoading(false);
       return;
     }
 
+    setLoading(true);
     try {
       const userDocRef = doc(clientDb, 'user_subscriptions', user.id);
       const userDoc = await getDoc(userDocRef);
@@ -68,12 +72,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
           : null;
 
+        const onboardingStatus = (data.onboardingStatus as SubscriptionData['onboardingStatus']) || null;
+
         setSubscription({
           isPaid,
           plan: data.plan || null,
           expiresAt,
           isTrial,
           trialDaysRemaining,
+          onboardingStatus,
         });
       } else {
         // No subscription document — auto-activate 7-day trial
@@ -95,7 +102,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
                   ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
                   : null;
 
-                setSubscription({ isPaid, plan: data.plan || null, expiresAt, isTrial, trialDaysRemaining });
+                const onboardingStatus = (data.onboardingStatus as SubscriptionData['onboardingStatus']) || null;
+                setSubscription({ isPaid, plan: data.plan || null, expiresAt, isTrial, trialDaysRemaining, onboardingStatus });
                 return;
               }
             }
@@ -106,11 +114,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }
         }
         // Fallback: no subscription
-        setSubscription({ isPaid: false, plan: null, expiresAt: null, isTrial: false, trialDaysRemaining: null });
+        setSubscription({ isPaid: false, plan: null, expiresAt: null, isTrial: false, trialDaysRemaining: null, onboardingStatus: null });
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
-      setSubscription({ isPaid: false, plan: null, expiresAt: null, isTrial: false, trialDaysRemaining: null });
+      setSubscription({ isPaid: false, plan: null, expiresAt: null, isTrial: false, trialDaysRemaining: null, onboardingStatus: null });
     } finally {
       setLoading(false);
     }
