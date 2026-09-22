@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         await setDoc(doc(db, 'trial_tokens', token), tokenData);
 
         // Build the full URL
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://founderflow.space';
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.founderflow.space';
         const trialUrl = `${baseUrl}/trial/${token}`;
 
         return NextResponse.json({

@@ -31,8 +31,8 @@ const dmSerifDisplay = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Founder Flow - Early-Stage Startup Network | Connect with Seed-Stage Companies Before They Scale",
-  description: "Access exclusive early-stage startup opportunities before they hit mainstream job boards. Connect directly with seed-stage company founders, get verified contact info, and use AI-powered outreach tools. The premier platform for discovering fresh startup opportunities and networking with founders at companies just getting started.",
+  title: "Founder Flow | Early-Stage Startup Opportunities",
+  description: "Access early-stage startup opportunities before they hit mainstream job boards. Connect directly with seed-stage founders and get verified contact info.",
   keywords: "early stage startups, seed stage companies, startup founder networking, exclusive startup opportunities, founder contact information, startup recruitment before scaling, fresh startup companies, direct founder connections, startup job opportunities not on linkedin, new company founders, emerging startup community, pre-series A startups, startup founder outreach, seed funding companies, early startup careers",
   authors: [{ name: "Founder Flow" }],
   creator: "Founder Flow",
@@ -58,12 +58,12 @@ export const metadata: Metadata = {
     siteName: "Founder Flow",
     title: "Founder Flow - Early-Stage Startup Network | Connect with Seed-Stage Companies",
     description: "Access exclusive early-stage startup opportunities before they hit mainstream job boards. Connect directly with seed-stage company founders and get verified contact information.",
-    url: "https://founderflow.space",
+    url: "https://www.founderflow.space",
     images: [
       {
         url: "/favicon.png",
-        width: 1200,
-        height: 630,
+        width: 1024,
+        height: 1024,
         alt: "Founder Flow - Startup Founder Networking Platform",
       },
     ],
@@ -75,7 +75,7 @@ export const metadata: Metadata = {
     images: ["/favicon.png"],
   },
   alternates: {
-    canonical: "https://founderflow.space",
+    canonical: "https://www.founderflow.space",
   },
 };
 

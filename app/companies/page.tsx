@@ -9,10 +9,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'All companies hiring | FounderFlow',
     description: 'Every startup that has posted on FounderFlow, with their full hiring history.',
-    url: 'https://founderflow.space/companies',
+    url: 'https://www.founderflow.space/companies',
   },
   alternates: {
-    canonical: 'https://founderflow.space/companies',
+    canonical: 'https://www.founderflow.space/companies',
   },
 };
 

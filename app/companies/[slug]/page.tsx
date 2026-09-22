@@ -21,11 +21,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${company.displayName} — Open roles & hiring history | FounderFlow`,
     description: company.bestCompanyInfo || `See all roles and contacts at ${company.displayName} on FounderFlow.`,
-    alternates: { canonical: `https://founderflow.space/companies/${slug}` },
+    alternates: { canonical: `https://www.founderflow.space/companies/${slug}` },
     openGraph: {
       title: `${company.displayName} | FounderFlow`,
       description: company.bestCompanyInfo || `Hiring history and contacts for ${company.displayName}.`,
-      url: `https://founderflow.space/companies/${slug}`,
+      url: `https://www.founderflow.space/companies/${slug}`,
+    },
+    robots: {
+      index: false,
+      follow: true,
     },
   };
 }
@@ -44,6 +48,10 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
   const recentEntries = entries.filter(e => e.published && new Date(e.published) >= ninetyDaysAgo);
   const olderEntries = entries.filter(e => !e.published || new Date(e.published) < ninetyDaysAgo);
 
+  // JobPosting markup was removed: FounderFlow isn't the hiringOrganization and these
+  // pages have no apply flow, so per-posting JobPosting schema can't meet Google's
+  // policy requirements (see 2026-09-22 SEO audit — sitewide "n/a" titles, missing
+  // validThrough/employmentType/baseSalary, manual-action risk at ~2,091-page scale).
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -53,15 +61,14 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
         url: entries.find(e => e.company_url)?.company_url,
         logo: faviconUrl ?? undefined,
       },
-      ...entries.map(entry => ({
-        '@type': 'JobPosting',
-        title: entry.role || 'Role',
-        hiringOrganization: { '@type': 'Organization', name: company.displayName },
-        datePosted: entry.published || undefined,
-        description: entry.looking_for || entry.company_info || undefined,
-        jobLocationType: 'TELECOMMUTE',
-        applicantLocationRequirements: { '@type': 'Country', name: 'Worldwide' },
-      })),
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.founderflow.space' },
+          { '@type': 'ListItem', position: 2, name: 'Companies', item: 'https://www.founderflow.space/companies' },
+          { '@type': 'ListItem', position: 3, name: company.displayName, item: `https://www.founderflow.space/companies/${slug}` },
+        ],
+      },
     ],
   };
 

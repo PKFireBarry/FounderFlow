@@ -1,17 +1,11 @@
 import { MetadataRoute } from 'next'
-import { listCompanies } from '../lib/companies'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://founderflow.space'
+  const baseUrl = 'https://www.founderflow.space'
 
-  const companies = await listCompanies()
-  const companySlugs: MetadataRoute.Sitemap = companies.map(c => ({
-    url: `${baseUrl}/companies/${c.slug}`,
-    lastModified: c.lastPublished ? new Date(c.lastPublished) : new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.7,
-  }))
-
+  // Per-company pages (/companies/[slug]) are noindexed (see app/companies/[slug]/page.tsx)
+  // until they have real internal linking and unique content, so they're intentionally
+  // left out of the sitemap — Google shouldn't be pointed at URLs that say noindex.
   return [
     {
       url: baseUrl,
@@ -31,6 +25,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.85,
     },
-    ...companySlugs,
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/privacy`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.3,
+    },
   ]
 }

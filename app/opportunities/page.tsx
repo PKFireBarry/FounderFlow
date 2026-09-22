@@ -7,10 +7,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Browse Early-Stage Startup Opportunities | FounderFlow',
     description: 'Curated leads at seed-stage startups with verified founder contact info.',
-    url: 'https://founderflow.space/opportunities',
+    url: 'https://www.founderflow.space/opportunities',
   },
   alternates: {
-    canonical: 'https://founderflow.space/opportunities',
+    canonical: 'https://www.founderflow.space/opportunities',
   },
 };
 

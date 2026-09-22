@@ -2,16 +2,12 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://founderflow.space/sitemap.xml
-
-# Crawl-delay
-Crawl-delay: 1
+Sitemap: https://www.founderflow.space/sitemap.xml
 
 # Specific rules
-Disallow: /api/
-Disallow: /_next/
-Disallow: /admin/
-Disallow: /private/
+Disallow: /api
+Disallow: /admin
+Disallow: /private
 Disallow: /dashboard
 Disallow: /billing
 Disallow: /outreach
