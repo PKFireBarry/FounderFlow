@@ -167,6 +167,32 @@ export default function AdminDashboard() {
               </div>
             </Link>
 
+            {/* Data Removal Requests */}
+            <Link href="/admin/removal-requests" className="group">
+              <div className="bg-[#18192a] border border-white/10 rounded-lg p-6 hover:bg-white/5 transition-colors">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mr-4">
+                    <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white group-hover:text-orange-300 transition-colors">
+                      Removal Requests
+                    </h3>
+                    <p className="text-neutral-400 text-sm">
+                      Review opt-out requests from listed founders
+                    </p>
+                  </div>
+                </div>
+                <div className="text-neutral-300 text-sm">
+                  • From people who never signed up<br />
+                  • Approve deletes the matched entry<br />
+                  • Reject leaves it untouched
+                </div>
+              </div>
+            </Link>
+
             {/* Clear Entries */}
             <Link href="/admin/clear-entries" className="group">
               <div className="bg-[#18192a] border border-white/10 rounded-lg p-6 hover:bg-white/5 transition-colors">

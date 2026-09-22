@@ -135,7 +135,25 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">8. No Sale of Data</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">8. Directory Listings (Non-Users)</h2>
+            <p className="mb-3">
+              FounderFlow&apos;s directory includes contact information — such as a name, work email,
+              LinkedIn profile, and company details — for founders and other company contacts who
+              have <span className="text-neutral-300 font-medium">not</span> signed up for FounderFlow.
+              This information is compiled from publicly available sources to help our users find and
+              reach out to relevant contacts.
+            </p>
+            <p>
+              If you appear in our directory but have never signed up for FounderFlow and would like
+              your information removed, you can submit a request at{" "}
+              <a href="/data-removal" className="text-white underline underline-offset-2 hover:text-neutral-200 transition-colors">
+                founderflow.space/data-removal
+              </a>. We review every request manually and will remove your listing once verified.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-white mb-3">9. No Sale of Data</h2>
             <p>
               We do not sell, rent, or trade your personal data to third parties. Your data is used
               exclusively to provide and improve the Service.
@@ -143,7 +161,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">9. Children&apos;s Privacy</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">10. Children&apos;s Privacy</h2>
             <p>
               FounderFlow is not intended for use by individuals under the age of 18. We do not
               knowingly collect personal information from anyone under 18. If we become aware that
@@ -153,7 +171,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">10. Changes to This Policy</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">11. Changes to This Policy</h2>
             <p>
               We may update this Privacy Policy from time to time. We will notify users of material
               changes by updating the &quot;Last updated&quot; date. Your continued use of the
@@ -162,7 +180,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">11. Contact</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">12. Contact</h2>
             <p>
               If you have any questions about this Privacy Policy, please contact us at{" "}
               <a href="mailto:info@founderflow.space" className="text-white underline underline-offset-2 hover:text-neutral-200 transition-colors">
