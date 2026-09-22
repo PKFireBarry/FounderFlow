@@ -22,6 +22,7 @@ interface FounderData {
   linkedinUrl?: string | null;
   emailHref?: string | null;
   published: string;
+  isStale?: boolean;
   restCount?: number;
 }
 
@@ -234,8 +235,17 @@ export default function FounderDetailModal({ founderData, onClose, onSave, isSav
                 {founderData.published !== "N/A" && (
                   <>
                     <span className="text-neutral-600">·</span>
-                    <span className="text-[10px] text-neutral-500">{founderData.published}</span>
+                    <span className={`text-[10px] ${founderData.isStale ? "text-amber-500" : "text-neutral-500"}`}>{founderData.published}</span>
                   </>
+                )}
+                {founderData.isStale && (
+                  <span
+                    className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-medium whitespace-nowrap"
+                    style={{ background: 'rgba(234,179,8,.15)', color: '#eab308', border: '1px solid rgba(234,179,8,.3)' }}
+                    title="This listing is over 30 days old and may no longer be open — but the contact below is still worth reaching out to."
+                  >
+                    May be outdated
+                  </span>
                 )}
               </div>
             </section>

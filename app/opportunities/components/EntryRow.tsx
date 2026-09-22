@@ -13,6 +13,7 @@ interface EntryRowProps {
   emailHref: string | null;
   companyUrl: string | null;
   published: string | null;
+  isStale?: boolean;
   isSaved: boolean;
   isSignedIn: boolean;
   onSave: (payload: any) => void;
@@ -37,6 +38,7 @@ export default function EntryRow({
   emailHref,
   companyUrl,
   published,
+  isStale = false,
   isSaved,
   isSignedIn,
   onSave,
@@ -214,7 +216,15 @@ export default function EntryRow({
 
       {/* Date */}
       <div className="w-[100px] text-right flex-shrink-0">
-        <span className="text-[11px] text-neutral-500" title={published ?? ""}>
+        <span
+          className={`text-[11px] ${isStale ? "text-amber-500" : "text-neutral-500"}`}
+          title={
+            isStale
+              ? "This listing is over 30 days old and may no longer be open — but the contact is still worth reaching out to."
+              : published ?? ""
+          }
+        >
+          {isStale ? "⚠ " : ""}
           {published?.includes("•") ? published.split("•")[1].trim() : published ?? ""}
         </span>
       </div>

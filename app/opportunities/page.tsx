@@ -64,6 +64,7 @@ type EntryCardProps = {
   companyDomain: string | null;
   companyInfo: string | null;
   published: string;
+  isStale?: boolean;
   name: string | null;
   role: string | null;
   lookingForTags: string[];
@@ -89,6 +90,7 @@ function EntryCard(props: EntryCardProps) {
     companyDomain,
     companyInfo,
     published,
+    isStale = false,
     name,
     role,
     lookingForTags,
@@ -234,11 +236,22 @@ function EntryCard(props: EntryCardProps) {
                 }
               </div>
             </div>
-            <div className="text-xs text-neutral-400">
-              {published !== "N/A" && typeof published === 'string'
-                ? `${published.split(' • ')[0]} • ${published.split(' • ')[1] || 'recently'}`
-                : 'Recently'
-              }
+            <div className="text-xs text-neutral-400 flex items-center gap-1.5 flex-wrap">
+              <span>
+                {published !== "N/A" && typeof published === 'string'
+                  ? `${published.split(' • ')[0]} • ${published.split(' • ')[1] || 'recently'}`
+                  : 'Recently'
+                }
+              </span>
+              {isStale && (
+                <span
+                  className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-medium whitespace-nowrap"
+                  style={{ background: 'rgba(234,179,8,.15)', color: '#eab308', border: '1px solid rgba(234,179,8,.3)' }}
+                  title="This listing is over 30 days old and may no longer be open — but the contact info below is still worth reaching out to."
+                >
+                  May be outdated
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -406,7 +419,7 @@ function EntryCard(props: EntryCardProps) {
           <div className="grid grid-cols-1 gap-1.5 text-xs text-neutral-400 mb-2">
             <div className="flex flex-col">
               <span className="text-[9px] font-medium uppercase tracking-wider mb-0.5">Published</span>
-              <span className="text-neutral-600 dark:text-neutral-300">{published !== "N/A" ? published.split(' • ')[0] : 'Unknown'}</span>
+              <span className={isStale ? "text-amber-500" : "text-neutral-600 dark:text-neutral-300"}>{published !== "N/A" ? published.split(' • ')[0] : 'Unknown'}</span>
             </div>
           </div>
           <div className={`grid gap-2 ${apply_url && isValidApplyUrl(apply_url) ? (isSignedIn ? 'grid-cols-2' : 'grid-cols-1') : 'grid-cols-1'}`}>
@@ -763,6 +776,7 @@ export default function EntryPage() {
   // filters and pagination
   const [q, setQ] = useState("");
   const [skillsQ, setSkillsQ] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const [onlyRoles, setOnlyRoles] = useState(false);
   const [onlyLinkedIn, setOnlyLinkedIn] = useState(false);
   const [onlyEmail, setOnlyEmail] = useState(false);
@@ -1103,6 +1117,16 @@ export default function EntryPage() {
     return `${abs} • ${rel}`;
   }
 
+  function getDaysOld(raw: any): number | null {
+    const d = asDate(raw);
+    if (!d) return null;
+    const diffMs = Date.now() - d.getTime();
+    if (diffMs < 0) return 0;
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  }
+
+  const STALE_AFTER_DAYS = 30;
+
   const tagIndex = useMemo<[string, number][]>(() => {
     const counts = new Map<string, number>();
     for (const it of items) {
@@ -1161,6 +1185,8 @@ export default function EntryPage() {
         it?.company,
         it?.name,
         it?.company_info,
+        it?.role,
+        it?.looking_for,
       ]
         .map((v) => (v == null ? "" : String(v).toLowerCase()))
         .join(" ");
@@ -1263,11 +1289,21 @@ export default function EntryPage() {
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
                   type="text"
-                  placeholder="Search founders, companies..."
+                  placeholder="Search founders, companies, roles..."
                   className="w-full rounded-lg border border-white/10 bg-[#141522] pl-9 md:pl-10 pr-3 py-2 md:py-2.5 text-sm text-white placeholder-[#a9abb6] focus:outline-none focus:ring-2"
                   style={{ '--tw-ring-color': 'var(--amber)' } as any}
                 />
+                {searchFocused && (
+                  <div
+                    className="absolute left-0 top-full mt-1.5 z-10 rounded-lg px-3 py-2 text-xs text-[#ccceda] shadow-lg"
+                    style={{ background: '#1a1b2a', border: '1px solid rgba(255,255,255,.1)' }}
+                  >
+                    Tip: broad terms work best — try “backend” or “design” instead of an exact job title. This is a curated lead list, not a job board, so exact titles rarely match.
+                  </div>
+                )}
               </div>
               <button
                 data-tour="tour-filter-toggle"
@@ -1347,6 +1383,8 @@ export default function EntryPage() {
                     {paginatedEntries.map((it, idx) => {
                       const rawDate = (it as any).published;
                       const published = formatPublished(rawDate);
+                      const daysOld = getDaysOld(rawDate);
+                      const isStale = daysOld !== null && daysOld > STALE_AFTER_DAYS;
                       const company = isNA((it as any).company) ? null : String((it as any).company);
                       const companyInfo = isNA((it as any).company_info) ? null : String((it as any).company_info);
                       const role = isNA((it as any).role) ? null : String((it as any).role);
@@ -1368,6 +1406,7 @@ export default function EntryPage() {
                           companyDomain={companyDomain}
                           companyInfo={companyInfo}
                           published={published}
+                          isStale={isStale}
                           name={name}
                           role={role}
                           lookingForTags={lookingForTags}
@@ -1413,7 +1452,8 @@ export default function EntryPage() {
                               apply_url,
                               linkedinUrl,
                               emailHref,
-                              published
+                              published,
+                              isStale
                             });
                           }}
                         />
@@ -1437,6 +1477,8 @@ export default function EntryPage() {
                     {paginatedEntries.map((it, idx) => {
                       const rawDate = (it as any).published;
                       const published = formatPublished(rawDate);
+                      const daysOld = getDaysOld(rawDate);
+                      const isStale = daysOld !== null && daysOld > STALE_AFTER_DAYS;
                       const company = isNA((it as any).company) ? null : String((it as any).company);
                       const role = isNA((it as any).role) ? null : String((it as any).role);
                       const name = isNA((it as any).name) ? null : String((it as any).name);
@@ -1463,6 +1505,7 @@ export default function EntryPage() {
                           emailHref={emailHref}
                           companyUrl={companyUrl}
                           published={published}
+                          isStale={isStale}
                           isSaved={savedJobIds.has(it.id)}
                           isSignedIn={!!isSignedIn}
                           onSave={saveJob}
@@ -1496,7 +1539,8 @@ export default function EntryPage() {
                               apply_url,
                               linkedinUrl,
                               emailHref,
-                              published
+                              published,
+                              isStale
                             });
                           }}
                           even={idx % 2 === 0}
