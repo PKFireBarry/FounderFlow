@@ -12,12 +12,14 @@ Disallow: /api/
 Disallow: /_next/
 Disallow: /admin/
 Disallow: /private/
+Disallow: /dashboard
+Disallow: /billing
+Disallow: /outreach
 
 # Allow important pages
 Allow: /
 Allow: /opportunities
-Allow: /billing
-Allow: /outreach
+Allow: /companies
 
 # Block duplicate content
 Disallow: /*?*utm_*

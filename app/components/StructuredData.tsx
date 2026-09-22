@@ -10,17 +10,7 @@ export default function StructuredData() {
         "description": "Find and connect with tech startup founders through AI-powered outreach platform",
         "publisher": {
           "@id": "https://founderflow.space/#organization"
-        },
-        "potentialAction": [
-          {
-            "@type": "SearchAction",
-            "target": {
-              "@type": "EntryPoint",
-              "urlTemplate": "https://founderflow.space/opportunities?search={search_term_string}"
-            },
-            "query-input": "required name=search_term_string"
-          }
-        ]
+        }
       },
       {
         "@type": "Organization",
@@ -50,42 +40,8 @@ export default function StructuredData() {
           "@type": "Offer",
           "price": "3.00",
           "priceCurrency": "USD",
-          "priceValidUntil": "2025-12-31",
           "availability": "https://schema.org/InStock"
-        },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.8",
-          "reviewCount": "150"
         }
-      },
-      {
-        "@type": "WebPage",
-        "@id": "https://founderflow.space/#webpage",
-        "url": "https://founderflow.space",
-        "name": "Find & Connect with Tech Startup Founders | Founder Flow",
-        "isPartOf": {
-          "@id": "https://founderflow.space/#website"
-        },
-        "about": {
-          "@id": "https://founderflow.space/#organization"
-        },
-        "description": "Discover tech startup founders, access verified contact information, and send AI-powered personalized outreach messages.",
-        "breadcrumb": {
-          "@id": "https://founderflow.space/#breadcrumb"
-        }
-      },
-      {
-        "@type": "BreadcrumbList",
-        "@id": "https://founderflow.space/#breadcrumb",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "https://founderflow.space"
-          }
-        ]
       }
     ]
   };
