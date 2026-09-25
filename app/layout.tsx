@@ -31,6 +31,7 @@ const dmSerifDisplay = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.founderflow.space"),
   title: "Founder Flow | Early-Stage Startup Opportunities",
   description: "Access early-stage startup opportunities before they hit mainstream job boards. Connect directly with seed-stage founders and get verified contact info.",
   keywords: "startup jobs not on linkedin, direct founder contact, verified founder emails, startup founder outreach, founder contact information, skip the job boards, early-stage startup jobs, startup hiring directory",
@@ -59,20 +60,11 @@ export const metadata: Metadata = {
     title: "Founder Flow | Early-Stage Startup Opportunities",
     description: "Startup jobs you won't find on LinkedIn. Connect directly with seed-stage founders and get verified contact info.",
     url: "https://www.founderflow.space",
-    images: [
-      {
-        url: "/favicon.png",
-        width: 1024,
-        height: 1024,
-        alt: "Founder Flow - Startup Founder Networking Platform",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Founder Flow | Early-Stage Startup Opportunities",
     description: "Startup jobs you won't find on LinkedIn. Connect directly with seed-stage founders and get verified contact info.",
-    images: ["/favicon.png"],
   },
   alternates: {
     canonical: "https://www.founderflow.space",

@@ -3,6 +3,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import {
   collection,
   getDocs,
+  getDoc,
   doc,
   deleteDoc,
   setDoc,
@@ -11,6 +12,8 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase/server';
+import { deriveCompanySlug } from '../../../../lib/company-slug';
+import { submitUrlsToIndexNow } from '../../../../lib/indexnow';
 
 // Admin email - replace with your actual email
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'barry0719@gmail.com'; // Set in environment variables
@@ -207,6 +210,12 @@ export async function PUT(req: NextRequest) {
     const entryRef = doc(db, 'entry', entryId);
     await setDoc(entryRef, sanitized, { merge: true });
 
+    const updatedDoc = await getDoc(entryRef);
+    const slug = updatedDoc.exists() ? deriveCompanySlug(updatedDoc.data()) : null;
+    if (slug) {
+      submitUrlsToIndexNow([`https://www.founderflow.space/companies/${slug}`]);
+    }
+
     return NextResponse.json({
       success: true,
       message: `Updated entry ${entryId}`,
@@ -257,6 +266,11 @@ export async function POST(req: NextRequest) {
 
     const entryRef = doc(db, 'entry', id);
     await setDoc(entryRef, newEntry);
+
+    const slug = deriveCompanySlug({ company: String(newEntry.company), company_url: String(newEntry.company_url) });
+    if (slug) {
+      submitUrlsToIndexNow([`https://www.founderflow.space/companies/${slug}`]);
+    }
 
     return NextResponse.json({
       success: true,
