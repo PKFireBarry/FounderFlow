@@ -261,12 +261,25 @@ function dedupeContacts(entries: EntryRecord[]): ContactRecord[] {
   return mergeContacts(entries);
 }
 
-// Split into two caches — combined, records + all entries grouped by slug came out
-// to ~2.5MB, over unstable_cache's 2MB per-entry limit. Each half comfortably fits
-// on its own, and both are cheap to rebuild together on the same cache miss.
+// Short-lived in-process memo (NOT persisted to Next's Data Cache) so that a
+// burst of calls — e.g. all ~2,100 company pages hitting a cold per-slug
+// cache during the same build — share one Firestore read instead of one
+// each. This is purely a same-process dedupe window, not a data cache, so
+// it never risks the 2MB unstable_cache size limit itself.
+let allEntriesMemo: { promise: Promise<EntryRecord[]>; fetchedAt: number } | null = null;
+const ALL_ENTRIES_MEMO_TTL_MS = 5 * 60 * 1000;
+
+function getAllEntriesMemoized(): Promise<EntryRecord[]> {
+  const now = Date.now();
+  if (!allEntriesMemo || now - allEntriesMemo.fetchedAt > ALL_ENTRIES_MEMO_TTL_MS) {
+    allEntriesMemo = { promise: fetchAllEntries(), fetchedAt: now };
+  }
+  return allEntriesMemo.promise;
+}
+
 const getCachedRecords = unstable_cache(
   async (): Promise<CompanyRecord[]> => {
-    const entries = await fetchAllEntries();
+    const entries = await getAllEntriesMemoized();
     const index = buildIndex(entries);
     const records = Array.from(index, ([slug, slugEntries]) => buildCompanyRecord(slug, slugEntries));
     records.sort((a, b) => a.displayName.localeCompare(b.displayName));
@@ -276,17 +289,20 @@ const getCachedRecords = unstable_cache(
   { revalidate: 3600, tags: ['companies'] }
 );
 
-const getCachedEntriesBySlug = unstable_cache(
-  async (): Promise<Record<string, EntryRecord[]>> => {
-    const entries = await fetchAllEntries();
+// Cached per-slug rather than as one shared map: a map holding every
+// company's full entries in a single unstable_cache entry previously blew
+// past the 2MB per-entry limit once the dataset grew (this is what caused
+// the "frame.join is not a function" crash on company pages — Next's error
+// formatting choking while trying to report the real oversized-cache error).
+// One company's entries (typically 1-3) never comes close to that limit,
+// regardless of how large the overall dataset grows.
+const getCachedEntriesForSlug = unstable_cache(
+  async (slug: string): Promise<EntryRecord[]> => {
+    const entries = await getAllEntriesMemoized();
     const index = buildIndex(entries);
-    const entriesBySlug: Record<string, EntryRecord[]> = {};
-    for (const [slug, slugEntries] of index) {
-      entriesBySlug[slug] = slugEntries;
-    }
-    return entriesBySlug;
+    return index.get(slug) ?? [];
   },
-  ['companies-entries-by-slug'],
+  ['company-entries-for-slug'],
   { revalidate: 3600, tags: ['companies'] }
 );
 
@@ -295,10 +311,9 @@ export async function listCompanies(): Promise<CompanyRecord[]> {
 }
 
 export async function getCompanyBySlug(slug: string): Promise<CompanyDetail | null> {
-  const [records, entriesBySlug] = await Promise.all([getCachedRecords(), getCachedEntriesBySlug()]);
+  const [records, entries] = await Promise.all([getCachedRecords(), getCachedEntriesForSlug(slug)]);
   const company = records.find(r => r.slug === slug);
   if (!company) return null;
-  const entries = entriesBySlug[slug] ?? [];
   const contacts = dedupeContacts(entries);
   return { company, entries, contacts };
 }
