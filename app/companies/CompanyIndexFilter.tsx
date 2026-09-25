@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { CompanyRecord } from '../../lib/companies';
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const PAGE_SIZE = 60;
 
 interface Props {
   companies: CompanyRecord[];
@@ -14,8 +13,12 @@ interface Props {
 export default function CompanyIndexFilter({ companies }: Props) {
   const [query, setQuery] = useState('');
   const [activeLetter, setActiveLetter] = useState('');
-  const [page, setPage] = useState(1);
 
+  // Every company renders as a real <Link> from the start — previously this sliced
+  // down to 60 behind a "Load more" button, which meant only 60/2,091 companies ever
+  // had a crawlable link pointing at them (confirmed by an SEO audit: this component
+  // is a client component, so its *initial* render state is what search engines see
+  // in the server-rendered HTML, not whatever a visitor clicks their way to after).
   const filtered = useMemo(() => {
     let list = companies;
     if (query.trim()) {
@@ -27,13 +30,9 @@ export default function CompanyIndexFilter({ companies }: Props) {
     return list;
   }, [companies, query, activeLetter]);
 
-  const paged = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
-  const hasMore = filtered.length > paged.length;
-
   const handleLetter = (l: string) => {
     setActiveLetter(prev => prev === l ? '' : l);
     setQuery('');
-    setPage(1);
   };
 
   return (
@@ -52,7 +51,7 @@ export default function CompanyIndexFilter({ companies }: Props) {
             type="text"
             placeholder="Search companies…"
             value={query}
-            onChange={e => { setQuery(e.target.value); setActiveLetter(''); setPage(1); }}
+            onChange={e => { setQuery(e.target.value); setActiveLetter(''); }}
             className="w-full pl-8 pr-3 py-2 text-sm rounded-lg transition-colors"
             style={{
               background: 'rgba(255,255,255,.04)',
@@ -87,7 +86,7 @@ export default function CompanyIndexFilter({ companies }: Props) {
           ))}
           {activeLetter && (
             <button
-              onClick={() => { setActiveLetter(''); setPage(1); }}
+              onClick={() => setActiveLetter('')}
               className="ml-1 text-[11px] px-2 py-1 rounded transition-colors"
               style={{ color: 'rgba(255,255,255,.3)', border: '1px solid rgba(255,255,255,.08)' }}
             >
@@ -105,13 +104,13 @@ export default function CompanyIndexFilter({ companies }: Props) {
         </p>
       )}
 
-      {paged.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="text-center py-16" style={{ color: 'rgba(255,255,255,.25)' }}>
           <p className="text-sm">No companies found.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-          {paged.map(company => (
+          {filtered.map(company => (
             <Link
               key={company.slug}
               href={`/companies/${company.slug}`}
@@ -185,17 +184,6 @@ export default function CompanyIndexFilter({ companies }: Props) {
               </div>
             </Link>
           ))}
-        </div>
-      )}
-
-      {hasMore && (
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => setPage(p => p + 1)}
-            className="btn btn-ghost btn-sm"
-          >
-            Load more — {(filtered.length - paged.length).toLocaleString()} remaining
-          </button>
         </div>
       )}
     </div>

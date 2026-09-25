@@ -1,3 +1,6 @@
+import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
+
 export const metadata = {
   title: "Privacy Policy | FounderFlow",
   description: "Privacy Policy for FounderFlow",
@@ -6,6 +9,7 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-neutral-300">
+      <Navigation />
       <div className="mx-auto max-w-3xl px-6 py-20">
         <h1 className="text-3xl font-bold text-white mb-2">Privacy Policy</h1>
         <p className="text-sm text-neutral-500 mb-12">Last updated: March 16, 2026</p>
@@ -190,6 +194,7 @@ export default function PrivacyPage() {
           </section>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

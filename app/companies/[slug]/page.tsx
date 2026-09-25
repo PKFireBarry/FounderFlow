@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { getCompanyBySlug, listCompanies } from '../../../lib/companies';
+import Link from 'next/link';
+import { getCompanyBySlug, listCompanies, getRelatedCompanies, listRoleHubs, roleToSlug } from '../../../lib/companies';
 import Navigation from '../../components/Navigation';
+import Footer from '../../components/Footer';
 import CompanyActions from './CompanyActions';
 import CompanyPageTabs from './CompanyPageTabs';
 import BackButton from './BackButton';
@@ -27,10 +29,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description: company.bestCompanyInfo || `Hiring history and contacts for ${company.displayName}.`,
       url: `https://www.founderflow.space/companies/${slug}`,
     },
-    robots: {
-      index: false,
-      follow: true,
-    },
   };
 }
 
@@ -43,6 +41,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
   const faviconUrl = company.domain
     ? `https://icons.duckduckgo.com/ip3/${company.domain}.ico`
     : null;
+  const relatedCompanies = await getRelatedCompanies(slug);
+  const roleHubs = await listRoleHubs();
+  const hubbedRoles = new Set(roleHubs.map(h => h.role));
 
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   const recentEntries = entries.filter(e => e.published && new Date(e.published) >= ninetyDaysAgo);
@@ -141,6 +142,37 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
                   {company.bestCompanyInfo}
                 </p>
               )}
+
+              {company.firstPublished && company.firstPublished !== company.lastPublished && (
+                <p className="mt-2 text-xs" style={{ color: 'rgba(255,255,255,.3)' }}>
+                  Hiring history: first listed {company.firstPublished}, {company.roleCount} roles posted through {company.lastPublished}.
+                </p>
+              )}
+
+              {company.roleKeywords.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {company.roleKeywords.map((role) =>
+                    hubbedRoles.has(role) ? (
+                      <Link
+                        key={role}
+                        href={`/companies/hiring-for/${roleToSlug(role)}`}
+                        className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] transition-colors hover:bg-white/10"
+                        style={{ border: '1px solid rgba(180,151,214,.2)', color: 'rgba(180,151,214,.75)' }}
+                      >
+                        {role}
+                      </Link>
+                    ) : (
+                      <span
+                        key={role}
+                        className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px]"
+                        style={{ border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.4)' }}
+                      >
+                        {role}
+                      </span>
+                    )
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -154,7 +186,28 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
           companyDisplayName={company.displayName}
           companyInfo={company.bestCompanyInfo}
         />
+
+        {relatedCompanies.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500 mb-3">
+              Other companies hiring for similar roles
+            </h2>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {relatedCompanies.map((related) => (
+                <Link
+                  key={related.slug}
+                  href={`/companies/${related.slug}`}
+                  className="rounded-lg p-3 text-sm transition-colors hover:bg-white/5"
+                  style={{ border: '1px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.02)' }}
+                >
+                  {related.displayName}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+      <Footer />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 import { listCompanies } from '../../lib/companies';
 import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
 import CompanyIndexFilter from './CompanyIndexFilter';
 
 export const metadata: Metadata = {
@@ -27,11 +29,16 @@ export default async function CompaniesPage() {
           <h1 className="text-2xl sm:text-3xl">Companies hiring</h1>
           <p className="mt-1.5 text-sm" style={{ color: 'rgba(255,255,255,.38)' }}>
             {companies.length.toLocaleString()} companies &middot; 1.5+ years of startup hiring history
+            {' · '}
+            <Link href="/companies/hiring-for" className="underline underline-offset-2 hover:text-neutral-300 transition-colors">
+              Browse by role
+            </Link>
           </p>
         </div>
 
         <CompanyIndexFilter companies={companies} />
       </div>
+      <Footer />
     </div>
   );
 }

@@ -25,6 +25,15 @@ export default function StructuredData() {
         },
         "description": "AI-powered platform for finding and connecting with tech startup founders",
         "foundingDate": "2024",
+        "founder": {
+          "@type": "Person",
+          "name": "Darion George"
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "info@founderflow.space",
+          "contactType": "customer support"
+        },
         "sameAs": [
           "https://linkedin.com/company/founder-flow"
         ]

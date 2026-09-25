@@ -7,16 +7,16 @@ interface FAQItem {
   answer: string;
 }
 
-const faqs: FAQItem[] = [
+function buildFaqs(founderCountDisplay: string): FAQItem[] { return [
   {
     question: 'How is FounderFlow different from LinkedIn?',
     answer:
-      'LinkedIn is a network built around connections you already have. FounderFlow is a curated directory of 3,000+ early-stage founders you would never find otherwise, because they are not posting jobs anywhere. We give you their contact info and a way to reach out. LinkedIn does not.',
+      `LinkedIn is a network built around connections you already have. FounderFlow is a curated directory of ${founderCountDisplay} early-stage founders you would never find otherwise, because they are not posting jobs anywhere. We give you their contact info and a way to reach out. LinkedIn does not.`,
   },
   {
     question: 'Is the founder directory really free?',
     answer:
-      'Yes. Anyone can browse all 3,000+ founders, see company details, and view public application links without paying anything. Pro unlocks verified emails, LinkedIn profiles, and the outreach tools.',
+      `Yes. Anyone can browse all ${founderCountDisplay} founders, see company details, and view public application links without paying anything. Pro unlocks verified emails, LinkedIn profiles, and the outreach tools.`,
   },
   {
     question: 'How do you verify contact information?',
@@ -51,17 +51,19 @@ const faqs: FAQItem[] = [
   {
     question: "Do founders know they are listed?",
     answer:
-      'The directory is built from publicly available information, the same kind of research a good recruiter would do manually. Founders are listed based on public company and team data. We do not scrape private sources.',
+      'Not automatically, no — we do not notify people when they are added. The directory is built from publicly available information, the same kind of research a good recruiter would do manually. If you are listed and would rather not be, you can request removal anytime at founderflow.space/data-removal and we will take it down.',
   },
   {
     question: 'Can I cancel anytime?',
     answer:
       'Yes. No contracts, no cancellation fees. Cancel from your account settings and you will not be charged again.',
   },
-];
+]; }
 
-export default function FAQ() {
+export default function FAQ({ founderCount = 0 }: { founderCount?: number }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const founderCountDisplay = founderCount > 0 ? `${founderCount.toLocaleString()}+` : '3,000+';
+  const faqs = buildFaqs(founderCountDisplay);
 
   const toggleItem = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
 
 export default function DataRemovalForm() {
   const [identifier, setIdentifier] = useState('');
@@ -114,6 +115,7 @@ export default function DataRemovalForm() {
           </a>.
         </p>
       </div>
+      <Footer />
     </div>
   );
 }

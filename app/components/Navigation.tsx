@@ -51,6 +51,22 @@ export default function Navigation() {
             >
               Directory
             </Link>
+            <Link
+              href="/blog"
+              className={`nav-link rounded-lg px-3 py-1.5 text-sm ${pathname === '/blog' ? '[aria-current="page"]' : ''
+                }`}
+              {...(pathname === '/blog' ? { 'aria-current': 'page' } : {})}
+            >
+              Blog
+            </Link>
+            <Link
+              href="/about"
+              className={`nav-link rounded-lg px-3 py-1.5 text-sm ${pathname === '/about' ? '[aria-current="page"]' : ''
+                }`}
+              {...(pathname === '/about' ? { 'aria-current': 'page' } : {})}
+            >
+              About
+            </Link>
             {isSignedIn && (
               <>
                 <Link
@@ -168,6 +184,22 @@ export default function Navigation() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Browse Directory
+              </Link>
+              <Link
+                href="/blog"
+                className={`nav-link rounded-lg px-3 py-2 text-sm ${pathname === '/blog' ? '[aria-current="page"]' : ''}`}
+                {...(pathname === '/blog' ? { 'aria-current': 'page' } : {})}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Blog
+              </Link>
+              <Link
+                href="/about"
+                className={`nav-link rounded-lg px-3 py-2 text-sm ${pathname === '/about' ? '[aria-current="page"]' : ''}`}
+                {...(pathname === '/about' ? { 'aria-current': 'page' } : {})}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                About
               </Link>
               {isSignedIn && (
                 <>

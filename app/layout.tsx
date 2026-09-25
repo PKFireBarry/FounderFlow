@@ -33,7 +33,7 @@ const dmSerifDisplay = DM_Serif_Display({
 export const metadata: Metadata = {
   title: "Founder Flow | Early-Stage Startup Opportunities",
   description: "Access early-stage startup opportunities before they hit mainstream job boards. Connect directly with seed-stage founders and get verified contact info.",
-  keywords: "early stage startups, seed stage companies, startup founder networking, exclusive startup opportunities, founder contact information, startup recruitment before scaling, fresh startup companies, direct founder connections, startup job opportunities not on linkedin, new company founders, emerging startup community, pre-series A startups, startup founder outreach, seed funding companies, early startup careers",
+  keywords: "startup jobs not on linkedin, direct founder contact, verified founder emails, startup founder outreach, founder contact information, skip the job boards, early-stage startup jobs, startup hiring directory",
   authors: [{ name: "Founder Flow" }],
   creator: "Founder Flow",
   publisher: "Founder Flow",
@@ -56,8 +56,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Founder Flow",
-    title: "Founder Flow - Early-Stage Startup Network | Connect with Seed-Stage Companies",
-    description: "Access exclusive early-stage startup opportunities before they hit mainstream job boards. Connect directly with seed-stage company founders and get verified contact information.",
+    title: "Founder Flow | Early-Stage Startup Opportunities",
+    description: "Startup jobs you won't find on LinkedIn. Connect directly with seed-stage founders and get verified contact info.",
     url: "https://www.founderflow.space",
     images: [
       {
@@ -70,8 +70,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Founder Flow - Early-Stage Startup Network | Connect with Seed-Stage Companies",
-    description: "Access exclusive early-stage startup opportunities before they hit mainstream job boards. Connect directly with seed-stage company founders.",
+    title: "Founder Flow | Early-Stage Startup Opportunities",
+    description: "Startup jobs you won't find on LinkedIn. Connect directly with seed-stage founders and get verified contact info.",
     images: ["/favicon.png"],
   },
   alternates: {

@@ -3,7 +3,7 @@ import { unstable_cache } from 'next/cache';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from './firebase/server';
 import { deriveCompanySlug, normalizeCompanyName, getDomainFromSlugEntry } from './company-slug';
-import { isNA } from './entry-helpers';
+import { isNA, extractRoleKeywords } from './entry-helpers';
 
 export interface EntryRecord {
   id: string;
@@ -28,7 +28,9 @@ export interface CompanyRecord {
   entryIds: string[];
   roleCount: number;
   lastPublished: string;
+  firstPublished: string;
   contactCount: number;
+  roleKeywords: string[];
 }
 
 export interface CompanyDetail {
@@ -98,6 +100,11 @@ function buildCompanyRecord(slug: string, entries: EntryRecord[]): CompanyRecord
   const deduped = dedupeContacts(entries);
 
   const dates = entries.map(e => e.published).filter(Boolean).sort().reverse();
+
+  const roleKeywords = Array.from(
+    new Set(entries.flatMap(e => extractRoleKeywords(e.looking_for)))
+  );
+
   return {
     slug,
     displayName,
@@ -106,8 +113,74 @@ function buildCompanyRecord(slug: string, entries: EntryRecord[]): CompanyRecord
     entryIds: entries.map(e => e.id),
     roleCount: entries.length,
     lastPublished: dates[0] ?? '',
+    firstPublished: dates[dates.length - 1] ?? '',
     contactCount: deduped.length,
+    roleKeywords,
   };
+}
+
+export function roleToSlug(role: string): string {
+  return role.toLowerCase().replace(/\s+/g, '-');
+}
+
+const MIN_COMPANIES_PER_ROLE_HUB = 5;
+
+export interface RoleHub {
+  role: string;
+  slug: string;
+  companies: CompanyRecord[];
+}
+
+/**
+ * Groups companies by extracted role keyword, for hub pages that give each
+ * company page a real inbound link (most have none otherwise). Roles with too
+ * few companies are dropped rather than shipped as another thin page.
+ */
+export async function listRoleHubs(): Promise<RoleHub[]> {
+  const companies = await listCompanies();
+  const byRole = new Map<string, CompanyRecord[]>();
+
+  for (const company of companies) {
+    for (const role of company.roleKeywords) {
+      const group = byRole.get(role) ?? [];
+      group.push(company);
+      byRole.set(role, group);
+    }
+  }
+
+  return Array.from(byRole.entries())
+    .filter(([, companies]) => companies.length >= MIN_COMPANIES_PER_ROLE_HUB)
+    .map(([role, companies]) => ({ role, slug: roleToSlug(role), companies }))
+    .sort((a, b) => b.companies.length - a.companies.length);
+}
+
+export async function getRoleHubBySlug(slug: string): Promise<RoleHub | null> {
+  const hubs = await listRoleHubs();
+  return hubs.find(h => h.slug === slug) ?? null;
+}
+
+/**
+ * Companies sharing at least one role keyword with the given company, ranked
+ * by how many keywords they share. Gives every company page real sibling
+ * links instead of the zero it has today.
+ */
+export async function getRelatedCompanies(slug: string, limit = 6): Promise<CompanyRecord[]> {
+  const companies = await listCompanies();
+  const target = companies.find(c => c.slug === slug);
+  if (!target || target.roleKeywords.length === 0) return [];
+
+  const targetKeywords = new Set(target.roleKeywords);
+
+  return companies
+    .filter(c => c.slug !== slug)
+    .map(c => ({
+      company: c,
+      sharedCount: c.roleKeywords.filter(k => targetKeywords.has(k)).length,
+    }))
+    .filter(({ sharedCount }) => sharedCount > 0)
+    .sort((a, b) => b.sharedCount - a.sharedCount)
+    .slice(0, limit)
+    .map(({ company }) => company);
 }
 
 function normalizeName(raw: string): string {
@@ -188,32 +261,41 @@ function dedupeContacts(entries: EntryRecord[]): ContactRecord[] {
   return mergeContacts(entries);
 }
 
-const getCachedIndex = unstable_cache(
-  async (): Promise<{ records: CompanyRecord[]; entriesBySlug: Record<string, EntryRecord[]> }> => {
+// Split into two caches — combined, records + all entries grouped by slug came out
+// to ~2.5MB, over unstable_cache's 2MB per-entry limit. Each half comfortably fits
+// on its own, and both are cheap to rebuild together on the same cache miss.
+const getCachedRecords = unstable_cache(
+  async (): Promise<CompanyRecord[]> => {
     const entries = await fetchAllEntries();
     const index = buildIndex(entries);
-    const records: CompanyRecord[] = [];
-    const entriesBySlug: Record<string, EntryRecord[]> = {};
+    const records = Array.from(index, ([slug, slugEntries]) => buildCompanyRecord(slug, slugEntries));
+    records.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    return records;
+  },
+  ['companies-records'],
+  { revalidate: 3600, tags: ['companies'] }
+);
 
+const getCachedEntriesBySlug = unstable_cache(
+  async (): Promise<Record<string, EntryRecord[]>> => {
+    const entries = await fetchAllEntries();
+    const index = buildIndex(entries);
+    const entriesBySlug: Record<string, EntryRecord[]> = {};
     for (const [slug, slugEntries] of index) {
-      records.push(buildCompanyRecord(slug, slugEntries));
       entriesBySlug[slug] = slugEntries;
     }
-
-    records.sort((a, b) => a.displayName.localeCompare(b.displayName));
-    return { records, entriesBySlug };
+    return entriesBySlug;
   },
-  ['companies-index'],
+  ['companies-entries-by-slug'],
   { revalidate: 3600, tags: ['companies'] }
 );
 
 export async function listCompanies(): Promise<CompanyRecord[]> {
-  const { records } = await getCachedIndex();
-  return records;
+  return getCachedRecords();
 }
 
 export async function getCompanyBySlug(slug: string): Promise<CompanyDetail | null> {
-  const { records, entriesBySlug } = await getCachedIndex();
+  const [records, entriesBySlug] = await Promise.all([getCachedRecords(), getCachedEntriesBySlug()]);
   const company = records.find(r => r.slug === slug);
   if (!company) return null;
   const entries = entriesBySlug[slug] ?? [];

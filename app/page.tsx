@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { SignInButton, useUser } from '@clerk/nextjs';
 import Navigation from './components/Navigation';
 import FounderDetailModal from './components/FounderDetailModal';
+import Footer from './components/Footer';
 import { clientDb } from '@/lib/firebase/client';
 import { collection, getDocs, query, orderBy, limit, getCountFromServer } from 'firebase/firestore';
 import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect';
@@ -897,7 +897,7 @@ export default function Home() {
           <div className="section-divider" />
 
           {/* ==================== FAQ ==================== */}
-          <FAQ />
+          <FAQ founderCount={totalFounderCount} />
 
           {/* ==================== FINAL CTA ==================== */}
           <section className="mx-auto max-w-4xl px-4 py-20 sm:py-28 text-center">
@@ -931,23 +931,7 @@ export default function Home() {
         </main>
 
         {/* Footer */}
-        <footer className="mx-auto max-w-7xl px-4 pb-10 pointer-events-auto">
-          <div className="rounded-2xl p-4 glass-card">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-[12px] text-neutral-400">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 shrink-0 rounded-full ring-2 ring-white/30 overflow-hidden bg-white/10">
-                  <Image src="/favicon.png" alt="Founder Flow Logo" width={28} height={28} className="w-full h-full object-cover" />
-                </div>
-                <span>&copy; {new Date().getFullYear()} Founder Flow</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <a href="/terms" className="hover:text-neutral-200 transition-colors">Terms</a>
-                <a href="/privacy" className="hover:text-neutral-200 transition-colors">Privacy</a>
-                <a href="mailto:info@founderflow.space" className="hover:text-neutral-200 transition-colors">Contact</a>
-              </div>
-            </div>
-          </div>
-        </footer>
+        <Footer />
 
         {/* Demo Message Modal */}
         {showModal && selectedMessage && (

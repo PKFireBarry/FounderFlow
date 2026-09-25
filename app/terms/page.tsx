@@ -1,3 +1,6 @@
+import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
+
 export const metadata = {
   title: "Terms of Service | FounderFlow",
   description: "Terms of Service for FounderFlow",
@@ -6,6 +9,7 @@ export const metadata = {
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-neutral-300">
+      <Navigation />
       <div className="mx-auto max-w-3xl px-6 py-20">
         <h1 className="text-3xl font-bold text-white mb-2">Terms of Service</h1>
         <p className="text-sm text-neutral-500 mb-12">Last updated: March 16, 2026</p>
@@ -78,10 +82,11 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">7. Intellectual Property</h2>
             <p>
-              The Service, including its design, features, and content (excluding user-generated
-              content), is the property of FounderFlow. You retain ownership of any content you
-              submit to the platform. By using the Service, you grant FounderFlow a limited license
-              to process your content as necessary to provide the Service.
+              FounderFlow is operated by Darion George as a sole proprietorship. The Service,
+              including its design, features, and content (excluding user-generated content), is
+              owned by the operator of FounderFlow. You retain ownership of any content you submit
+              to the platform. By using the Service, you grant FounderFlow a limited license to
+              process your content as necessary to provide the Service.
             </p>
           </section>
 
@@ -134,6 +139,7 @@ export default function TermsPage() {
           </section>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
