@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
-import { collection, getDocs, query, orderBy, addDoc, doc, deleteDoc, where } from "firebase/firestore";
+import { collection, getDocs, query, addDoc, doc, deleteDoc, where } from "firebase/firestore";
 import { useUser, SignInButton } from '@clerk/nextjs';
 import { usePostHog } from 'posthog-js/react';
 import { clientDb } from "../../lib/firebase/client";
@@ -14,6 +14,7 @@ import Link from "next/link";
 import { isValidApplyUrl, isValidActionableUrl } from "../../lib/url-validation";
 import { extractRoleKeywords } from "@/lib/entry-helpers";
 import { deriveCompanySlug } from "../../lib/company-slug";
+import { isNA, firstNonNA, cleanEmail, mailtoHref, asHttpUrl, prettyDomain, chooseLinks } from "../../lib/entry-links";
 import TagFilter from "./components/TagFilter";
 import ViewToggle, { type ViewMode } from "./components/ViewToggle";
 import EntryRow from "./components/EntryRow";
@@ -479,74 +480,6 @@ function EntryCard(props: EntryCardProps) {
   );
 }
 
-// Helpers to normalize messy data coming from the scrape
-function isNA(value: any): boolean {
-  if (value == null) return true;
-  const s = String(value)
-    // trim common and zero-width spaces
-    .replace(/[\u200B-\u200D\uFEFF]/g, "")
-    .trim()
-    .toLowerCase();
-  if (!s) return true;
-  // Normalize separators and punctuation (/, \, ., -, long dash, fraction slash)
-  const stripped = s.replace(/[\s\./\\_\-–⁄]/g, "");
-  return (
-    s === "N/A" ||
-    s === "-" ||
-    stripped === "na" ||
-    stripped === "none" ||
-    stripped === "null" ||
-    stripped === "undefined" ||
-    stripped === "tbd"
-  );
-}
-
-// Returns the first value that is not null/undefined and not an NA-like string
-function firstNonNA<T = any>(...values: T[]): T | null {
-  for (const v of values) {
-    if (v == null) continue;
-    if (typeof v === "string" && isNA(v)) continue;
-    return v;
-  }
-  return null;
-}
-
-function cleanEmail(raw: any): string | null {
-  if (isNA(raw)) return null;
-  let s = String(raw).trim();
-  if (s.toLowerCase().startsWith("mailto:")) s = s.slice(7);
-  // very light validation
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return null;
-  return s;
-}
-
-function mailtoHref(email: string | null): string | null {
-  if (!email) return null;
-  return `mailto:${email}`;
-}
-
-function asHttpUrl(raw: any): string | null {
-  if (isNA(raw)) return null;
-  let s = String(raw).trim();
-  if (!/^https?:\/\//i.test(s)) s = `https://${s}`;
-  try {
-    const u = new URL(s);
-    return u.toString();
-  } catch {
-    return null;
-  }
-}
-
-function prettyDomain(url: string | null): string | null {
-  if (!url) return null;
-  try {
-    const u = new URL(url);
-    return u.hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
-}
-
 function tagsFrom(value: any, max = 6): string[] {
   if (isNA(value)) return [];
   const items = String(value)
@@ -558,136 +491,6 @@ function tagsFrom(value: any, max = 6): string[] {
   return uniq.slice(0, max);
 }
 
-function isLinkedInUrl(url: string | null): boolean {
-  if (!url) return false;
-  try {
-    const u = new URL(url);
-    return /(^|\.)linkedin\.com$/i.test(u.hostname);
-  } catch {
-    return false;
-  }
-}
-
-function canonicalizeUrl(url: string | null): string | null {
-  if (!url) return null;
-  try {
-    const u = new URL(url);
-    // drop query/hash, normalize trailing slash, lowercase host
-    const path = u.pathname.replace(/\/$/, "");
-    return `${u.protocol}//${u.hostname.toLowerCase()}${path}`;
-  } catch {
-    return null;
-  }
-}
-
-function isJobBoardUrl(url: string | null): boolean {
-  if (!url) return false;
-  try {
-    const u = new URL(url);
-    const h = u.hostname.toLowerCase();
-    const p = u.pathname.toLowerCase();
-    if (
-      h.includes("greenhouse.io") ||
-      h.includes("lever.co") ||
-      h.includes("workable.com") ||
-      h.includes("ashbyhq.com") ||
-      h.includes("myworkdayjobs.com") ||
-      h.includes("jobvite.com") ||
-      h.includes("bamboohr.com")
-    ) return true;
-    return /careers|jobs|open-roles|apply|join-us/.test(p);
-  } catch {
-    return false;
-  }
-}
-
-// (duplicate helper definitions removed)
-
-function isBadCompanyDomain(url: string | null): boolean {
-  if (!url) return false;
-  try {
-    const u = new URL(url);
-    const host = u.hostname.toLowerCase();
-    return host === "gmail.com" || host === "mail.google.com";
-  } catch {
-    return false;
-  }
-}
-
-// moved below asDate
-
-function chooseLinks(it: any) {
-  const used = new Set<string>();
-
-  // accept many aliases commonly seen in scraped data
-  const fromCompany = asHttpUrl(
-    it?.company_url ?? it?.companyUrl ?? it?.website ?? it?.site ?? it?.homepage ?? it?.url_website
-  );
-  const fromLinkedIn = asHttpUrl(
-    it?.linkedinurl ?? it?.linkedin_url ?? it?.linkedin ?? it?.li
-  );
-  const fromFlexUrl = asHttpUrl(
-    it?.url ?? it?.roles_url ?? it?.careers ?? it?.jobs_url ?? it?.open_roles_url
-  );
-  const fromApplyUrl = asHttpUrl(it?.apply_url);
-  const flexEmail = cleanEmail(it?.url);
-  const email = cleanEmail(it?.email) || flexEmail;
-
-  let linkedinUrl: string | null = null;
-  let rolesUrl: string | null = null;
-  let apply_url: string | null = null;
-  let companyUrl: string | null = null;
-
-  // 1) LinkedIn: prefer explicit linkedin field, else any URL pointing to LinkedIn
-  for (const cand of [fromLinkedIn, fromCompany, fromFlexUrl, fromApplyUrl]) {
-    if (cand && isLinkedInUrl(cand)) {
-      const canon = canonicalizeUrl(cand)!;
-      if (!used.has(canon)) {
-        linkedinUrl = cand;
-        used.add(canon);
-        break;
-      }
-    }
-  }
-
-  // 2) Apply URL: prefer explicit apply_url if it's different from other URLs
-  if (fromApplyUrl) {
-    const canon = canonicalizeUrl(fromApplyUrl)!;
-    if (!used.has(canon)) {
-      apply_url = fromApplyUrl;
-      used.add(canon);
-    }
-  }
-
-  // 3) Roles/Jobs: prefer URLs that look like job boards or careers pages
-  for (const cand of [fromFlexUrl, fromCompany]) {
-    if (cand && isJobBoardUrl(cand)) {
-      const canon = canonicalizeUrl(cand)!;
-      if (!used.has(canon)) {
-        rolesUrl = cand;
-        used.add(canon);
-        break;
-      }
-    }
-  }
-
-  // 4) Company: a generic website (non-LinkedIn, non-job-board, not gmail.com)
-  for (const cand of [fromCompany, fromFlexUrl]) {
-    if (cand && !isLinkedInUrl(cand) && !isJobBoardUrl(cand) && !isBadCompanyDomain(cand)) {
-      const canon = canonicalizeUrl(cand)!;
-      if (!used.has(canon)) {
-        companyUrl = cand;
-        used.add(canon);
-        break;
-      }
-    }
-  }
-
-  // Derive company domain from selected companyUrl
-  const companyDomain = prettyDomain(companyUrl);
-
-  return { companyUrl, rolesUrl, apply_url, linkedinUrl, emailHref: mailtoHref(email), companyDomain } as const;
-}
 
 function Label({ children }: { children: ReactNode }) {
   return (
@@ -933,37 +736,34 @@ export default function EntryPage() {
     const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
     const run = async () => {
-      // Serve from cache if fresh
-      try {
-        const raw = localStorage.getItem(CACHE_KEY);
-        if (raw) {
-          const { data, ts } = JSON.parse(raw);
-          if (Date.now() - ts < CACHE_TTL) {
-            setItems(data as EntryDoc[]);
-            setLoading(false);
-            return;
+      // Serve from cache if fresh. Signed-in users always hit the network so a
+      // just-upgraded Pro subscriber doesn't sit behind a stale redacted cache.
+      if (!isSignedIn) {
+        try {
+          const raw = localStorage.getItem(CACHE_KEY);
+          if (raw) {
+            const { data, ts } = JSON.parse(raw);
+            if (Date.now() - ts < CACHE_TTL) {
+              setItems(data as EntryDoc[]);
+              setLoading(false);
+              return;
+            }
           }
-        }
-      } catch { /* ignore corrupt cache */ }
+        } catch { /* ignore corrupt cache */ }
+      }
 
       try {
-        const q = query(
-          collection(clientDb, "entry"),
-          orderBy("published", "desc")
-        );
-        const snap = await getDocs(q);
-        const rows = snap.docs.map((d) => {
-          const anyD: any = d as any;
-          const createdSec =
-            anyD?._document?.createTime?.timestamp?.seconds ?? anyD?._document?.createTime?.seconds;
-          const updatedSec =
-            anyD?._document?.updateTime?.timestamp?.seconds ?? anyD?._document?.updateTime?.seconds;
-          const createdMs = typeof createdSec === "number" ? createdSec * 1000 : undefined;
-          const updatedMs = typeof updatedSec === "number" ? updatedSec * 1000 : undefined;
-          return ({ id: d.id, __createdAtMillis: createdMs, __updatedAtMillis: updatedMs, ...d.data() } as EntryDoc);
-        });
+        // Fetched server-side: contact info (email/linkedinurl) for entries
+        // the caller isn't entitled to is redacted before it ever reaches the
+        // browser. See app/api/opportunities/route.ts.
+        const res = await fetch('/api/opportunities');
+        if (!res.ok) throw new Error(`Failed to load (${res.status})`);
+        const { entries } = await res.json();
+        const rows = entries as EntryDoc[];
         setItems(rows);
-        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: rows, ts: Date.now() })); } catch { /* ignore quota errors */ }
+        if (!isSignedIn) {
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: rows, ts: Date.now() })); } catch { /* ignore quota errors */ }
+        }
       } catch (e: any) {
         setError(e?.message ?? "Failed to load");
       } finally {
@@ -971,6 +771,24 @@ export default function EntryPage() {
       }
     };
     run();
+  }, [isSignedIn]);
+
+  // Asks the server to unlock one entry's real email/linkedinurl (anonymous
+  // visitors: consumes one of their 3 free reveals/24h, enforced server-side;
+  // paid users never need this since the bulk fetch already includes real
+  // values). No-ops for signed-in-but-unpaid users — they get zero previews.
+  const revealContact = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/opportunities/${id}/reveal`, { method: 'POST' });
+      if (!res.ok) return;
+      const data = await res.json();
+      setItems(prev => prev.map(it => it.id === id ? { ...it, email: data.email ?? it.email, linkedinurl: data.linkedinurl ?? it.linkedinurl, url: data.url ?? it.url } : it));
+      setSelectedFounder((prev: any) => {
+        if (!prev || prev.id !== id) return prev;
+        const resolved = chooseLinks({ ...prev, email: data.email, linkedinurl: data.linkedinurl, url: data.url });
+        return { ...prev, linkedinUrl: resolved.linkedinUrl, emailHref: resolved.emailHref };
+      });
+    } catch { /* ignore — card stays locked */ }
   }, []);
 
   // Load user's saved jobs
@@ -1429,6 +1247,7 @@ export default function EntryPage() {
                               setAnonModalCount(newCount);
                               if (newCount <= 3) {
                                 setAnonViewedIds(prev => new Set(prev).add(it.id));
+                                revealContact(it.id);
                               }
                               const existing = JSON.parse(localStorage.getItem('ff_anon_views') || '{}');
                               localStorage.setItem('ff_anon_views', JSON.stringify({
@@ -1516,6 +1335,7 @@ export default function EntryPage() {
                               setAnonModalCount(newCount);
                               if (newCount <= 3) {
                                 setAnonViewedIds(prev => new Set(prev).add(it.id));
+                                revealContact(it.id);
                               }
                               const existing = JSON.parse(localStorage.getItem('ff_anon_views') || '{}');
                               localStorage.setItem('ff_anon_views', JSON.stringify({
