@@ -1,11 +1,9 @@
 import type { NextConfig } from "next";
 
-// Report-Only for now: an enforced CSP that's wrong in production would silently break
-// Clerk sign-in or Stripe checkout, and there's no way to load-test this environment's
-// actual Clerk/PostHog domains before shipping. Report-Only can never block anything —
-// it only surfaces violations in the browser console — so once real traffic shows the
-// policy doesn't false-positive on anything, swap the header name to enforce it.
-const CSP_REPORT_ONLY = [
+// Verified live on production (2026-09-25) with zero violations across homepage,
+// /opportunities, /companies, a company detail page, and the Clerk sign-in modal
+// (the highest-risk flow — cross-origin Google OAuth button + iframes). Now enforced.
+const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.founderflow.space https://js.stripe.com https://us.i.posthog.com https://us-assets.i.posthog.com",
   "style-src 'self' 'unsafe-inline'",
@@ -27,7 +25,7 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
-          { key: 'Content-Security-Policy-Report-Only', value: CSP_REPORT_ONLY },
+          { key: 'Content-Security-Policy', value: CONTENT_SECURITY_POLICY },
         ],
       },
     ];
