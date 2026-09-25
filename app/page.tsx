@@ -41,6 +41,7 @@ export default function Home() {
   const [carouselFounders, setCarouselFounders] = useState<any[]>([]);
   const [isLoadingCarousel, setIsLoadingCarousel] = useState(true);
   const [totalFounderCount, setTotalFounderCount] = useState<number>(0);
+  const [companyCount, setCompanyCount] = useState<number>(0);
   const [displayCount, setDisplayCount] = useState<number>(0);
   const [showBackground, setShowBackground] = useState(false);
   const [isPageReady, setIsPageReady] = useState(false);
@@ -265,6 +266,31 @@ export default function Home() {
       } catch { setTotalFounderCount(500); }
     };
     const id = setTimeout(fetchTotalCount, 500);
+    return () => clearTimeout(id);
+  }, []);
+
+  // Real distinct-company count (different from totalFounderCount, which counts
+  // individual entries/contacts) — used for "X Startups" so that claim can't
+  // silently reuse the wrong metric again.
+  useEffect(() => {
+    const CACHE_KEY = 'ff_cache_company_count';
+    const CACHE_TTL = 15 * 60 * 1000;
+    const fetchCompanyCount = async () => {
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (raw) {
+          const { data, ts } = JSON.parse(raw);
+          if (Date.now() - ts < CACHE_TTL) { setCompanyCount(data); return; }
+        }
+      } catch { /* ignore */ }
+      try {
+        const res = await fetch('/api/stats');
+        const { companyCount: count } = await res.json();
+        setCompanyCount(count);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: count, ts: Date.now() })); } catch { /* ignore */ }
+      } catch { /* leave at 0, falls back to the static copy below */ }
+    };
+    const id = setTimeout(fetchCompanyCount, 500);
     return () => clearTimeout(id);
   }, []);
 
@@ -717,7 +743,7 @@ export default function Home() {
             <div className="text-center mb-10">
               <p className="text-sm font-medium text-neutral-500 mb-3 tracking-wide uppercase">The New Batch of Startups This Week Looking To Fill Roles</p>
               <h2 className="font-display text-2xl sm:text-3xl text-white mb-1" style={{ lineHeight: '1.15', letterSpacing: '-0.02em' }}>
-                {totalFounderCount > 0 ? `${totalFounderCount.toLocaleString()}+` : '3,000+'} Startups &amp; Growing
+                {companyCount > 0 ? `${companyCount.toLocaleString()}+` : '2,000+'} Startups &amp; Growing
               </h2>
             </div>
 
