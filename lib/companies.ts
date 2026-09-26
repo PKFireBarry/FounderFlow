@@ -92,10 +92,53 @@ function buildIndex(entries: EntryRecord[]): Map<string, EntryRecord[]> {
   return index;
 }
 
+// Scraped blurbs sometimes run sentences together ("solutions.(Remote)"); add the
+// missing space after sentence punctuation and collapse stray whitespace.
+function cleanBlurb(raw: string): string {
+  return raw
+    .replace(/([a-z0-9)][.!?])(?=[A-Z(])/g, '$1 ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const META_DESCRIPTION_MAX = 158;
+
+/**
+ * Meta description for a company page: the company's own blurb (when there is one)
+ * plus a factual line built from real data, trimmed to fit a SERP snippet. Raw
+ * blurbs alone run 39-86 characters, well short of a useful snippet.
+ */
+export function buildCompanyDescription(company: CompanyRecord): string {
+  const roles = `${company.roleCount} listed role${company.roleCount !== 1 ? 's' : ''}`;
+  const tail = `${company.displayName}: ${roles}, hiring history and contacts on FounderFlow.`;
+
+  const blurb = company.bestCompanyInfo;
+  if (!blurb) return tail;
+
+  // Keep whole sentences that fit; only fall back to a word-boundary cut when even
+  // the first sentence is too long for the space left after the tail.
+  const budget = META_DESCRIPTION_MAX - tail.length - 1;
+  const sentences = blurb.split(/(?<=[.!?])\s+/);
+  let picked = '';
+  for (const sentence of sentences) {
+    const next = picked ? `${picked} ${sentence}` : sentence;
+    if (next.length > budget) break;
+    picked = next;
+  }
+  if (!picked) {
+    if (budget < 40) return tail;
+    const cut = blurb.slice(0, budget - 1);
+    picked = `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[\s,;:.]+$/, '')}…`;
+  } else if (!/[.!?]$/.test(picked)) {
+    picked += '.';
+  }
+  return `${picked.charAt(0).toUpperCase()}${picked.slice(1)} ${tail}`;
+}
+
 function buildCompanyRecord(slug: string, entries: EntryRecord[]): CompanyRecord {
   const displayName = normalizeCompanyName(entries.map(e => e.company));
   const domain = entries.map(e => getDomainFromSlugEntry(e)).find(Boolean) ?? null;
-  const bestCompanyInfo = entries.find(e => !isNA(e.company_info))?.company_info ?? '';
+  const bestCompanyInfo = cleanBlurb(entries.find(e => !isNA(e.company_info))?.company_info ?? '');
 
   const deduped = dedupeContacts(entries);
 
@@ -300,7 +343,7 @@ const getCachedRecords = unstable_cache(
     records.sort((a, b) => a.displayName.localeCompare(b.displayName));
     return records;
   },
-  ['companies-records-v2'],
+  ['companies-records-v3'],
   { revalidate: 3600, tags: ['companies'] }
 );
 

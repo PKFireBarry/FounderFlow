@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { getCompanyBySlug, listCompanies, getRelatedCompanies, listRoleHubs, roleToSlug } from '../../../lib/companies';
+import { getCompanyBySlug, listCompanies, getRelatedCompanies, listRoleHubs, roleToSlug, buildCompanyDescription } from '../../../lib/companies';
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import CompanyActions from './CompanyActions';
@@ -20,13 +20,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const result = await getCompanyBySlug(slug);
   if (!result) return { title: 'Company not found | FounderFlow' };
   const { company } = result;
+  const description = buildCompanyDescription(company);
   return {
     title: `${company.displayName} — Open roles & hiring history | FounderFlow`,
-    description: company.bestCompanyInfo || `See all roles and contacts at ${company.displayName} on FounderFlow.`,
+    description,
     alternates: { canonical: `https://www.founderflow.space/companies/${slug}` },
     openGraph: {
       title: `${company.displayName} | FounderFlow`,
-      description: company.bestCompanyInfo || `Hiring history and contacts for ${company.displayName}.`,
+      description,
       url: `https://www.founderflow.space/companies/${slug}`,
     },
   };
