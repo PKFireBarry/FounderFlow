@@ -23,11 +23,12 @@ export default function StructuredData() {
           "width": 1024,
           "height": 1024
         },
-        "description": "AI-powered platform for finding and connecting with tech startup founders",
+        "alternateName": "FounderFlow",
+        "description": "Startup job directory with direct founder contact info, for roles that aren't posted on LinkedIn",
+        "disambiguatingDescription": "founderflow.space is the official FounderFlow: a directory of early-stage startups hiring, run by Darion George. Not affiliated with other businesses that use similar names.",
         "foundingDate": "2024",
         "founder": {
-          "@type": "Person",
-          "name": "Darion George"
+          "@id": "https://www.founderflow.space/about#darion-george"
         },
         "contactPoint": {
           "@type": "ContactPoint",
@@ -37,6 +38,16 @@ export default function StructuredData() {
         "sameAs": [
           "https://linkedin.com/company/founder-flow"
         ]
+      },
+      {
+        "@type": "Person",
+        "@id": "https://www.founderflow.space/about#darion-george",
+        "name": "Darion George",
+        "url": "https://www.founderflow.space/about",
+        "jobTitle": "Founder",
+        "worksFor": {
+          "@id": "https://www.founderflow.space/#organization"
+        }
       },
       {
         "@type": "SoftwareApplication",

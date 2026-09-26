@@ -58,6 +58,17 @@ export default function AboutPage() {
           </section>
 
           <section>
+            <h2 className="text-lg font-semibold text-white mb-3">The official FounderFlow site</h2>
+            <p>
+              This site, founderflow.space, is the only official home of FounderFlow. Other
+              businesses and websites use similar names, including on other domains and social
+              accounts. FounderFlow isn&apos;t affiliated with any of them, so if you&apos;re looking for
+              the startup jobs and founder-contact directory run by Darion George, you&apos;re in the
+              right place.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-lg font-semibold text-white mb-3">Get in touch</h2>
             <p>
               Questions, feedback, or something looks wrong? Reach me directly at{' '}
