@@ -59,7 +59,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
       {
         '@type': 'Organization',
         name: company.displayName,
-        url: entries.find(e => e.company_url)?.company_url,
+        url: company.domain ? `https://${company.domain}` : undefined,
         logo: faviconUrl ?? undefined,
       },
       {

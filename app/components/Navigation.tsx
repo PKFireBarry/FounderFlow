@@ -52,6 +52,13 @@ export default function Navigation() {
               Directory
             </Link>
             <Link
+              href="/companies"
+              className="nav-link rounded-lg px-3 py-1.5 text-sm"
+              {...(pathname?.startsWith('/companies') ? { 'aria-current': 'page' } : {})}
+            >
+              Companies
+            </Link>
+            <Link
               href="/blog"
               className={`nav-link rounded-lg px-3 py-1.5 text-sm ${pathname === '/blog' ? '[aria-current="page"]' : ''
                 }`}
@@ -184,6 +191,14 @@ export default function Navigation() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Browse Directory
+              </Link>
+              <Link
+                href="/companies"
+                className="nav-link rounded-lg px-3 py-2 text-sm"
+                {...(pathname?.startsWith('/companies') ? { 'aria-current': 'page' } : {})}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Companies
               </Link>
               <Link
                 href="/blog"

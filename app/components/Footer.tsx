@@ -12,6 +12,8 @@ export default function Footer() {
             <span>&copy; {new Date().getFullYear()} Founder Flow</span>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
+            <a href="/companies" className="hover:text-neutral-200 transition-colors">Companies</a>
+            <a href="/companies/hiring-for" className="hover:text-neutral-200 transition-colors">Browse by role</a>
             <a href="/about" className="hover:text-neutral-200 transition-colors">About</a>
             <a href="/blog" className="hover:text-neutral-200 transition-colors">Blog</a>
             <a href="/terms" className="hover:text-neutral-200 transition-colors">Terms</a>

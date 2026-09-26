@@ -94,7 +94,7 @@ function buildIndex(entries: EntryRecord[]): Map<string, EntryRecord[]> {
 
 function buildCompanyRecord(slug: string, entries: EntryRecord[]): CompanyRecord {
   const displayName = normalizeCompanyName(entries.map(e => e.company));
-  const domain = getDomainFromSlugEntry(entries.find(e => e.company_url) ?? entries[0]) ?? null;
+  const domain = entries.map(e => getDomainFromSlugEntry(e)).find(Boolean) ?? null;
   const bestCompanyInfo = entries.find(e => !isNA(e.company_info))?.company_info ?? '';
 
   const deduped = dedupeContacts(entries);
@@ -266,15 +266,30 @@ function dedupeContacts(entries: EntryRecord[]): ContactRecord[] {
 // cache during the same build — share one Firestore read instead of one
 // each. This is purely a same-process dedupe window, not a data cache, so
 // it never risks the 2MB unstable_cache size limit itself.
-let allEntriesMemo: { promise: Promise<EntryRecord[]>; fetchedAt: number } | null = null;
+//
+// Holds the resolved array (not a long-lived promise): awaiting one promise
+// shared across many requests chains every request's async graph together, and
+// Next's dev-mode async tracker (visitAsyncNode) overflows the stack walking it
+// ("Maximum call stack size exceeded" / "frame.join is not a function").
+let allEntriesMemo: { entries: EntryRecord[]; fetchedAt: number } | null = null;
+let allEntriesInflight: Promise<EntryRecord[]> | null = null;
 const ALL_ENTRIES_MEMO_TTL_MS = 5 * 60 * 1000;
 
-function getAllEntriesMemoized(): Promise<EntryRecord[]> {
-  const now = Date.now();
-  if (!allEntriesMemo || now - allEntriesMemo.fetchedAt > ALL_ENTRIES_MEMO_TTL_MS) {
-    allEntriesMemo = { promise: fetchAllEntries(), fetchedAt: now };
+async function getAllEntriesMemoized(): Promise<EntryRecord[]> {
+  if (allEntriesMemo && Date.now() - allEntriesMemo.fetchedAt <= ALL_ENTRIES_MEMO_TTL_MS) {
+    return allEntriesMemo.entries;
   }
-  return allEntriesMemo.promise;
+  if (!allEntriesInflight) {
+    allEntriesInflight = fetchAllEntries()
+      .then(entries => {
+        allEntriesMemo = { entries, fetchedAt: Date.now() };
+        return entries;
+      })
+      .finally(() => {
+        allEntriesInflight = null;
+      });
+  }
+  return allEntriesInflight;
 }
 
 const getCachedRecords = unstable_cache(
@@ -285,7 +300,7 @@ const getCachedRecords = unstable_cache(
     records.sort((a, b) => a.displayName.localeCompare(b.displayName));
     return records;
   },
-  ['companies-records'],
+  ['companies-records-v2'],
   { revalidate: 3600, tags: ['companies'] }
 );
 
@@ -302,7 +317,7 @@ const getCachedEntriesForSlug = unstable_cache(
     const index = buildIndex(entries);
     return index.get(slug) ?? [];
   },
-  ['company-entries-for-slug'],
+  ['company-entries-for-slug-v2'],
   { revalidate: 3600, tags: ['companies'] }
 );
 
