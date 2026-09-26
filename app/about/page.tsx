@@ -1,9 +1,10 @@
 import { Metadata } from 'next';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
+import StructuredData from '../components/StructuredData';
 
 export const metadata: Metadata = {
-  title: 'About FounderFlow',
+  title: 'About FounderFlow | Startup Job & Founder Contact Directory',
   description: 'FounderFlow is built and run by Darion George. Learn who is behind the directory and why it exists.',
   alternates: {
     canonical: 'https://www.founderflow.space/about',
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-neutral-300">
+      <StructuredData />
       <Navigation />
       <div className="mx-auto max-w-3xl px-6 py-20">
         <h1 className="text-3xl font-bold text-white mb-2">About FounderFlow</h1>

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, DM_Sans, DM_Serif_Display } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
-import StructuredData from './components/StructuredData';
 import NotificationProvider from './components/NotificationProvider';
 import { SubscriptionProvider } from './hooks/useSubscription';
 import OnboardingProvider from './components/onboarding/OnboardingProvider';
@@ -80,9 +79,6 @@ export default function RootLayout({
     <ClerkProvider afterSignUpUrl="/opportunities?welcome=1">
       <PostHogProvider>
         <html lang="en" className="dark">
-          <head>
-            <StructuredData />
-          </head>
           <body
             className={`${inter.variable} ${dmSans.variable} ${dmSerifDisplay.variable} antialiased min-h-screen`}
           >

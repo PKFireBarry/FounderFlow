@@ -1,0 +1,18 @@
+# FounderFlow
+
+> FounderFlow (https://www.founderflow.space) is a directory of early-stage startups and the founders and hiring contacts behind them, built for people looking for roles that are not posted on public job boards. It is built and run by Darion George as a sole proprietorship.
+
+Records are compiled from publicly available information (company sites, team pages, public hiring signals) and can go stale. Each listing shows when it was published. Contact details (email, LinkedIn) are available to subscribers, with a limited free preview.
+
+## Key pages
+
+- [Directory](https://www.founderflow.space/opportunities): search and filter startup hiring contacts by role or skill.
+- [Companies](https://www.founderflow.space/companies): every company in the directory, with role counts and hiring history.
+- [Companies by role](https://www.founderflow.space/companies/hiring-for): companies grouped by the kind of role they are hiring for.
+- [How contact data is verified](https://www.founderflow.space/blog/how-we-verify-contact-data): sourcing and verification process.
+- [About](https://www.founderflow.space/about): who runs FounderFlow and why it exists.
+- [Data removal](https://www.founderflow.space/data-removal): request a correction or removal of a listing.
+
+## Contact
+
+info@founderflow.space

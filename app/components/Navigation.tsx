@@ -32,6 +32,7 @@ export default function Navigation() {
                 alt="Founder Flow Logo"
                 width={40}
                 height={40}
+                priority
                 className="w-full h-full object-cover"
               />
             </div>

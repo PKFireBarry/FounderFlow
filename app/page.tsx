@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { SignInButton, useUser } from '@clerk/nextjs';
 import Navigation from './components/Navigation';
+import StructuredData from './components/StructuredData';
 import FounderDetailModal from './components/FounderDetailModal';
 import Footer from './components/Footer';
 import { clientDb } from '@/lib/firebase/client';
@@ -419,6 +420,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0b12] dark">
+      <StructuredData />
       {/* Loading Overlay */}
       {!isPageReady && (
         <div
