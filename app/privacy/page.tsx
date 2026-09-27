@@ -1,9 +1,12 @@
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
+import { socialMetadata } from '../../lib/social-metadata';
 
 export const metadata = {
   title: "Privacy Policy | FounderFlow",
-  description: "Privacy Policy for FounderFlow",
+  description: "How FounderFlow collects, uses and protects your data, how directory listings of non-users are handled, and how to request correction or removal.",
+  alternates: { canonical: "https://www.founderflow.space/privacy" },
+  ...socialMetadata({ title: "Privacy Policy | FounderFlow", description: "How FounderFlow collects, uses and protects your data, how directory listings of non-users are handled, and how to request correction or removal.", path: "/privacy" }),
 };
 
 export default function PrivacyPage() {

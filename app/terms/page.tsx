@@ -1,9 +1,12 @@
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
+import { socialMetadata } from '../../lib/social-metadata';
 
 export const metadata = {
   title: "Terms of Service | FounderFlow",
-  description: "Terms of Service for FounderFlow",
+  description: "The terms for using FounderFlow: accounts, free trial and billing, acceptable use of directory data, AI-generated content, and limits of liability.",
+  alternates: { canonical: "https://www.founderflow.space/terms" },
+  ...socialMetadata({ title: "Terms of Service | FounderFlow", description: "The terms for using FounderFlow: accounts, free trial and billing, acceptable use of directory data, AI-generated content, and limits of liability.", path: "/terms" }),
 };
 
 export default function TermsPage() {

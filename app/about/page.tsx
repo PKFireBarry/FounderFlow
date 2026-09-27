@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import StructuredData from '../components/StructuredData';
+import { socialMetadata } from '../../lib/social-metadata';
 
 export const metadata: Metadata = {
   title: 'About FounderFlow | Startup Job & Founder Contact Directory',
@@ -9,6 +10,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://www.founderflow.space/about',
   },
+  ...socialMetadata({
+    title: 'About FounderFlow | Startup Job & Founder Contact Directory',
+    description: 'FounderFlow is built and run by Darion George. Learn who is behind the directory and why it exists.',
+    path: '/about',
+  }),
 };
 
 export default function AboutPage() {

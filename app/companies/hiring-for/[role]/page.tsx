@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { listRoleHubs, getRoleHubBySlug } from '../../../../lib/companies';
 import Navigation from '../../../components/Navigation';
 import Footer from '../../../components/Footer';
+import { socialMetadata } from '@/lib/social-metadata';
 
 export const dynamicParams = true;
 
@@ -20,11 +21,11 @@ export async function generateMetadata({ params }: { params: Promise<{ role: str
     title: `${hub.role} roles at early-stage startups | FounderFlow`,
     description: `${hub.companies.length} early-stage startups currently looking to fill ${hub.role} roles, with direct founder contact info.`,
     alternates: { canonical: `https://www.founderflow.space/companies/hiring-for/${hub.slug}` },
-    openGraph: {
+    ...socialMetadata({
       title: `${hub.role} roles at early-stage startups | FounderFlow`,
       description: `${hub.companies.length} early-stage startups hiring for ${hub.role} roles.`,
-      url: `https://www.founderflow.space/companies/hiring-for/${hub.slug}`,
-    },
+      path: `/companies/hiring-for/${hub.slug}`,
+    }),
   };
 }
 

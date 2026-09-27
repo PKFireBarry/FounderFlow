@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
+import { socialMetadata } from '@/lib/social-metadata';
 
 export const metadata: Metadata = {
   title: 'How We Verify Contact Data | FounderFlow Blog',
@@ -8,6 +9,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://www.founderflow.space/blog/how-we-verify-contact-data',
   },
+  ...socialMetadata({
+    title: 'How We Verify Contact Data | FounderFlow Blog',
+    description: "The actual process behind FounderFlow's directory — where records come from, how they're checked, and what happens when they're wrong.",
+    path: '/blog/how-we-verify-contact-data',
+    type: 'article',
+  }),
 };
 
 const jsonLd = {

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { listRoleHubs } from '../../../lib/companies';
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
+import { socialMetadata } from '@/lib/social-metadata';
 
 export const metadata: Metadata = {
   title: 'Browse Startups by Role | FounderFlow',
@@ -10,6 +11,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://www.founderflow.space/companies/hiring-for',
   },
+  ...socialMetadata({
+    title: 'Browse Startups by Role | FounderFlow',
+    description: 'Find early-stage startups hiring for a specific role, from engineering to sales to operations.',
+    path: '/companies/hiring-for',
+  }),
 };
 
 export default async function RoleHubIndexPage() {

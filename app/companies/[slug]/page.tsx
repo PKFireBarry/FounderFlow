@@ -7,6 +7,7 @@ import Footer from '../../components/Footer';
 import CompanyActions from './CompanyActions';
 import CompanyPageTabs from './CompanyPageTabs';
 import BackButton from './BackButton';
+import { socialMetadata } from '@/lib/social-metadata';
 
 export const dynamicParams = true;
 
@@ -25,11 +26,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${company.displayName} — Open roles & hiring history | FounderFlow`,
     description,
     alternates: { canonical: `https://www.founderflow.space/companies/${slug}` },
-    openGraph: {
+    ...socialMetadata({
       title: `${company.displayName} | FounderFlow`,
       description,
-      url: `https://www.founderflow.space/companies/${slug}`,
-    },
+      path: `/companies/${slug}`,
+    }),
   };
 }
 

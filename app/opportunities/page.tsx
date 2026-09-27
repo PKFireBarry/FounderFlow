@@ -3,17 +3,18 @@ import Link from 'next/link';
 import OpportunitiesClient from './OpportunitiesClient';
 import Footer from '../components/Footer';
 import { listCompanies, listRoleHubs } from '../../lib/companies';
+import { socialMetadata } from '@/lib/social-metadata';
 
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Browse Early-Stage Startup Opportunities | FounderFlow',
   description: 'Browse curated leads at seed-stage startups with verified founder contact info — search by role or skill to find companies actively hiring.',
-  openGraph: {
+  ...socialMetadata({
     title: 'Browse Early-Stage Startup Opportunities | FounderFlow',
     description: 'Curated leads at seed-stage startups with verified founder contact info.',
-    url: 'https://www.founderflow.space/opportunities',
-  },
+    path: '/opportunities',
+  }),
   alternates: {
     canonical: 'https://www.founderflow.space/opportunities',
   },

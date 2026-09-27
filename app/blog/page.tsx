@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
+import { socialMetadata } from '@/lib/social-metadata';
 
 export const metadata: Metadata = {
   title: 'Blog | FounderFlow',
@@ -9,6 +10,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://www.founderflow.space/blog',
   },
+  ...socialMetadata({
+    title: 'Blog | FounderFlow',
+    description: 'Notes on finding startup jobs that never get posted, and how FounderFlow verifies its founder directory.',
+    path: '/blog',
+  }),
 };
 
 interface PostSummary {

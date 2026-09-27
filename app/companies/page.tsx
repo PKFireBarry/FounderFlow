@@ -4,15 +4,16 @@ import { listCompanies } from '../../lib/companies';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import CompanyIndexFilter from './CompanyIndexFilter';
+import { socialMetadata } from '@/lib/social-metadata';
 
 export const metadata: Metadata = {
   title: 'All companies hiring | FounderFlow',
   description: 'Browse every company in the FounderFlow directory — 1.5+ years of startup hiring history with direct founder contacts.',
-  openGraph: {
+  ...socialMetadata({
     title: 'All companies hiring | FounderFlow',
     description: 'Every startup that has posted on FounderFlow, with their full hiring history.',
-    url: 'https://www.founderflow.space/companies',
-  },
+    path: '/companies',
+  }),
   alternates: {
     canonical: 'https://www.founderflow.space/companies',
   },
